@@ -159,8 +159,6 @@ bool EventListener::setup() {
 
             logger->debug("[PlaceingBlock] {}", blockPos.toString());
 
-            if (WhiteListItems.contains(player.getSelectedItem().getTypeName())) return; // 白名单
-
             auto land = db->getLandAt(blockPos, player.getDimensionId());
             if (PreCheck(land, player.getUuid().asString())) {
                 return;
@@ -236,8 +234,6 @@ bool EventListener::setup() {
             if (block == "minecraft:respawn_anchor" && tab.useRespawnAnchor) return;   // 重生锚（充能）
             if (block == "minecraft:flower_pot" && tab.editFlowerPot) return;          // 花盆
             // clang-format on
-
-            if (WhiteListItems.contains(item)) return;
 
             ev.cancel();
         }),
@@ -333,8 +329,6 @@ bool EventListener::setup() {
             if (block.ends_with("blast_furnace") && tab.useBlastFurnace) return;           // 高炉
             if (block.ends_with("furnace") && tab.useFurnace) return;                      // 熔炉
             if (block.ends_with("smoker") && tab.useSmoker) return;                        // 烟熏炉
-
-            if (WhiteListItems.contains(player.getSelectedItem().getTypeName())) return;
 
             ev.cancel();
         }),
@@ -975,7 +969,6 @@ std::unordered_set<string> EventListener::InteractBlockMap = {
 //     "minecraft:wandering_trader", // 流浪商人
 //     "minecraft:npc"               // NPC
 // };
-std::unordered_set<string> EventListener::WhiteListItems = {"minecraft:clock"};
 
 
 } // namespace land
