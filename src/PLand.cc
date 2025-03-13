@@ -1,6 +1,7 @@
 #include "pland/PLand.h"
 #include "fmt/core.h"
 #include "ll/api/data/KeyValueDB.h"
+#include "ll/api/i18n/I18n.h"
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/level/BlockPos.h"
 #include "mod/MyMod.h"
@@ -22,6 +23,10 @@
 
 
 namespace land {
+std::string PlayerSettings::SYSTEM_LOCALE_CODE() { return "system"; }
+std::string PlayerSettings::SERVER_LOCALE_CODE() { return "server"; }
+
+
 void PLand::_loadOperators() {
     if (!mDB->has(DB_KEY_OPERATORS())) {
         mDB->set(DB_KEY_OPERATORS(), "[]"); // empty array
@@ -35,7 +40,15 @@ void PLand::_loadPlayerSettings() {
         mDB->set(DB_KEY_PLAYER_SETTINGS(), "{}"); // empty object
     }
     auto settings = JSON::parse(*mDB->get(DB_KEY_PLAYER_SETTINGS()));
-    JSON::jsonToStructNoMerge(settings, mPlayerSettings);
+    if (!settings.is_object()) {
+        throw std::runtime_error("player settings is not an object");
+    }
+
+    for (auto& [key, value] : settings.items()) {
+        PlayerSettings settings_;
+        JSON::jsonToStructTryPatch(value, settings_);
+        mPlayerSettings.emplace(key, std::move(settings_));
+    }
 }
 
 void PLand::_loadLands() {
@@ -185,6 +198,10 @@ bool PLand::removeOperator(UUIDs const& uuid) {
     }
     mLandOperators.erase(iter);
     return true;
+}
+std::vector<UUIDs> const& PLand::getOperators() const {
+    std::shared_lock<std::shared_mutex> lock(mMutex);
+    return mLandOperators;
 }
 
 
@@ -429,6 +446,8 @@ ChunkID PLand::EncodeChunkID(int x, int z) {
     if (x >= 0) signBits |= (1ULL << 63);
     if (z >= 0) signBits |= (1ULL << 62);
     return signBits | (ux << 31) | (uz & 0x7FFFFFFF);
+    // Memory layout:
+    // [signBits][x][z] (signBits: 2 bits, x: 31 bits, z: 31 bits)
 }
 std::pair<int, int> PLand::DecodeChunkID(ChunkID id) {
     bool xPositive = (id & (1ULL << 63)) != 0;

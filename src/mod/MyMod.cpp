@@ -44,7 +44,10 @@ bool MyMod::load() {
     logger.info(R"(                                     )");
     logger.info("Loading...");
 
-    auto un_used = ll::i18n::getInstance().load(getSelf().getLangDir());
+    if (auto res = ll::i18n::getInstance().load(getSelf().getLangDir()); !res) {
+        logger.error("Load language file failed, plugin will use default language.");
+        res.error().log(logger);
+    }
 
     land::Config::tryLoad();
     logger.setLevel(land::Config::cfg.logLevel); // set console log level

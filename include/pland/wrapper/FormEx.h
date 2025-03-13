@@ -48,7 +48,7 @@ public:
 
     //                  父表单                  返回按钮位置                      要回传给父表单的参数
     template <typename ParentForm = void, auto ButtonPos = BackButtonPos::Lower, typename... Args>
-    [[nodiscard]] LDAPI static SimpleFormEx create(Args&&... args) {
+    LDNDAPI static SimpleFormEx create(Args&&... args) {
         if constexpr (std::is_same_v<ParentForm, void>) {
             return SimpleFormEx{}; // 没有父表单
         } else {

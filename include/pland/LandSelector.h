@@ -46,12 +46,12 @@ public:
 
     std::unordered_map<UUIDs, LandSelectorData> mSelectors;
 
-    [[nodiscard]] LDAPI static LandSelector& getInstance();
+    LDNDAPI static LandSelector& getInstance();
 
     LDAPI bool init();   // 初始化
     LDAPI bool uninit(); // 卸载
 
-    [[nodiscard]] LDAPI LandSelectorData* getSelector(Player& player);
+    LDNDAPI LandSelectorData* getSelector(Player& player);
 
     LDAPI bool isSelectTool(ItemStack const& item) const;
     LDAPI bool isSelecting(Player& player) const; // 是否正在选区

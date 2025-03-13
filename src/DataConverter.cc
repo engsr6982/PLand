@@ -273,7 +273,7 @@ bool iLandConverter::execute() {
     }
 
     logger.info("Data transformation completed, total {} lands", result.size());
-    writeToDb(std::move(result));
+    writeToDb(result);
 
     return true;
 }

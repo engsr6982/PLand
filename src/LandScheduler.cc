@@ -2,7 +2,6 @@
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/event/EventBus.h"
 #include "ll/api/event/ListenerBase.h"
-#include "ll/api/event/player/PlayerDisconnectEvent.h"
 #include "ll/api/service/Bedrock.h"
 #include "ll/api/service/PlayerInfo.h"
 #include "ll/api/thread/ServerThreadExecutor.h"
@@ -21,8 +20,7 @@
 
 namespace land {
 
-ll::event::ListenerPtr mPlayerEnterListener;       // 玩家进入领地监听器
-ll::event::ListenerPtr mPlayerLeaveServerListener; // 玩家离开服务器监听器
+ll::event::ListenerPtr mPlayerEnterListener; // 玩家进入领地监听器
 
 std::unordered_map<UUIDm, LandDimid> LandScheduler::mDimidMap;  // 玩家当前所在维度信息
 std::unordered_map<UUIDm, LandID>    LandScheduler::mLandidMap; // 玩家当前所在领地ID信息
@@ -88,13 +86,6 @@ bool LandScheduler::setup() {
     }).launch(ll::thread::ServerThreadExecutor::getDefault());
 
     auto* logger = &my_mod::MyMod::getInstance().getSelf().getLogger();
-    mPlayerLeaveServerListener =
-        bus->emplaceListener<ll::event::PlayerDisconnectEvent>([logger](ll::event::PlayerDisconnectEvent& ev) {
-            logger->debug("Player {} disconnect, remove land info");
-            auto& uuid = ev.self().getUuid();
-            LandScheduler::mDimidMap.erase(uuid);
-            LandScheduler::mLandidMap.erase(uuid);
-        });
 
     // tip
     auto* infos          = &ll::service::PlayerInfo::getInstance();
@@ -123,7 +114,7 @@ bool LandScheduler::setup() {
 
         if (land->isLandOwner(player.getUuid().asString())) {
             title.mTitleText    = land->getLandName();
-            subTitle.mTitleText = "欢迎回来"_tr();
+            subTitle.mTitleText = "欢迎回来"_trf(player);
         } else {
             auto owner = land->getLandOwner();
             auto info  = infos->fromUuid(mce::UUID::fromString(owner));
@@ -131,8 +122,8 @@ bool LandScheduler::setup() {
                 logger->warn("Failed to get the name of player \"{}\", please check the PlayerInfo status.", owner);
             }
 
-            title.mTitleText    = "Welcome to"_tr();
-            subTitle.mTitleText = "{} 的领地"_tr(info.has_value() ? info->name : owner);
+            title.mTitleText    = "Welcome to"_trf(player);
+            subTitle.mTitleText = "{} 的领地"_trf(player, info.has_value() ? info->name : owner);
         }
 
         title.sendTo(player);
@@ -175,9 +166,10 @@ bool LandScheduler::setup() {
                     auto const owner = UUIDm::fromString(land->getLandOwner());
                     auto       info  = infos->fromUuid(owner);
                     if (land->isLandOwner(curPlayerUUID.asString())) {
-                        pkt.mTitleText = "[Land] 当前正在领地 {}"_tr(land->getLandName());
+                        pkt.mTitleText = "[Land] 当前正在领地 {}"_trf(*player, land->getLandName());
                     } else {
-                        pkt.mTitleText = "[Land] 这里是 {} 的领地"_tr(info.has_value() ? info->name : owner.asString());
+                        pkt.mTitleText =
+                            "[Land] 这里是 {} 的领地"_trf(*player, info.has_value() ? info->name : owner.asString());
                     }
 
                     pkt.sendTo(*player);
@@ -192,7 +184,6 @@ bool LandScheduler::setup() {
 bool LandScheduler::release() {
     auto& bus = ll::event::EventBus::getInstance();
     bus.removeListener(mPlayerEnterListener);
-    bus.removeListener(mPlayerLeaveServerListener);
 
     return true;
 }

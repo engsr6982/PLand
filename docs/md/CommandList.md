@@ -15,6 +15,7 @@
 23:01:00.561 INFO [Server] - /pland mgr
 23:01:00.561 INFO [Server] - /pland new
 23:01:00.561 INFO [Server] - /pland reload
+23:01:00.561 INFO [Server] - /pland list op
 23:01:00.561 INFO [Server] - /pland set <a|b>
 23:01:00.561 INFO [Server] - /pland set teleport_pos
 23:01:00.561 INFO [Server] - /pland draw <disable|current_land|near_land>
@@ -52,6 +53,12 @@
 
 - `/pland set teleport_pos`
   - 设置脚下领地的传送点为当前位置（领地主人、管理员）。
+
+- `/pland list op`
+  - 列出领地管理员列表。
+
+- `/pland set language`
+  - 选择语言（玩家）
 
 - `/pland draw <disable|current_land|near_land>`
   - 开启绘制领地范围(需在 `Config.json` 中设置 `setupDrawCommand: true`)

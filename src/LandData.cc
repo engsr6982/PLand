@@ -58,6 +58,10 @@ bool LandData::isLandMember(UUIDs const& uuid) const {
     return std::find(mLandMembers.begin(), mLandMembers.end(), uuid) != mLandMembers.end();
 }
 
+bool LandData::isSubLand() const { return this->mParentLandID != LandID(-1) && this->mSubLandIDs.empty(); }
+bool LandData::isParentLand() const { return this->mParentLandID == LandID(-1) && !this->mSubLandIDs.empty(); }
+bool LandData::canCreateSubLand() const { return !isSubLand(); }
+
 bool LandData::isRadiusInLand(BlockPos const& pos, int radius) const {
     BlockPos minPos(pos.x - radius, mIs3DLand ? pos.y - radius : mPos.mMin_A.y, pos.z - radius);
     BlockPos maxPos(pos.x + radius, mIs3DLand ? pos.y + radius : mPos.mMax_B.y, pos.z + radius);

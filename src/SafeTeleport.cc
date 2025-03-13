@@ -12,7 +12,7 @@
 #include "mod/MyMod.h"
 #include "pland/Config.h"
 #include "pland/Global.h"
-#include "pland/utils/MC.h"
+#include "pland/utils/McUtils.h"
 #include <algorithm>
 #include <concurrentqueue.h>
 #include <cstdint>
@@ -87,8 +87,8 @@ private:
         auto& dimension   = task->player_->getDimension();
         auto& blockSource = task->player_->getDimensionBlockSource();
 
-        short const startY = mc::GetDimensionMaxHeight(dimension); // 维度最大高度
-        short const endY   = mc::GetDimensionMinHeight(dimension); // 维度最小高度
+        short const startY = mc_utils::GetDimensionMaxHeight(dimension); // 维度最大高度
+        short const endY   = mc_utils::GetDimensionMinHeight(dimension); // 维度最小高度
 
         Block* headBlock = nullptr; // 头部方块
         Block* legBlock  = nullptr; // 腿部方块
@@ -130,10 +130,10 @@ private:
     }
 
     inline void handleWaitingProcess(TaskPtr& task) {
-        mc::sendText(*task->player_, "任务已加入队列，请稍后..."_tr());
-        if (mc::IsChunkFullLyoaded(task->targetPos_.first, task->player_->getDimensionBlockSource())) {
+        mc_utils::sendText(*task->player_, "任务已加入队列，请稍后..."_trf(*task->player_));
+        if (mc_utils::IsChunkFullLyoaded(task->targetPos_.first, task->player_->getDimensionBlockSource())) {
             task->updateState(TaskState::ChunkLoadedWaitingProcess);
-            mc::sendText(*task->player_, "等待区块加载..."_tr());
+            mc_utils::sendText(*task->player_, "等待区块加载..."_trf(*task->player_));
         } else {
             task->updateState(TaskState::WaitingChunkLoad);
         }
@@ -146,7 +146,8 @@ private:
         tmp.y = 320;
         task->player_->teleport(tmp, target.second); // 防止摔死
 
-        task->action_.mTitleText = "等待区块加载... 计数: {}/{}"_tr(task->scheduleCounter_, SCHEDULE_COUNTER_MAX);
+        task->action_.mTitleText =
+            "等待区块加载... 计数: {}/{}"_trf(*task->player_, task->scheduleCounter_, SCHEDULE_COUNTER_MAX);
         task->action_.sendTo(*task->player_);
 
         if (task->scheduleCounter_ > SCHEDULE_COUNTER_MAX) {
@@ -154,7 +155,7 @@ private:
             return;
         }
 
-        if (mc::IsChunkFullLyoaded(target.first, task->player_->getDimensionBlockSource())) {
+        if (mc_utils::IsChunkFullLyoaded(target.first, task->player_->getDimensionBlockSource())) {
             task->updateState(TaskState::ChunkLoadedWaitingProcess);
         } else {
             task->scheduleCounter_++;
@@ -162,19 +163,19 @@ private:
     }
 
     inline void handleChunkLoadedWaitingProcess(TaskPtr& task) {
-        mc::sendText(*task->player_, "区块已加载，正在寻找安全位置..."_tr());
+        mc_utils::sendText(*task->player_, "区块已加载，正在寻找安全位置..."_trf(*task->player_));
         task->updateState(TaskState::FindingSafePos);
         findPosImpl(task);
     }
 
     inline void handleFindedSafePosWaitingProcess(TaskPtr& task) {
-        mc::sendText(*task->player_, "安全位置已找到，正在传送..."_tr());
+        mc_utils::sendText(*task->player_, "安全位置已找到，正在传送..."_trf(*task->player_));
         task->player_->teleport(task->targetPos_.first, task->targetPos_.second);
         task->updateState(TaskState::TaskCompleted);
     }
 
     inline void handleFailed(TaskPtr& task, std::string const& reason) {
-        mc::sendText<mc::LogLevel::Error>(*task->player_, reason);
+        mc_utils::sendText<mc_utils::LogLevel::Error>(*task->player_, reason);
         auto& sou = task->sourcePos_;
         task->player_->teleport(sou.first, sou.second);
     }
@@ -208,19 +209,19 @@ private:
                     break;
                 }
                 case TaskState::TaskCompleted: {
-                    mc::sendText(*task->player_, "传送成功!"_tr());
+                    mc_utils::sendText(*task->player_, "传送成功!"_trf(*task->player_));
                     queueMap_.erase(task->uuid_);
                     iter = queue_.erase(iter);
                     break;
                 }
                 case TaskState::NoSafePos: {
-                    handleFailed(task, "任务失败，未找到安全坐标"_tr());
+                    handleFailed(task, "任务失败，未找到安全坐标"_trf(*task->player_));
                     queueMap_.erase(task->uuid_);
                     iter = queue_.erase(iter);
                     break;
                 }
                 case TaskState::WaitChunkLoadTimeout: {
-                    handleFailed(task, "区块加载超时"_tr());
+                    handleFailed(task, "区块加载超时"_trf(*task->player_));
                     queueMap_.erase(task->uuid_);
                     iter = queue_.erase(iter);
                     break;
@@ -277,7 +278,7 @@ public:
 
     uint64_t createTask(Player* player, DimensionPos targetPos, DimensionPos sourcePos) {
         if (queueMap_.find(player->getRealName()) != queueMap_.end()) {
-            mc::sendText<mc::LogLevel::Error>(*player, "传送任务已存在，请等待当前任务完成"_tr());
+            mc_utils::sendText<mc_utils::LogLevel::Error>(*player, "传送任务已存在，请等待当前任务完成"_trf(*player));
             return -1;
         }
         auto id   = idCounter_++;
@@ -291,7 +292,7 @@ public:
 
 void SafeTeleport::teleportTo(Player& player, Vec3 const& pos, int dimid) {
     if (!Config::cfg.land.landTp) {
-        mc::sendText<mc::LogLevel::Info>(player, "此功能已被管理员关闭"_tr());
+        mc_utils::sendText<mc_utils::LogLevel::Info>(player, "此功能已被管理员关闭"_trf(player));
         return;
     }
 

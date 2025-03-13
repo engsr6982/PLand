@@ -47,10 +47,10 @@ public:
     using EditStringResult = std::function<void(Player& self, string result)>;
     LDAPI static void impl(
         Player&                 player,
-        string const&           title        = " | 编辑", // 标题
-        string const&           text         = "",        // 提示
-        string const&           defaultValue = "",        // 默认值
-        EditStringResult const& callback     = {}         // 回调
+        string const&           title,       // 标题
+        string const&           text,        // 提示
+        string const&           defaultValu, // 默认值
+        EditStringResult const& callback     // 回调
     );
 };
 class FuzzySerarchUtilGui {
