@@ -2,6 +2,7 @@
 #include "mc/world/actor/player/Player.h"
 #include "pland/Global.h"
 #include "pland/LandData.h"
+#include "pland/LandSelector.h"
 #include "pland/wrapper/FormEx.h"
 #include <functional>
 #include <vector>
@@ -10,15 +11,6 @@ namespace land {
 using namespace wrapper;
 
 // 独立GUI
-class LandBuyGui {
-public:
-    LDAPI static void impl(Player& player);
-
-    class LandBuyWithReSelectGui {
-    public:
-        LDAPI static void impl(Player& player);
-    };
-};
 class ChooseLandDimAndNewLand {
 public:
     LDAPI static void impl(Player& player);
@@ -27,38 +19,6 @@ class SelectorChangeYGui {
 public:
     LDAPI static void impl(Player& player, std::string const& exception = "");
 };
-
-
-// 通用组件Gui
-class ChooseLandUtilGui {
-public:
-    using ChooseCallback = std::function<void(Player&, LandID id)>;
-    template <typename ParentForm = void>
-    LDAPI static void impl(Player& player, ChooseCallback const& callback, bool showShredLand = false);
-};
-class ChoosePlayerUtilGui {
-public:
-    using ChoosePlayerCall = std::function<void(Player&, Player& choosedPlayer)>;
-    template <typename ParentForm = void>
-    LDAPI static void impl(Player& player, ChoosePlayerCall const& callback);
-};
-class EditStringUtilGui {
-public:
-    using EditStringResult = std::function<void(Player& self, string result)>;
-    LDAPI static void impl(
-        Player&                 player,
-        string const&           title        = " | 编辑", // 标题
-        string const&           text         = "",        // 提示
-        string const&           defaultValue = "",        // 默认值
-        EditStringResult const& callback     = {}         // 回调
-    );
-};
-class FuzzySerarchUtilGui {
-public:
-    using CallBack = std::function<void(Player& slef, std::vector<LandData_sptr> const& result)>;
-    LDAPI static void impl(Player& player, std::vector<LandData_sptr> const& list, CallBack const& callback);
-};
-
 
 // 主界面
 class LandMainGui {
@@ -74,37 +34,6 @@ public:
 
 
 // 领地管理GUI
-class LandManagerGui {
-public:
-    LDAPI static void impl(Player& player, LandID id);
-
-    class EditLandPermGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
-    };
-
-    class DeleteLandGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
-    };
-
-    class EditLandNameGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
-    };
-    class EditLandDescGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
-    };
-    class EditLandOwnerGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
-    };
-    class ReSelectLandGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
-    };
-};
 
 
 // 领地成员管理GUI

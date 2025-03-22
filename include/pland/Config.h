@@ -9,7 +9,7 @@ namespace land {
 enum class EconomyKit : int { LegacyMoney, ScoreBoard };
 
 struct Config {
-    int              version{9};
+    int              version{12};
     ll::io::LogLevel logLevel{ll::io::LogLevel::Info};
 
     struct {
@@ -28,6 +28,13 @@ struct Config {
 
         bool setupDrawCommand{false}; // 安装领地绘制命令
         int  drawRange{64};           // 绘制 x 范围内的领地
+
+        struct {
+            bool   enabled{true};                           // 是否启用
+            int    maxNested{5};                            // 最大嵌套层数(默认5，最大16)
+            int    minSpacing{8};                           // 最小领地间距
+            string calculate{"(square * 8 + height * 20)"}; // 价格公式
+        } subLand;
 
         struct {
             bool enterTip{true};           // 进入领地提示
@@ -58,9 +65,7 @@ struct Config {
     } land;
 
     struct {
-        bool   drawParticle{true};                   // 是否绘制粒子效果
-        string particle{"minecraft:villager_happy"}; // 粒子效果
-        string tool{"minecraft:stick"};              // 工具
+        string tool{"minecraft:stick"}; // 工具
     } selector;
 
     struct {

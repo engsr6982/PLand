@@ -4,8 +4,10 @@
 #include "pland/LandData.h"
 #include <atomic>
 #include <memory>
+#include <string>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -15,11 +17,16 @@ class BlockPos;
 namespace land {
 
 struct PlayerSettings {
-    bool showEnterLandTitle{true};     // 是否显示进入领地提示
-    bool showBottomContinuedTip{true}; // 是否持续显示底部提示
+    bool        showEnterLandTitle{true};     // 是否显示进入领地提示
+    bool        showBottomContinuedTip{true}; // 是否持续显示底部提示
+    std::string localeCode{"server"};         // 语言 system / server / xxx
+
+
+    LDNDAPI static std::string SYSTEM_LOCALE_CODE();
+    LDNDAPI static std::string SERVER_LOCALE_CODE();
 };
 
-class PLand {
+class PLand final {
 public:
     PLand()                        = default;
     PLand(const PLand&)            = delete;
@@ -38,7 +45,8 @@ private:
     std::atomic<bool>                         mThreadStopFlag{false}; // 线程停止标志
 
     // 维度 -> 区块 -> [领地] (快速查询领地)
-    std::unordered_map<LandDimid, std::unordered_map<ChunkID, std::vector<LandID>>> mLandMap;
+    std::unordered_map<LandDimid, std::unordered_map<ChunkID, std::unordered_set<LandID>>> mLandMap;
+
 
 private: //! private 方法非线程安全
     void _loadOperators();
@@ -50,27 +58,31 @@ private: //! private 方法非线程安全
     void _updateLandMap(LandData_sptr const& ptr, bool add);
     void _refreshLandRange(LandData_sptr const& ptr);
 
+    LandID getNextLandID();
+
 public:
-    [[nodiscard]] LDAPI static PLand& getInstance();
+    LDNDAPI static PLand& getInstance();
 
     LDAPI void init();
     LDAPI void save();
     LDAPI void stopThread();
 
 public:
-    [[nodiscard]] LDAPI bool isOperator(UUIDs const& uuid) const;
+    LDNDAPI bool isOperator(UUIDs const& uuid) const;
 
-    [[nodiscard]] LDAPI bool addOperator(UUIDs const& uuid);
+    LDNDAPI bool addOperator(UUIDs const& uuid);
 
-    [[nodiscard]] LDAPI bool removeOperator(UUIDs const& uuid);
+    LDNDAPI bool removeOperator(UUIDs const& uuid);
 
-    [[nodiscard]] LDAPI bool hasPlayerSettings(UUIDs const& uuid) const;
+    LDNDAPI std::vector<UUIDs> const& getOperators() const;
 
-    [[nodiscard]] LDAPI PlayerSettings* getPlayerSettings(UUIDs const& uuid);
+    LDNDAPI bool hasPlayerSettings(UUIDs const& uuid) const;
+
+    LDNDAPI PlayerSettings* getPlayerSettings(UUIDs const& uuid);
 
     LDAPI bool setPlayerSettings(UUIDs const& uuid, PlayerSettings settings);
 
-    [[nodiscard]] LDAPI bool hasLand(LandID id) const;
+    LDNDAPI bool hasLand(LandID id) const;
 
     LDAPI bool addLand(LandData_sptr land);
 
@@ -79,24 +91,22 @@ public:
     LDAPI void refreshLandRange(LandData_sptr const& ptr); // 刷新领地范围 (_refreshLandRange)
 
 public: // 领地查询API
-    [[nodiscard]] LDAPI LandData_wptr getLandWeakPtr(LandID id) const;
-    [[nodiscard]] LDAPI LandData_sptr getLand(LandID id) const;
-    [[nodiscard]] LDAPI std::vector<LandData_sptr> getLands() const;
-    [[nodiscard]] LDAPI std::vector<LandData_sptr> getLands(LandDimid dimid) const;
-    [[nodiscard]] LDAPI std::vector<LandData_sptr> getLands(UUIDs const& uuid, bool includeShared = false) const;
-    [[nodiscard]] LDAPI std::vector<LandData_sptr> getLands(UUIDs const& uuid, LandDimid dimid) const;
+    LDNDAPI LandData_wptr getLandWeakPtr(LandID id) const;
+    LDNDAPI LandData_sptr getLand(LandID id) const;
+    LDNDAPI std::vector<LandData_sptr> getLands() const;
+    LDNDAPI std::vector<LandData_sptr> getLands(std::vector<LandID> const& ids) const;
+    LDNDAPI std::vector<LandData_sptr> getLands(LandDimid dimid) const;
+    LDNDAPI std::vector<LandData_sptr> getLands(UUIDs const& uuid, bool includeShared = false) const;
+    LDNDAPI std::vector<LandData_sptr> getLands(UUIDs const& uuid, LandDimid dimid) const;
 
-    [[nodiscard]] LDAPI LandPermType getPermType(UUIDs const& uuid, LandID id = 0, bool ignoreOperator = false) const;
+    LDNDAPI LandPermType getPermType(UUIDs const& uuid, LandID id = 0, bool ignoreOperator = false) const;
 
-    [[nodiscard]] LDAPI LandData_sptr getLandAt(BlockPos const& pos, LandDimid dimid) const;
+    LDNDAPI LandData_sptr getLandAt(BlockPos const& pos, LandDimid dimid) const;
 
-    [[nodiscard]] LDAPI std::vector<LandData_sptr> getLandAt(BlockPos const& center, int radius, LandDimid dimid) const;
+    LDNDAPI std::unordered_set<LandData_sptr> getLandAt(BlockPos const& center, int radius, LandDimid dimid) const;
 
-    [[nodiscard]] LDAPI std::vector<LandData_sptr>
-                        getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid dimid) const;
-
-public:
-    LDAPI LandID generateLandID();
+    LDNDAPI std::unordered_set<LandData_sptr>
+            getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid dimid) const;
 
 public:
     LDAPI static ChunkID             EncodeChunkID(int x, int z);

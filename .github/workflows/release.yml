@@ -110,7 +110,7 @@ jobs:
           path: sdk-artifact
 
       - run: |
-          cp CHANGELOG.md README.md artifact/
+          cp CHANGELOG.md README.md LICENSE artifact/
 
       - run: |
           zip -r ../${{ github.event.repository.name }}-windows-x64.zip *

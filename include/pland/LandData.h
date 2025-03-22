@@ -4,6 +4,7 @@
 #include "pland/Global.h"
 #include "pland/LandPos.h"
 #include <cstdint>
+#include <vector>
 
 
 namespace land {
@@ -94,40 +95,44 @@ using LandData_sptr = std::shared_ptr<class LandData>; // 共享指针
 using LandData_wptr = std::weak_ptr<class LandData>;   // 弱指针
 class LandData {
 public:
-    int                version{6};                         // 版本号
-    LandPos            mPos;                               // 领地对角坐标
-    PosBase            mTeleportPos;                       // 领地传送坐标
-    LandID             mLandID{static_cast<uint64_t>(-1)}; // 领地唯一ID  (由 PLand::addLand() 时分配)
-    LandDimid          mLandDimid;                         // 领地所在维度
-    bool               mIs3DLand;                          // 是否为3D领地
-    LandPermTable      mLandPermTable;                     // 领地权限
-    UUIDs              mLandOwner;                         // 领地主人(默认UUID,其余情况看mOwnerDataIsXUID)
-    std::vector<UUIDs> mLandMembers;                       // 领地成员
-    std::string        mLandName{"Unnamed territories"};   // 领地名称
-    std::string        mLandDescribe{"No description"};    // 领地描述
-    bool               mIsSaleing{false};                  // 是否正在出售
-    int                mSalePrice{0};                      // 出售价格
-    int                mOriginalBuyPrice{0};               // 原始购买价格
-    bool               mIsConvertedLand{false};            // 是否为转换后的领地(其它插件创建的领地)
-    bool               mOwnerDataIsXUID{false}; // 领地主人数据是否为XUID (如果为true，则主人上线自动转换为UUID)
+    int                 version{7};                            // 版本号
+    LandPos             mPos;                                  // 领地对角坐标
+    PosBase             mTeleportPos;                          // 领地传送坐标
+    LandID              mLandID{static_cast<uint64_t>(-1)};    // 领地唯一ID  (由 PLand::addLand() 时分配)
+    LandDimid           mLandDimid;                            // 领地所在维度
+    bool                mIs3DLand;                             // 是否为3D领地
+    LandPermTable       mLandPermTable;                        // 领地权限
+    UUIDs               mLandOwner;                            // 领地主人(默认UUID,其余情况看mOwnerDataIsXUID)
+    std::vector<UUIDs>  mLandMembers;                          // 领地成员
+    std::string         mLandName{"Unnamed territories"_tr()}; // 领地名称
+    std::string         mLandDescribe{"No description"_tr()};  // 领地描述
+    bool                mIsSaleing{false};                     // 是否正在出售
+    int                 mSalePrice{0};                         // 出售价格
+    int                 mOriginalBuyPrice{0};                  // 原始购买价格
+    bool                mIsConvertedLand{false};               // 是否为转换后的领地(其它插件创建的领地)
+    bool                mOwnerDataIsXUID{false}; // 领地主人数据是否为XUID (如果为true，则主人上线自动转换为UUID)
+    LandID              mParentLandID{static_cast<uint64_t>(-1)}; // 父领地ID
+    std::vector<LandID> mSubLandIDs;                              // 子领地ID
 
-    [[nodiscard]] LDAPI static LandData_sptr make(); // 创建一个空领地数据(反射使用)
-    [[nodiscard]] LDAPI static LandData_sptr
+
+public:
+    LDNDAPI static LandData_sptr make(); // 创建一个空领地数据(反射使用)
+    LDNDAPI static LandData_sptr
     make(LandPos const& pos, LandDimid dimid, bool is3D, UUIDs const& owner); // 新建领地数据
 
     // getters
-    [[nodiscard]] LDAPI LandPos const& getLandPos() const;
-    [[nodiscard]] LDAPI LandID         getLandID() const;
-    [[nodiscard]] LDAPI LandDimid      getLandDimid() const;
-    [[nodiscard]] LDAPI int            getSalePrice() const;
+    LDNDAPI LandPos const& getLandPos() const;
+    LDNDAPI LandID         getLandID() const;
+    LDNDAPI LandDimid      getLandDimid() const;
+    LDNDAPI int            getSalePrice() const;
 
-    [[nodiscard]] LDAPI LandPermTable&       getLandPermTable();
-    [[nodiscard]] LDAPI LandPermTable const& getLandPermTableConst() const;
+    LDNDAPI LandPermTable&       getLandPermTable();
+    LDNDAPI LandPermTable const& getLandPermTableConst() const;
 
-    [[nodiscard]] LDAPI UUIDs const& getLandOwner() const;
-    [[nodiscard]] LDAPI std::vector<UUIDs> const& getLandMembers() const;
-    [[nodiscard]] LDAPI std::string const& getLandName() const;
-    [[nodiscard]] LDAPI std::string const& getLandDescribe() const;
+    LDNDAPI UUIDs const& getLandOwner() const;
+    LDNDAPI std::vector<UUIDs> const& getLandMembers() const;
+    LDNDAPI std::string const& getLandName() const;
+    LDNDAPI std::string const& getLandDescribe() const;
 
 
     // setters
@@ -145,17 +150,63 @@ public:
 
 
     // others
-    [[nodiscard]] LDAPI bool is3DLand() const;
-    [[nodiscard]] LDAPI bool isLandOwner(UUIDs const& uuid) const;
-    [[nodiscard]] LDAPI bool isLandMember(UUIDs const& uuid) const;
-    [[nodiscard]] LDAPI bool isSaleing() const;
+    LDNDAPI bool is3DLand() const;
+    LDNDAPI bool isLandOwner(UUIDs const& uuid) const;
+    LDNDAPI bool isLandMember(UUIDs const& uuid) const;
+    LDNDAPI bool isSaleing() const;
 
-    [[nodiscard]] LDAPI bool isRadiusInLand(BlockPos const& pos, int radius) const;
-    [[nodiscard]] LDAPI bool isAABBInLand(BlockPos const& pos1, BlockPos const& pos2) const;
+    /**
+     * @brief 是否为子领地
+     * 如果是子领地，则有父领地，没有子领地
+     */
+    LDNDAPI bool isSubLand() const;
 
-    [[nodiscard]] LDAPI LandPermType getPermType(UUIDs const& uuid) const;
+    /**
+     * @brief 是否为父领地
+     * 如果是父领地，则有子领地，没有父领地
+     */
+    LDNDAPI bool isParentLand() const;
 
-    [[nodiscard]] LDAPI nlohmann::json toJSON() const;
+    /**
+     * @brief 是否为混合领地
+     * 如果是混合领地，则同时有父领地和子领地
+     */
+    LDNDAPI bool isMixLand() const;
+
+    /**
+     * @brief 是否为普通领地(既不是子领地也不是父领地)
+     */
+    LDNDAPI bool isOrdinaryLand() const;
+
+    /**
+     * @brief 是否可以创建子领地
+     * 如果满足嵌套层级限制，则可以创建子领地
+     */
+    LDNDAPI bool canCreateSubLand() const;
+
+    /**
+     * @brief 获取父领地
+     */
+    LDNDAPI LandData_sptr getParentLand() const;
+
+    /**
+     * @brief 获取子领地
+     */
+    LDNDAPI std::vector<LandData_sptr> getSubLands() const;
+
+    /**
+     * @brief 获取嵌套层级(相对于父领地)
+     */
+    LDNDAPI int getNestedLevel() const;
+
+    LDNDAPI bool isRadiusInLand(BlockPos const& pos, int radius) const;
+    LDNDAPI bool isAABBInLand(BlockPos const& pos1, BlockPos const& pos2) const;
+
+    LDNDAPI LandPermType getPermType(UUIDs const& uuid) const;
+
+    LDNDAPI nlohmann::json toJSON() const;
+
+    LDNDAPI bool operator==(LandData_sptr const& other) const;
 };
 
 

@@ -1,5 +1,7 @@
 #include "pland/LandData.h"
+#include "pland/Config.h"
 #include "pland/Global.h"
+#include "pland/PLand.h"
 #include "pland/utils/JSON.h"
 #include <vector>
 
@@ -58,6 +60,39 @@ bool LandData::isLandMember(UUIDs const& uuid) const {
     return std::find(mLandMembers.begin(), mLandMembers.end(), uuid) != mLandMembers.end();
 }
 
+bool LandData::isSubLand() const { return this->mParentLandID != LandID(-1) && this->mSubLandIDs.empty(); }
+bool LandData::isParentLand() const { return this->mParentLandID == LandID(-1) && !this->mSubLandIDs.empty(); }
+bool LandData::isMixLand() const { return isSubLand() && isParentLand(); }
+bool LandData::isOrdinaryLand() const { return !isMixLand(); }
+bool LandData::canCreateSubLand() const {
+    auto nestedLevel = getNestedLevel();
+    return nestedLevel < Config::cfg.land.subLand.maxNested && nestedLevel < GlobalSubLandMaxNestedLevel;
+}
+
+LandData_sptr LandData::getParentLand() const {
+    if (isParentLand()) {
+        return nullptr;
+    }
+    return PLand::getInstance().getLand(this->mParentLandID);
+}
+
+std::vector<LandData_sptr> LandData::getSubLands() const {
+    if (!isParentLand()) {
+        return {}; // 不是父领地，没有子领地
+    }
+    return PLand::getInstance().getLands(this->mSubLandIDs);
+}
+int LandData::getNestedLevel() const {
+    if (isParentLand()) {
+        return 0;
+    }
+    auto parentLand = getParentLand();
+    if (!parentLand) {
+        return 0;
+    }
+    return parentLand->getNestedLevel() + 1;
+}
+
 bool LandData::isRadiusInLand(BlockPos const& pos, int radius) const {
     BlockPos minPos(pos.x - radius, mIs3DLand ? pos.y - radius : mPos.mMin_A.y, pos.z - radius);
     BlockPos maxPos(pos.x + radius, mIs3DLand ? pos.y + radius : mPos.mMax_B.y, pos.z + radius);
@@ -83,6 +118,9 @@ LandPermType LandData::getPermType(UUIDs const& uuid) const {
 }
 
 nlohmann::json LandData::toJSON() const { return JSON::structTojson(*this); }
+
+bool LandData::operator==(LandData_sptr const& other) const { return mLandID == other->mLandID; }
+
 
 // static
 LandData_sptr LandData::make() { return std::make_shared<LandData>(); }

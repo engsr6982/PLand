@@ -11,10 +11,12 @@ public:
     EconomySystem()                                = default;
     EconomySystem(const EconomySystem&)            = delete;
     EconomySystem& operator=(const EconomySystem&) = delete;
+    EconomySystem(EconomySystem&&)                 = delete;
+    EconomySystem& operator=(EconomySystem&&)      = delete;
 
-    [[nodiscard]] LDAPI static EconomySystem& getInstance();
+    LDNDAPI static EconomySystem& getInstance();
 
-    [[nodiscard]] LDAPI long long get(Player& player);
+    LDNDAPI long long get(Player& player);
 
     LDAPI bool set(Player& player, long long money);
 
@@ -22,7 +24,7 @@ public:
 
     LDAPI bool reduce(Player& player, long long money);
 
-    [[nodiscard]] LDAPI string getSpendTip(Player& player, long long money);
+    LDNDAPI string getSpendTip(Player& player, long long money);
 
     LDAPI void sendLackMoneyTip(Player& player, long long money); // 发送经济不足提示
 };

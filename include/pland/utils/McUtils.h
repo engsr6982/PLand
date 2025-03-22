@@ -46,10 +46,9 @@
 #include <mc/world/actor/player/Player.h>
 #include <memory>
 #include <string>
-#include <utility>
 
 
-namespace land::mc {
+namespace mc_utils {
 
 [[nodiscard]] inline Block const& getBlock(BlockPos& bp, int dimid) {
     auto weakDimension = ll::service::getLevel()->getDimension(dimid);
@@ -145,6 +144,10 @@ template <typename... Args>
     }
 }
 
+#ifndef PLUGIN_NAME
+#define PLUGIN_NAME "[Unknown]"
+#endif
+
 template <LogLevel type = LogLevel::Normal, typename... Args>
 inline void sendText(Player& player, const std::string& fmt, Args&&... args) {
     player.sendMessage(format(PLUGIN_NAME + Color[type] + fmt, args...));
@@ -176,4 +179,4 @@ inline void sendText(const std::string& realName, const std::string& fmt, Args&&
 }
 
 
-} // namespace land::mc
+} // namespace mc_utils

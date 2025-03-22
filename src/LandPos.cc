@@ -23,6 +23,12 @@ PosBase& PosBase::operator=(const BlockPos& pos) {
 }
 PosBase PosBase::make(int x, int y, int z) { return PosBase{x, y, z}; }
 PosBase PosBase::make(BlockPos const& pos) { return PosBase{pos.x, pos.y, pos.z}; }
+int     PosBase::distance(Vec3 const& pos) const {
+    float dx = pos.x - (float)x;
+    float dy = pos.y - (float)y;
+    float dz = pos.z - (float)z;
+    return (int)std::sqrt(dx * dx + dy * dy + dz * dz);
+}
 
 // LandPos
 int LandPos::getDepth() const { return mMax_B.x - mMin_A.x; }
@@ -136,9 +142,7 @@ bool LandPos::isCollision(const LandPos& pos1, const LandPos& pos2) {
         || pos1.mMin_A.y > pos2.mMax_B.y || pos1.mMax_B.z < pos2.mMin_A.z || pos1.mMin_A.z > pos2.mMax_B.z
     );
 }
-bool LandPos::isComplisWithMinSpacing(const LandPos& pos1, const LandPos& pos2, bool ignoreY) {
-    const int minSpacing = Config::cfg.land.minSpacing;
-
+bool LandPos::isComplisWithMinSpacing(const LandPos& pos1, const LandPos& pos2, int minSpacing) {
     // 检查 X 轴
     int xDist = std::min(std::abs(pos1.mMax_B.x - pos2.mMin_A.x), std::abs(pos2.mMax_B.x - pos1.mMin_A.x));
     if (xDist < minSpacing) return false;
@@ -147,13 +151,16 @@ bool LandPos::isComplisWithMinSpacing(const LandPos& pos1, const LandPos& pos2, 
     int zDist = std::min(std::abs(pos1.mMax_B.z - pos2.mMin_A.z), std::abs(pos2.mMax_B.z - pos1.mMin_A.z));
     if (zDist < minSpacing) return false;
 
-    // 如果不忽略 Y 轴，则检查 Y 轴
-    if (!ignoreY) {
-        int yDist = std::min(std::abs(pos1.mMax_B.y - pos2.mMin_A.y), std::abs(pos2.mMax_B.y - pos1.mMin_A.y));
-        if (yDist < minSpacing) return false;
-    }
+    // 检查 Y 轴
+    int yDist = std::min(std::abs(pos1.mMax_B.y - pos2.mMin_A.y), std::abs(pos2.mMax_B.y - pos1.mMin_A.y));
+    if (yDist < minSpacing) return false;
 
     return true;
+}
+bool LandPos::isContain(LandPos const& src, LandPos const& dst) {
+    return src.mMin_A.x <= dst.mMin_A.x && src.mMax_B.x >= dst.mMax_B.x && //
+           src.mMin_A.y <= dst.mMin_A.y && src.mMax_B.y >= dst.mMax_B.y && //
+           src.mMin_A.z <= dst.mMin_A.z && src.mMax_B.z >= dst.mMax_B.z;
 }
 
 

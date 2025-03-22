@@ -13,10 +13,13 @@
 #include "mc\world\level\chunk\SubChunk.h"
 #include "mod/MyMod.h"
 #include "pland/Config.h"
+#include "pland/DrawHandleManager.h"
 #include "pland/Global.h"
 #include "pland/LandData.h"
+#include "pland/LandScheduler.h"
+#include "pland/LandSelector.h"
 #include "pland/PLand.h"
-#include "pland/utils/MC.h"
+#include "pland/utils/McUtils.h"
 #include <cstdint>
 #include <unordered_set>
 #include <vector>
@@ -25,11 +28,13 @@
 #include "ll/api/event/entity/ActorHurtEvent.h"
 #include "ll/api/event/player/PlayerAttackEvent.h"
 #include "ll/api/event/player/PlayerDestroyBlockEvent.h"
+#include "ll/api/event/player/PlayerDisconnectEvent.h"
 #include "ll/api/event/player/PlayerInteractBlockEvent.h"
 #include "ll/api/event/player/PlayerJoinEvent.h"
 #include "ll/api/event/player/PlayerPickUpItemEvent.h"
 #include "ll/api/event/player/PlayerPlaceBlockEvent.h"
 #include "ll/api/event/world/FireSpreadEvent.h"
+
 
 #include "ila/event/minecraft/world/ExplosionEvent.h"
 #include "ila/event/minecraft/world/PistonPushEvent.h"
@@ -95,6 +100,20 @@ bool EventListener::setup() {
                 }
             }
         }),
+        bus->emplaceListener<ll::event::PlayerDisconnectEvent>([logger](ll::event::PlayerDisconnectEvent& ev) {
+            auto& player = ev.self();
+            if (player.isSimulatedPlayer()) return;
+            logger->debug("Player {} disconnect, remove all cache");
+
+            auto& uuid    = player.getUuid();
+            auto  uuidStr = uuid.asString();
+
+            GlobalPlayerLocaleCodeCached.erase(uuidStr);
+            LandScheduler::mDimidMap.erase(uuid);
+            LandScheduler::mLandidMap.erase(uuid);
+            SelectorManager::getInstance().cancel(player);
+            DrawHandleManager::getInstance().removeHandle(player);
+        }),
         bus->emplaceListener<ll::event::ActorHurtEvent>([db, logger](ll::event::ActorHurtEvent& ev) {
             if (!Config::cfg.listeners.ActorHurtEvent) return;
 
@@ -158,7 +177,7 @@ bool EventListener::setup() {
             if (!Config::cfg.listeners.PlayerPlacingBlockEvent) return;
 
             auto&       player   = ev.self();
-            auto const& blockPos = mc::face2Pos(ev.pos(), ev.face()); // 计算实际放置位置
+            auto const& blockPos = mc_utils::face2Pos(ev.pos(), ev.face()); // 计算实际放置位置
 
             logger->debug("[PlaceingBlock] {}", blockPos.toString());
 

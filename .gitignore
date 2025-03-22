@@ -560,3 +560,5 @@ fabric.properties
 /bin/
 
 vsxmake2022
+
+doxygen/

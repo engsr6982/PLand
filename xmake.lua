@@ -3,6 +3,7 @@ add_rules("mode.debug", "mode.release")
 add_repositories("liteldev-repo https://github.com/LiteLDev/xmake-repo.git")
 add_repositories("engsr6982-repo https://github.com/engsr6982/xmake-repo.git")
 add_repositories("miracleforest-repo https://github.com/MiracleForest/xmake-repo.git")
+add_repositories("OTOTYAN https://github.com/OEOTYAN/xmake-repo.git")
 
 -- add_requires("levilamina x.x.x") for a specific version
 -- add_requires("levilamina develop") to use develop version
@@ -16,6 +17,7 @@ add_requires("levibuildscript")
 add_requires("exprtk 0.0.3")
 add_requires("legacymoney 0.9.0-rc.1")
 add_requires("ilistenattentively 0.3.0")
+add_requires("bsci 0.1.6")
 
 if has_config("devtool") then
     add_requires("imgui v1.91.6-docking", {configs = { opengl3 = true, glfw = true }})
@@ -64,7 +66,8 @@ target("PLand") -- Change this to your mod name.
         "levilamina",
         "exprtk",
         "ilistenattentively",
-        "legacymoney"
+        "legacymoney",
+        "bsci"
     )
 
     set_exceptions("none") -- To avoid conflicts with /EHa.
@@ -102,9 +105,6 @@ target("PLand") -- Change this to your mod name.
         local outputdir = path.join(bindir, target:name())
 
         local assetsdir = path.join(os.projectdir(), "assets")
-        local matchDir = assetsdir .. "/*"
-        for _, dir in ipairs(os.dirs(matchDir)) do
-            local fixedDir = path.join(outputdir, path.basename(dir))
-            os.cp(dir, fixedDir)
-        end
+        local langDir = path.join(assetsdir, "lang")
+        os.cp(langDir, outputdir)
     end)
