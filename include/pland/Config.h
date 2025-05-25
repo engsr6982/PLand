@@ -9,7 +9,7 @@ namespace land {
 enum class EconomyKit : int { LegacyMoney, ScoreBoard };
 
 struct Config {
-    int              version{13};
+    int              version{14};
     ll::io::LogLevel logLevel{ll::io::LogLevel::Info};
 
     struct {
@@ -102,6 +102,7 @@ struct Config {
         bool ActorDestroyBlockEvent{true}; // 实体破坏方块事件
         bool EndermanLeaveBlockEvent{true}; // 末影人搬走方块
         bool EndermanTakeBlockEvent{true};  // 末影人放下方块
+        bool DragonEggBlockTeleportBeforeEvent{true}; // 龙蛋传送事件
     } listeners;
 
     struct {

@@ -86,6 +86,7 @@
 #include "ila/event/minecraft/world/level/block/MossGrowthEvent.h"
 #include "ila/event/minecraft/world/level/block/SculkCatalystAbsorbExperienceEvent.h"
 #include "ila/event/minecraft/world/level/block/SculkSpreadEvent.h"
+#include "ila/event/minecraft/world/level/block/DragonEggBlockTeleportEvent.h"
 
 // Fix BlockProperty operator&
 inline BlockProperty operator&(BlockProperty a, BlockProperty b) {
@@ -919,6 +920,21 @@ bool EventListener::setup() {
                 logger->debug("[LiquidFlow] 液体流动: {}", landTo->getLandName());
             }
             // logger->debug("[LiquidFlow] Land:null");
+        })
+    )
+    CHECK_EVENT_AND_REGISTER_LISTENER(//再加个事件拦龙蛋，
+        Config::cfg.listeners.DragonEggBlockTeleportBeforeEvent,
+        bus->emplaceListener<ila::mc::DragonEggBlockTeleportBeforeEvent>([db,
+                                                                    logger](ila::mc::DragonEggBlockTeleportBeforeEvent& ev) {
+            auto& pos = ev.pos();
+            logger->debug("[SculkBlockGrowth] {}", pos.toString());
+
+            auto land = db->getLandAt(pos, ev.blockSource().getDimensionId());
+            if (land) {
+                if (!land->getLandPermTableConst().allowAttackDragonEgg) {
+                    ev.cancel();
+                }
+            }
         })
     )
 
