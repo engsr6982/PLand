@@ -163,7 +163,7 @@ void BuyLandGui::impl(Player& player, Selector* selector) {
             if (!lands.empty()) {
                 for (auto& land : lands) {
                     if (LandAABB::isCollision(land->mPos, *aabb)) {
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地重叠，请重新选择"_trf(pl));
+                        mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName()));
                         return;
                     }
                     if (!LandAABB::isComplisWithMinSpacing(land->mPos, *aabb, Config::cfg.land.minSpacing)) {
@@ -314,7 +314,7 @@ void BuyLandGui::impl(Player& player, LandReSelector* reSelector) {
                 for (auto& land : lands) {
                     if (land->getLandID() == landPtr->getLandID()) continue; // 跳过自己
                     if (LandAABB::isCollision(land->mPos, *aabb)) {
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地重叠，请重新选择"_trf(pl));
+                        mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName()));
                         return;
                     }
                     if (!LandAABB::isComplisWithMinSpacing(land->mPos, *aabb, Config::cfg.land.minSpacing)) {
@@ -523,7 +523,7 @@ void BuyLandGui::impl(Player& player, SubLandSelector* subSelector) {
                 if (parentLands.find(land) != parentLands.end()) continue; // 排除父领地
 
                 if (LandAABB::isCollision(land->mPos, *aabb)) {
-                    mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地重叠，请重新选择"_trf(pl));
+                    mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName()));
                     return;
                 }
                 if (!LandAABB::isComplisWithMinSpacing(land->mPos, *aabb, Config::cfg.land.subLand.minSpacing)) {

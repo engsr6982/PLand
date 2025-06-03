@@ -139,6 +139,7 @@
     "您已经达到最大领地数量": "Maximum plot limit reached.",
     "领地范围不合法, 可用范围: 长宽: {}~{} 最小高度: {}, 当前长宽高: {}x{}x{}": "Invalid plot range. Allowed: Length/Width {}-{}, Min Height {}. Current: {}x{}x{}",
     "领地重叠，请重新选择": "Plot overlap. Reselect.",
+    "领地重叠，与领地 {} 冲突，请重新选择": "Plot overlap, conflicts with plot {}. Reselect.",
     "领地距离过近，请重新选择": "Plots too close. Reselect.",
     "购买领地成功": "Plot purchased successfully.",
     "购买领地失败，原因: {}": "Failed to purchase plot.reason:{}",
