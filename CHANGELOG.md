@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 将生物的类别修改为配置文件可自定义的列表，不再依赖family来判断生物类别 #84 @yangyangzhong82
 
+### 🧹 其他改动
+
+- 优化领地重叠冲突时的消息提醒，现在会显示和哪些领地冲突  #85 @yangyangzhong82
 
 
 ## [Unreleased]
