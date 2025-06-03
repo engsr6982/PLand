@@ -991,7 +991,10 @@ EventListener::EventListener() {
                 auto&  type = ev.self().getTypeName();
 
                 logger->debug("[ProjectileSpawn] type: {}", type);
-                auto mob  = self.getOwner();
+                auto mob = self.getOwner();
+                if (!mob) {
+                    return;
+                }
                 auto land = db->getLandAt(self.getPosition(), self.getDimensionId());
                 if (PreCheckLandExistsAndPermission(land)) return; // land not found
 
