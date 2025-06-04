@@ -131,6 +131,97 @@
     "EndermanTakeBlockEvent": true, // 末影人放下方块
     "DragonEggBlockTeleportBeforeEvent": true // 龙蛋传送事件
   },
+  // v0.8.2
+  "mob": {
+    "hostileMobTypeNames": [
+      // 敌对生物
+      // 关联权限: "allowMonsterDamage": "允许敌对生物受伤",
+      "minecraft:enderman",
+      "minecraft:zombie",
+      "minecraft:witch",
+      "minecraft:endermite",
+      "minecraft:skeleton",
+      "minecraft:zoglin",
+      "minecraft:creeper",
+      "minecraft:ghast",
+      "minecraft:spider",
+      "minecraft:blaze",
+      "minecraft:magma_cube",
+      "minecraft:silverfish",
+      "minecraft:slime",
+      "minecraft:pillager",
+      "minecraft:guardian",
+      "minecraft:vex",
+      "minecraft:wither",
+      "minecraft:elder_guardian",
+      "minecraft:wither_skeleton",
+      "minecraft:stray",
+      "minecraft:husk",
+      "minecraft:hoglin",
+      "minecraft:zombie_villager",
+      "minecraft:drowned",
+      "minecraft:phantom",
+      "minecraft:vindicator",
+      "minecraft:ravager",
+      "minecraft:evocation_illager",
+      "minecraft:shulker",
+      "minecraft:cave_spider",
+      "minecraft:piglin_brute",
+      "minecraft:ender_dragon"
+    ],
+    "specialMobTypeNames": [
+      // 特殊生物 (在 hostileMobTypeNames 后检查)
+      // 关联权限: "allowSpecialDamage": "允许特殊实体受伤(船、矿车、画等)",
+      "minecraft:fox",
+      "minecraft:iron_golem",
+      "minecraft:parrot",
+      "minecraft:cat",
+      "minecraft:bee",
+      "minecraft:wolf",
+      "minecraft:wandering_trader",
+      "minecraft:snow_golem",
+      "minecraft:villager",
+      "minecraft:dolphin",
+      "minecraft:llama",
+      "minecraft:trader_llama",
+      "minecraft:tropicalfish",
+      "minecraft:turtle",
+      "minecraft:panda",
+      "minecraft:polar_bear",
+      "minecraft:pufferfish",
+      "minecraft:squid",
+      "minecraft:salmon",
+      "minecraft:cod",
+      "minecraft:glow_squid",
+      "minecraft:axolotl",
+      "minecraft:goat",
+      "minecraft:frog",
+      "minecraft:allay",
+      "minecraft:strider"
+    ],
+    "passiveMobTypeNames": [
+      // 友好/中立生物 (在 specialMobTypeNames 后检查)
+      // 关联权限: "allowPassiveDamage": "允许友好、中立生物受伤",
+      "minecraft:sheep",
+      "minecraft:cow",
+      "minecraft:rabbit",
+      "minecraft:pig",
+      "minecraft:chicken",
+      "minecraft:mooshroom",
+      "minecraft:horse",
+      "minecraft:donkey",
+      "minecraft:mule",
+      "minecraft:ocelot",
+      "minecraft:bat",
+      "minecraft:sniffer",
+      "minecraft:camel",
+      "minecraft:armadillo"
+    ],
+    "customSpecialMobTypeNames": [
+      // 自定义特殊生物、例如 Addon 生物 (最后检查)
+      // 关联权限："allowCustomSpecialDamage": "允许自定义实体受伤",
+    ]
+  },
   "internal": {
     "devTools": false // 是否启用开发工具，启用前请确保您的机器有具有显示器，否则初始化时会引发错误、甚至崩溃。
   }
