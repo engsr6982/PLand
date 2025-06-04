@@ -188,7 +188,6 @@ struct Config {
     LDAPI static Config cfg;
     LDAPI static bool   tryLoad();
     LDAPI static bool   trySave();
-    LDAPI static bool   tryUpdate();
 };
 
 
