@@ -26,7 +26,7 @@ struct LandPermTable {
     bool allowMonsterDamage{true};        // 允许敌对生物受伤
     bool allowPassiveDamage{false};       // 允许友好、中立生物受伤
     bool allowSpecialDamage{false};       // 允许对特殊实体造成伤害(船、矿车、画等)
-    bool allowSpecialDamage2{false};       // 允许对特殊实体2造成伤害
+    bool allowCustomSpecialDamage{false}; // 允许对特殊实体2造成伤害
     bool allowOpenChest{false};           // 允许打开箱子
     bool allowPickupItem{false};          // 允许拾取物品
     bool allowEndermanLeaveBlock{false};  // 允许末影人放下方块

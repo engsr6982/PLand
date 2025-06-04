@@ -14,7 +14,7 @@
     "allowMonsterDamage": "允许敌对生物受伤",
     "allowPassiveDamage": "允许友好、中立生物受伤",
     "allowSpecialDamage": "允许特殊实体受伤(船、矿车、画等)",
-    "allowSpecialDamage2": "允许自定义实体受伤",
+    "allowCustomSpecialDamage": "允许自定义实体受伤",
     "allowOpenChest": "允许打开箱子",
     "allowPickupItem": "允许拾取物品",
     "allowDropItem": "允许丢弃物品",

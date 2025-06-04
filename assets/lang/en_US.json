@@ -14,7 +14,7 @@
     "allowMonsterDamage": "Allow hostile mobs to take damage",
     "allowPassiveDamage": "Allow passive and neutral mobs to take damage",
     "allowSpecialDamage": "Allow special entities (boats, minecarts, paintings, etc.) to take damage",
-    "allowSpecialDamage2": "Allow custom entity damage",
+    "allowCustomSpecialDamage": "Allow custom entity damage",
     "allowOpenChest": "Open chests (allow)",
     "allowPickupItem": "Pick up items (allow)",
     "allowThrowSnowball": "Throw snowballs (allow)",

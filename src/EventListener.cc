@@ -277,9 +277,9 @@ EventListener::EventListener() {
                     CANCEL_EVENT_AND_RETURN
                 }
             } else if (mSpecialMobTypeNames2.count(hurtActorTypeName)) {
-                if (!tab.allowSpecialDamage2) {
+                if (!tab.allowCustomSpecialDamage) {
                     logger->debug(
-                        "[ActorHurt] Cancel damage for addon mob: {}, allowSpecialDamage2 is false",
+                        "[ActorHurt] Cancel damage for addon mob: {}, allowCustomSpecialDamage is false",
                         hurtActorTypeName
                     );
                     CANCEL_EVENT_AND_RETURN
@@ -901,11 +901,11 @@ EventListener::EventListener() {
                 auto land = db->getLandAt(hurtActor.getPosition(), hurtActor.getDimensionId());
                 if (!land) return;
 
-            // 放行来自有权限的玩家伤害
-            if (auto source = ev.source(); source && source->isPlayer()) {
-                auto& player = static_cast<Player&>(source.value());
-                if (PreCheckLandExistsAndPermission(land, player.getUuid().asString())) return; // land not found
-            }
+                // 放行来自有权限的玩家伤害
+                if (auto source = ev.source(); source && source->isPlayer()) {
+                    auto& player = static_cast<Player&>(source.value());
+                    if (PreCheckLandExistsAndPermission(land, player.getUuid().asString())) return; // land not found
+                }
 
                 auto const& tab = land->getLandPermTable();
                 if (hurtActorIsPlayer) {
@@ -915,7 +915,7 @@ EventListener::EventListener() {
                 } else if (mSpecialMobTypeNames.count(hurtActorTypeName)) {
                     CANCEL_AND_RETURN_IF(!tab.allowSpecialDamage);
                 } else if (mSpecialMobTypeNames2.count(hurtActorTypeName)) {
-                    CANCEL_AND_RETURN_IF(!tab.allowSpecialDamage2);
+                    CANCEL_AND_RETURN_IF(!tab.allowCustomSpecialDamage);
                 } else {
                     CANCEL_AND_RETURN_IF(!tab.allowPassiveDamage); // 视为友好生物
                 }
