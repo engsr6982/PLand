@@ -177,7 +177,7 @@ struct Config {
                                                             "minecraft:camel",
                                                             "minecraft:armadillo"
         };
-        std::unordered_set<std::string> mSpecialMobTypeNames2; // Addon生物类型名称
+        std::unordered_set<std::string> customSpecialMobTypeNames; // Addon生物类型名称
     } mob;
 
     struct {

@@ -179,14 +179,6 @@ EventListener::EventListener() {
     auto* bus    = &ll::event::EventBus::getInstance();
     auto* logger = &mod::ModEntry::getInstance().getSelf().getLogger();
 
-    // 初始化生物类型名称
-    mHostileMobTypeNames.insert(Config::cfg.mob.hostileMobTypeNames.begin(), Config::cfg.mob.hostileMobTypeNames.end());
-    mSpecialMobTypeNames.insert(Config::cfg.mob.specialMobTypeNames.begin(), Config::cfg.mob.specialMobTypeNames.end());
-    mPassiveMobTypeNames.insert(Config::cfg.mob.passiveMobTypeNames.begin(), Config::cfg.mob.passiveMobTypeNames.end());
-    mSpecialMobTypeNames2.insert(
-        Config::cfg.mob.mSpecialMobTypeNames2.begin(),
-        Config::cfg.mob.mSpecialMobTypeNames2.end()
-    );
 
     mListenerPtrs = {
         bus->emplaceListener<ll::event::PlayerJoinEvent>([db, logger](ll::event::PlayerJoinEvent& ev) {
@@ -225,7 +217,7 @@ EventListener::EventListener() {
 
     // LL
     RegisterListenerIf(Config::cfg.listeners.ActorHurtEvent, [&]() {
-        return bus->emplaceListener<ll::event::ActorHurtEvent>([db, logger, this](ll::event::ActorHurtEvent& ev) {
+        return bus->emplaceListener<ll::event::ActorHurtEvent>([db, logger](ll::event::ActorHurtEvent& ev) {
             auto&      hurtActor         = ev.self();
             auto&      damageSource      = ev.source();         // 伤害来源
             auto&      damageCause       = damageSource.mCause; // 伤害原因
@@ -260,7 +252,8 @@ EventListener::EventListener() {
                     hurtActor.getTypeName()
                 );
                 CANCEL_EVENT_AND_RETURN
-            } else if (mHostileMobTypeNames.count(hurtActorTypeName)) {
+
+            } else if (Config::cfg.mob.hostileMobTypeNames.contains(hurtActorTypeName)) {
                 if (!tab.allowMonsterDamage) {
                     logger->debug(
                         "[ActorHurt] Cancel damage for monster: {}, allowMonsterDamage is false",
@@ -268,7 +261,8 @@ EventListener::EventListener() {
                     );
                     CANCEL_EVENT_AND_RETURN
                 }
-            } else if (mSpecialMobTypeNames.count(hurtActorTypeName)) {
+
+            } else if (Config::cfg.mob.specialMobTypeNames.contains(hurtActorTypeName)) {
                 if (!tab.allowSpecialDamage) {
                     logger->debug(
                         "[ActorHurt] Cancel damage for special mob: {}, allowSpecialDamage is false",
@@ -276,18 +270,20 @@ EventListener::EventListener() {
                     );
                     CANCEL_EVENT_AND_RETURN
                 }
-            } else if (mSpecialMobTypeNames2.count(hurtActorTypeName)) {
-                if (!tab.allowCustomSpecialDamage) {
+
+            } else if (Config::cfg.mob.passiveMobTypeNames.contains(hurtActorTypeName)) {
+                if (!tab.allowPassiveDamage) {
                     logger->debug(
-                        "[ActorHurt] Cancel damage for addon mob: {}, allowCustomSpecialDamage is false",
+                        "[ActorHurt] Cancel damage for passive mob: {}, allowPassiveDamage is false",
                         hurtActorTypeName
                     );
                     CANCEL_EVENT_AND_RETURN
                 }
-            } else { // 视为友好生物
-                if (!tab.allowPassiveDamage) {
+
+            } else if (Config::cfg.mob.customSpecialMobTypeNames.count(hurtActorTypeName)) {
+                if (!tab.allowCustomSpecialDamage) {
                     logger->debug(
-                        "[ActorHurt] Cancel damage for passive mob: {}, allowPassiveDamage is false",
+                        "[ActorHurt] Cancel damage for addon mob: {}, allowCustomSpecialDamage is false",
                         hurtActorTypeName
                     );
                     CANCEL_EVENT_AND_RETURN
@@ -891,36 +887,39 @@ EventListener::EventListener() {
     });
 
     RegisterListenerIf(Config::cfg.listeners.MobHurtEffectBeforeEvent, [&]() {
-        return bus->emplaceListener<ila::mc::MobHurtEffectBeforeEvent>(
-            [db, logger, this](ila::mc::MobHurtEffectBeforeEvent& ev) {
-                auto&      hurtActor         = ev.self();
-                auto const hurtActorTypeName = hurtActor.getTypeName();
-                logger->debug("[MobHurtEffect] mob: {}", hurtActorTypeName);
-                bool const hurtActorIsPlayer = hurtActor.isPlayer();
+        return bus->emplaceListener<ila::mc::MobHurtEffectBeforeEvent>([db,
+                                                                        logger](ila::mc::MobHurtEffectBeforeEvent& ev) {
+            auto&      hurtActor         = ev.self();
+            auto const hurtActorTypeName = hurtActor.getTypeName();
+            logger->debug("[MobHurtEffect] mob: {}", hurtActorTypeName);
+            bool const hurtActorIsPlayer = hurtActor.isPlayer();
 
-                auto land = db->getLandAt(hurtActor.getPosition(), hurtActor.getDimensionId());
-                if (!land) return;
+            auto land = db->getLandAt(hurtActor.getPosition(), hurtActor.getDimensionId());
+            if (!land) return;
 
-                // 放行来自有权限的玩家伤害
-                if (auto source = ev.source(); source && source->isPlayer()) {
-                    auto& player = static_cast<Player&>(source.value());
-                    if (PreCheckLandExistsAndPermission(land, player.getUuid().asString())) return; // land not found
-                }
-
-                auto const& tab = land->getLandPermTable();
-                if (hurtActorIsPlayer) {
-                    CANCEL_AND_RETURN_IF(!tab.allowPlayerDamage);
-                } else if (mHostileMobTypeNames.count(hurtActorTypeName)) {
-                    CANCEL_AND_RETURN_IF(!tab.allowMonsterDamage);
-                } else if (mSpecialMobTypeNames.count(hurtActorTypeName)) {
-                    CANCEL_AND_RETURN_IF(!tab.allowSpecialDamage);
-                } else if (mSpecialMobTypeNames2.count(hurtActorTypeName)) {
-                    CANCEL_AND_RETURN_IF(!tab.allowCustomSpecialDamage);
-                } else {
-                    CANCEL_AND_RETURN_IF(!tab.allowPassiveDamage); // 视为友好生物
-                }
+            // 放行来自有权限的玩家伤害
+            if (auto source = ev.source(); source && source->isPlayer()) {
+                auto& player = static_cast<Player&>(source.value());
+                if (PreCheckLandExistsAndPermission(land, player.getUuid().asString())) return; // land not found
             }
-        );
+
+            auto const& tab = land->getLandPermTable();
+            if (hurtActorIsPlayer) {
+                CANCEL_AND_RETURN_IF(!tab.allowPlayerDamage);
+
+            } else if (Config::cfg.mob.hostileMobTypeNames.contains(hurtActorTypeName)) {
+                CANCEL_AND_RETURN_IF(!tab.allowMonsterDamage);
+
+            } else if (Config::cfg.mob.specialMobTypeNames.contains(hurtActorTypeName)) {
+                CANCEL_AND_RETURN_IF(!tab.allowSpecialDamage);
+
+            } else if (Config::cfg.mob.passiveMobTypeNames.contains(hurtActorTypeName)) {
+                CANCEL_AND_RETURN_IF(!tab.allowPassiveDamage);
+
+            } else if (Config::cfg.mob.customSpecialMobTypeNames.contains(hurtActorTypeName)) {
+                CANCEL_AND_RETURN_IF(!tab.allowCustomSpecialDamage);
+            }
+        });
     });
 
     RegisterListenerIf(Config::cfg.listeners.PistonPushBeforeEvent, [&]() {
