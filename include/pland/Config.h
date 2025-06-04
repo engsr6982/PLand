@@ -3,6 +3,7 @@
 #include "ll/api/io/LogLevel.h"
 #include "pland/math/LandAABB.h"
 #include "pland/math/LandPos.h"
+#include <unordered_set>
 #include <vector>
 
 
@@ -69,8 +70,8 @@ struct Config {
                 int minHeight{1}; // 最小领地高度
             } squareRange;
 
-            std::vector<LandDimid>      allowDimensions{0, 1, 2}; // 允许的领地维度
-            std::vector<ForbiddenRange> forbiddenRanges;          // 禁止创建领地的区域
+            std::vector<LandDimid>        allowDimensions{0, 1, 2};   // 允许的领地维度
+            std::vector<ForbiddenRange>   forbiddenRanges;            // 禁止创建领地的区域
             std::map<std::string, double> dimensionPriceCoefficients; // 维度价格系数，例如维度id的1 是1.2倍 2是1.5倍
         } bought;
     } land;
@@ -116,41 +117,41 @@ struct Config {
     } listeners;
 
     struct {
-        std::vector<std::string> hostileMobTypeNames{// 敌对生物
-                                                     "minecraft:zombie",
-                                                     "minecraft:skeleton",
-                                                     "minecraft:creeper",
-                                                     "minecraft:spider",
-                                                     "minecraft:enderman",
-                                                     "minecraft:witch",
-                                                     "minecraft:blaze",
-                                                     "minecraft:ghast",
-                                                     "minecraft:magma_cube",
-                                                     "minecraft:silverfish",
-                                                     "minecraft:slime",
-                                                     "minecraft:guardian",
-                                                     "minecraft:elder_guardian",
-                                                     "minecraft:wither_skeleton",
-                                                     "minecraft:stray",
-                                                     "minecraft:husk",
-                                                     "minecraft:zombie_villager",
-                                                     "minecraft:drowned",
-                                                     "minecraft:phantom",
-                                                     "minecraft:pillager",
-                                                     "minecraft:vindicator",
-                                                     "minecraft:ravager",
-                                                     "minecraft:evocation_illager",
-                                                     "minecraft:vex",
-                                                     "minecraft:shulker",
-                                                     "minecraft:endermite",
-                                                     "minecraft:cave_spider",
-                                                     "minecraft:zoglin",
-                                                     "minecraft:piglin_brute",
-                                                     "minecraft:hoglin",
-                                                     "minecraft:wither",
-                                                     "minecraft:ender_dragon"
+        std::unordered_set<std::string> hostileMobTypeNames{// 敌对生物
+                                                            "minecraft:zombie",
+                                                            "minecraft:skeleton",
+                                                            "minecraft:creeper",
+                                                            "minecraft:spider",
+                                                            "minecraft:enderman",
+                                                            "minecraft:witch",
+                                                            "minecraft:blaze",
+                                                            "minecraft:ghast",
+                                                            "minecraft:magma_cube",
+                                                            "minecraft:silverfish",
+                                                            "minecraft:slime",
+                                                            "minecraft:guardian",
+                                                            "minecraft:elder_guardian",
+                                                            "minecraft:wither_skeleton",
+                                                            "minecraft:stray",
+                                                            "minecraft:husk",
+                                                            "minecraft:zombie_villager",
+                                                            "minecraft:drowned",
+                                                            "minecraft:phantom",
+                                                            "minecraft:pillager",
+                                                            "minecraft:vindicator",
+                                                            "minecraft:ravager",
+                                                            "minecraft:evocation_illager",
+                                                            "minecraft:vex",
+                                                            "minecraft:shulker",
+                                                            "minecraft:endermite",
+                                                            "minecraft:cave_spider",
+                                                            "minecraft:zoglin",
+                                                            "minecraft:piglin_brute",
+                                                            "minecraft:hoglin",
+                                                            "minecraft:wither",
+                                                            "minecraft:ender_dragon"
         };
-        std::vector<std::string> specialMobTypeNames{
+        std::unordered_set<std::string> specialMobTypeNames{
             // 特殊生物
             "minecraft:iron_golem", "minecraft:snow_golem",   "minecraft:villager",   "minecraft:wandering_trader",
             "minecraft:fox",        "minecraft:wolf",         "minecraft:cat",        "minecraft:parrot",
@@ -160,23 +161,23 @@ struct Config {
             "minecraft:turtle",     "minecraft:axolotl",      "minecraft:goat",       "minecraft:frog",
             "minecraft:allay",      "minecraft:strider"
         };
-        std::vector<std::string> passiveMobTypeNames{// 友好生物
-                                                     "minecraft:cow",
-                                                     "minecraft:pig",
-                                                     "minecraft:sheep",
-                                                     "minecraft:chicken",
-                                                     "minecraft:rabbit",
-                                                     "minecraft:mooshroom",
-                                                     "minecraft:horse",
-                                                     "minecraft:donkey",
-                                                     "minecraft:mule",
-                                                     "minecraft:ocelot",
-                                                     "minecraft:bat",
-                                                     "minecraft:sniffer",
-                                                     "minecraft:camel",
-                                                     "minecraft:armadillo"
+        std::unordered_set<std::string> passiveMobTypeNames{// 友好生物
+                                                            "minecraft:cow",
+                                                            "minecraft:pig",
+                                                            "minecraft:sheep",
+                                                            "minecraft:chicken",
+                                                            "minecraft:rabbit",
+                                                            "minecraft:mooshroom",
+                                                            "minecraft:horse",
+                                                            "minecraft:donkey",
+                                                            "minecraft:mule",
+                                                            "minecraft:ocelot",
+                                                            "minecraft:bat",
+                                                            "minecraft:sniffer",
+                                                            "minecraft:camel",
+                                                            "minecraft:armadillo"
         };
-        std::vector<std::string> mSpecialMobTypeNames2; // Addon生物类型名称
+        std::unordered_set<std::string> mSpecialMobTypeNames2; // Addon生物类型名称
     } mob;
 
     struct {
