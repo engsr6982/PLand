@@ -66,6 +66,19 @@ public:
     void updateState(TaskState state) { state_ = state; }
 
     bool operator==(const Task& other) const { return id_ == other.id_; }
+
+    [[nodiscard]] std::string toDebugString() const {
+        return fmt::format(
+            "Task(id={}, uuid={}, targetPos=[{}, {}], sourcePos=[{}, {}], state={})",
+            id_,
+            uuid_.asString(),
+            targetPos_.first.toString(),
+            targetPos_.second,
+            sourcePos_.first.toString(),
+            sourcePos_.second,
+            static_cast<int>(state_)
+        );
+    }
 };
 
 using TaskPtr = std::shared_ptr<Task>;
@@ -228,12 +241,23 @@ private:
                     break;
                 }
                 }
-            } catch (...) {
+                ++iter;
+            } catch (const std::exception& e) {
+                mod::ModEntry::getInstance().getSelf().getLogger().error(
+                    "Exception during teleportation task: {}\nTask info: {}",
+                    e.what(),
+                    task->toDebugString()
+                );
                 queueMap_.erase(task->uuid_);
                 iter = queue_.erase(iter);
-                mod::ModEntry::getInstance().getSelf().getLogger().error("传送任务处理失败，任务ID: {}", task->id_);
+            } catch (...) {
+                mod::ModEntry::getInstance().getSelf().getLogger().error(
+                    "Unknown exception during teleportation task\nTask info: {}",
+                    task->toDebugString()
+                );
+                queueMap_.erase(task->uuid_);
+                iter = queue_.erase(iter);
             }
-            ++iter;
         }
     }
 
