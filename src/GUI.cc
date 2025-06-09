@@ -175,9 +175,6 @@ void SelectorChangeYGui::impl(Player& player, std::string const& exception) {
 }
 
 
-// 通用组件Gui
-
-
 // 领地主菜单
 void LandMainGui::impl(Player& player) {
     auto fm = SimpleFormEx::create();
@@ -190,9 +187,13 @@ void LandMainGui::impl(Player& player) {
     fm.appendButton("管理领地"_trf(player), "textures/ui/icon_spring", [](Player& pl) {
         ChooseLandUtilGui::impl<LandMainGui>(pl, LandManageGui::impl);
     });
-    fm.appendButton("领地传送"_trf(player), "textures/ui/icon_recipe_nature", [](Player& pl) {
-        LandTeleportGui::impl(pl);
-    });
+
+    if (Config::cfg.land.landTp || PLand::getInstance().isOperator(player.getUuid().asString())) {
+        fm.appendButton("领地传送"_trf(player), "textures/ui/icon_recipe_nature", [](Player& pl) {
+            LandTeleportGui::impl(pl);
+        });
+    }
+
     fm.appendButton("个人设置"_trf(player), "textures/ui/icon_recipe_nature", [](Player& pl) {
         EditPlayerSettingGui::impl(pl);
     });

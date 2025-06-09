@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 修复 xmake 打包语言文件路径错误问题 @engsr6982
 - 修复新创建的领地数据库误识别为旧版数据库 @engsr6982
 - 修复弹射物事件在某些情况下的报错 @yangyangzhong82
+- 修复领地传送功能可在部分关闭的情况下使用 #89 @engsr6982
 
 ### 🧩 权限与逻辑优化
 

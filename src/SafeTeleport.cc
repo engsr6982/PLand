@@ -316,11 +316,6 @@ public:
 
 
 void SafeTeleport::teleportTo(Player& player, Vec3 const& pos, int dimid) {
-    if (!Config::cfg.land.landTp && !PLand::getInstance().isOperator(player.getUuid().asString())) {
-        mc_utils::sendText<mc_utils::LogLevel::Info>(player, "此功能已被管理员关闭"_trf(player));
-        return;
-    }
-
     SafeTeleportImpl::getInstance()
         .createTask(&player, {pos, dimid}, {player.getPosition(), player.getDimensionId().id});
 }
