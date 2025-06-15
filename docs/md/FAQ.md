@@ -24,6 +24,11 @@
 
 PLand 的数据存储使用 Google 的 LevelDB 数据库，你可以使用 [QLevelDBViewer](https://github.com/engsr6982/QLevelDBViewer) 来查看数据库内容。
 
+> Tip:  
+> 从 PLand v0.5.0 开始，PLand 内置了一个 `DevTool` 工具  
+> 如果您的设备拥有显示器，可以在 `Config.internals.devTool` 中开启这个工具  
+> 然后使用 `/pland devtool` 唤起窗口，插件将会创建一个 Windows 窗口提供运行时可视化修改、查看。
+
 !> 请不要随意修改数据库内容，否则会导致插件反射异常，无法加载领地数据。
 
 ## 关于子领地
