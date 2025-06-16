@@ -1,4 +1,18 @@
+function parse_levilamina_version() 
+    -- 读取 xmake.lua 文件
+    -- 使用正则提取 "levilamina x.x.x" 或者 "levilamina x.x.x-rc.x" 的版本号
+    -- 解析语义版本号，返回 major, minor, patch, rc (如果没有 rc 则为 0)
+    -- 写入到 Version.h 中，格式如下：
+    -- DEPEND_LEVILAMINA_MAJOR = 1
+    -- DEPEND_LEVILAMINA_MINOR = 0
+    -- DEPEND_LEVILAMINA_PATCH = 0
+    -- DEPEND_LEVILAMINA_RC = 0
+    -- DEPEND_LEVILAMINA_STRING = "x.x.x-rc.x"
+    
+end
+
 function main()
+    parse_levilamina_version()
     -- 创建include/pland目录（如果不存在）
     os.mkdir("include/pland")
     
@@ -64,9 +78,28 @@ function main()
 ]], 
         major, minor, patch, build_number, commit_hash, 
         is_snapshot and "true" or "false", version_string)
-    
+
+    local filePath = "include/pland/Version.h"
+    if os.exists(filePath) then
+        import("core.base.bytes")
+
+        -- 读取并计算Version.h文件的sha256
+        local fileContent = io.readfile(filePath)
+        fileContent = fileContent:gsub("\r\n", "\n") -- 将文件内容中的\r\n替换为\n
+        local rawFileSha256 = hash.sha256(bytes.new(fileContent)) -- 计算文件的sha256
+        -- print("Raw file sha256: " .. rawFileSha256)
+
+        -- 计算新的文件内容的sha256
+        local contentSha256 = hash.sha256(bytes.new(content))
+        -- print("Content sha256: " .. contentSha256)
+        if rawFileSha256 == contentSha256 then
+            print("Version.h is up to date.")
+            return
+        end
+    end
+
     -- 写入文件
-    local file = io.open("include/pland/Version.h", "w")
+    local file = io.open(filePath, "w")
     if file then
         file:write(content)
         file:close()
