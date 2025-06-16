@@ -131,7 +131,7 @@
     "EndermanTakeBlockEvent": true, // 末影人放下方块
     "DragonEggBlockTeleportBeforeEvent": true // 龙蛋传送事件
   },
-  // v0.8.2
+  // v0.9.0
   "mob": {
     "hostileMobTypeNames": [
       // 敌对生物
