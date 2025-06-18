@@ -27,7 +27,7 @@ namespace land {
 
 
 Selector::~Selector() {
-    if (mIsDrawedAABB) {
+    if (mDrawedAABBGeoId) {
         DrawHandleManager::getInstance().getOrCreateHandle(*mPlayer)->remove(mDrawedAABBGeoId);
     }
 }
@@ -98,8 +98,7 @@ void Selector::fixAABBMinMax() {
 }
 
 void Selector::drawAABB() {
-    if (auto aabb = getAABB(); aabb && !mIsDrawedAABB) {
-        mIsDrawedAABB    = true;
+    if (auto aabb = getAABB(); aabb && !mDrawedAABBGeoId) {
         mDrawedAABBGeoId = DrawHandleManager::getInstance().getOrCreateHandle(*mPlayer)->draw(
             aabb.value(),
             mDimensionId,
@@ -109,7 +108,7 @@ void Selector::drawAABB() {
 }
 
 void Selector::onABSelected() {
-    if (mIsDrawedAABB) {
+    if (mDrawedAABBGeoId) {
         return;
     }
 
@@ -138,6 +137,7 @@ void Selector::onFixesY() { drawAABB(); }
 
 namespace land {
 
+// 重新选区器
 LandReSelector::LandReSelector(Player& player, LandData_sptr const& data)
 : Selector(player, data->getLandDimid(), data->is3DLand(), Type::ReSelector),
   mLandData(data) {
@@ -149,18 +149,13 @@ LandReSelector::LandReSelector(Player& player, LandData_sptr const& data)
 }
 
 LandReSelector::~LandReSelector() {
-    if (mOldBoxGeoId) {
-        DrawHandleManager::getInstance().getOrCreateHandle(*mPlayer)->remove(*mOldBoxGeoId);
-    }
+    DrawHandleManager::getInstance().getOrCreateHandle(*mPlayer)->remove(mOldBoxGeoId);
 }
 
 LandData_sptr LandReSelector::getLandData() const { return mLandData.lock(); }
 
-} // namespace land
 
-
-namespace land {
-
+// 子领地选区器
 SubLandSelector::SubLandSelector(Player& player, LandData_sptr const& data)
 : Selector(player, data->getLandDimid(), data->is3DLand(), Type::SubLand),
   mParentLandData(data) {
@@ -169,9 +164,7 @@ SubLandSelector::SubLandSelector(Player& player, LandData_sptr const& data)
 }
 
 SubLandSelector::~SubLandSelector() {
-    if (mParentRangeBoxGeoId) {
-        DrawHandleManager::getInstance().getOrCreateHandle(*mPlayer)->remove(*mParentRangeBoxGeoId);
-    }
+    DrawHandleManager::getInstance().getOrCreateHandle(*mPlayer)->remove(mParentRangeBoxGeoId);
 }
 
 LandData_sptr SubLandSelector::getParentLandData() const { return mParentLandData.lock(); }

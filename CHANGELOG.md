@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-6-?
+
+### 🐛 问题修复
+
+- 修复选区器析构时没有正确清理已渲染的选区 #94 @engsr6982
+
+### 🧹 其他改动
+
+- 适配 LeviLamina v1.3.1 @engsr6982
+- 适配 iListenattentively v0.6.0 @engsr6982
+
 ## [0.9.0] - 2025-6-9
 
 ### 🐛 问题修复

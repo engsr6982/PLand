@@ -36,8 +36,7 @@ protected:
     std::optional<BlockPos> mPointA; // 第一个点
     std::optional<BlockPos> mPointB; // 第二个点
 
-    bool                     mIsDrawedAABB{false}; // 是否已经绘制了选区
-    DrawHandle::UniqueDrawId mDrawedAABBGeoId;     // 绘制的GeoId
+    DrawHandle::UniqueDrawId mDrawedAABBGeoId; // 绘制的GeoId
 
 public:
     Selector(Selector&)             = delete;
@@ -111,10 +110,6 @@ public:
     /* 事件 */
     LDAPI virtual void onABSelected(); // AB点选择完成
     LDAPI virtual void onFixesY();     // 修正Y轴
-
-    // LDAPI virtual void onCancel()   = 0;
-    // LDAPI virtual void onDrawAABB() = 0;
-    // LDAPI virtual void onComplete() = 0;
 };
 
 
