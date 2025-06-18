@@ -138,7 +138,6 @@ void LandCacheViewerWindow::renderCacheLand() {
                                    ImGuiTableFlags_ScrollY;      // 启用垂直滚动，以便固定表头
 
     if (!ImGui::BeginTable("land_cache", 7, flags)) {
-        ImGui::EndTable();
         return;
     }
 
