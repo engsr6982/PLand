@@ -36,17 +36,13 @@ struct LandPermTable {
     bool allowRideEntity{false};         // 允许骑乘实体
     bool allowRideTrans{false};          // 允许骑乘矿车、船
     bool allowAxePeeled{false};          // 允许斧头去皮
-    bool allowAttackEnderCrystal{false}; // 允许攻击末地水晶
-    bool allowDestroyArmorStand{false};  // 允许破坏盔甲架
     bool allowLiquidFlow{true};          // 允许液体流动
     bool allowSculkBlockGrowth{true};    // 允许幽匿尖啸体生长
     bool allowMonsterSpawn{true};        // 允许怪物生成
     bool allowAnimalSpawn{true};         // 允许动物生成
     bool allowInteractEntity{false};     // 实体交互
     bool allowActorDestroy{false};       // 实体破坏
-    bool allowAttackPainting{false};     // 攻击画
-    bool allowAttackMinecart{false};     // 攻击矿车
-    bool allowAttackBoat{false};         // 攻击船
+
 
     bool useAnvil{false};             // 使用铁砧
     bool useBarrel{false};            // 使用木桶
@@ -107,7 +103,7 @@ struct LandPermTable {
 
 using LandData_sptr           = std::shared_ptr<class LandData>; // 共享指针
 using LandData_wptr           = std::weak_ptr<class LandData>;   // 弱指针
-constexpr int LandDataVersion = 18;                              // 领地数据版本号
+constexpr int LandDataVersion = 19;                              // 领地数据版本号
 class LandData {
 public:
     int                 version{LandDataVersion};              // 版本号

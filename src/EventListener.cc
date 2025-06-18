@@ -215,82 +215,6 @@ EventListener::EventListener() {
         }),
     };
 
-    // LL
-    RegisterListenerIf(Config::cfg.listeners.ActorHurtEvent, [&]() {
-        return bus->emplaceListener<ll::event::ActorHurtEvent>([db, logger](ll::event::ActorHurtEvent& ev) {
-            auto&      hurtActor         = ev.self();
-            auto&      damageSource      = ev.source();         // 伤害来源
-            auto&      damageCause       = damageSource.mCause; // 伤害原因
-            auto const damageActorType   = damageSource.getEntityType();
-            bool const isPlayerDamage    = damageActorType == ActorType::Player; // 是否是玩家造成的伤害
-            auto const hurtActorTypeName = hurtActor.getTypeName();
-            logger->debug(
-                "[ActorHurt] Mob: {}, ActorDamageCause: {}, ActorType: {} isPlayerDamage:{}",
-                hurtActorTypeName,
-                static_cast<int>(damageSource.mCause),
-                static_cast<int>(damageSource.getEntityType()),
-                isPlayerDamage
-            );
-
-            auto land = db->getLandAt(hurtActor.getPosition(), hurtActor.getDimensionId());
-            if (PreCheckLandExistsAndPermission(land)) return;
-
-            if (isPlayerDamage) {
-                if (auto souPlayer = hurtActor.getLevel().getPlayer(damageSource.getEntityUniqueID())) {
-                    if ((damageCause == SharedTypes::Legacy::ActorDamageCause::EntityAttack
-                         || damageCause == SharedTypes::Legacy::ActorDamageCause::Projectile)
-                        && PreCheckLandExistsAndPermission(land, souPlayer->getUuid().asString())) {
-                        return;
-                    }
-                }
-            }
-
-            auto const& tab = land->getLandPermTableConst();
-            if (!tab.allowPlayerDamage && hurtActor.isPlayer()) {
-                logger->debug(
-                    "[ActorHurt] Cancel damage for player: {}, allowPlayerDamage is false",
-                    hurtActor.getTypeName()
-                );
-                CANCEL_EVENT_AND_RETURN
-
-            } else if (Config::cfg.mob.hostileMobTypeNames.contains(hurtActorTypeName)) {
-                if (!tab.allowMonsterDamage) {
-                    logger->debug(
-                        "[ActorHurt] Cancel damage for monster: {}, allowMonsterDamage is false",
-                        hurtActorTypeName
-                    );
-                    CANCEL_EVENT_AND_RETURN
-                }
-
-            } else if (Config::cfg.mob.specialMobTypeNames.contains(hurtActorTypeName)) {
-                if (!tab.allowSpecialDamage) {
-                    logger->debug(
-                        "[ActorHurt] Cancel damage for special mob: {}, allowSpecialDamage is false",
-                        hurtActorTypeName
-                    );
-                    CANCEL_EVENT_AND_RETURN
-                }
-
-            } else if (Config::cfg.mob.passiveMobTypeNames.contains(hurtActorTypeName)) {
-                if (!tab.allowPassiveDamage) {
-                    logger->debug(
-                        "[ActorHurt] Cancel damage for passive mob: {}, allowPassiveDamage is false",
-                        hurtActorTypeName
-                    );
-                    CANCEL_EVENT_AND_RETURN
-                }
-
-            } else if (Config::cfg.mob.customSpecialMobTypeNames.count(hurtActorTypeName)) {
-                if (!tab.allowCustomSpecialDamage) {
-                    logger->debug(
-                        "[ActorHurt] Cancel damage for addon mob: {}, allowCustomSpecialDamage is false",
-                        hurtActorTypeName
-                    );
-                    CANCEL_EVENT_AND_RETURN
-                }
-            }
-        });
-    });
 
     RegisterListenerIf(Config::cfg.listeners.PlayerDestroyBlockEvent, [&]() {
         return bus->emplaceListener<ll::event::PlayerDestroyBlockEvent>(
@@ -693,15 +617,48 @@ EventListener::EventListener() {
                 return;
             }
 
-            auto const& et  = mob.getTypeName();
-            auto const& tab = land->getLandPermTableConst();
-            if ((et == "minecraft:armor_stand" && !tab.allowDestroyArmorStand) ||    // 盔甲架
-                (et == "minecraft:ender_crystal" && !tab.allowAttackEnderCrystal) || // 末影水晶
-                (et == "minecraft:painting" && !tab.allowAttackPainting) ||          // 画
-                (mob.hasFamily("boat") && !tab.allowAttackBoat) ||                   // 船
-                (mob.hasFamily("minecart") && !tab.allowAttackMinecart)              // 矿车
-            ) {
-                ev.cancel();
+            auto const& mobTypeName = mob.getTypeName();
+            auto const& tab         = land->getLandPermTableConst();
+            if (Config::cfg.mob.hostileMobTypeNames.contains(mobTypeName) && !tab.allowMonsterDamage) {
+                logger->debug("[PlayerAttackEvent] Mob is hostile: {}", mobTypeName);
+
+                logger->debug(
+                    "[PlayerAttackEvent] Cancel damage for hostile mob: {}, allowMonsterDamage is false",
+                    mobTypeName
+                );
+                CANCEL_EVENT_AND_RETURN
+
+            } else if (Config::cfg.mob.specialMobTypeNames.contains(mobTypeName) && !tab.allowSpecialDamage) {
+                logger->debug("[PlayerAttackEvent] Mob is special: {}", mobTypeName);
+                logger->debug(
+                    "[PlayerAttackEvent] Cancel damage for special mob: {}, allowSpecialDamage is false",
+                    mobTypeName
+                );
+                CANCEL_EVENT_AND_RETURN
+
+            } else if (mobTypeName == "minecraft:player" && !tab.allowPlayerDamage) {
+                logger->debug(
+                    "[PlayerAttackEvent] Cancel damage for passive mob: {}, allowPlayerDamage is false",
+                    mobTypeName
+                );
+                CANCEL_EVENT_AND_RETURN
+
+            } else if (Config::cfg.mob.passiveMobTypeNames.contains(mobTypeName) && !tab.allowPassiveDamage) {
+                if (!tab.allowPassiveDamage) {
+                    logger->debug(
+                        "[PlayerAttackEvent] Cancel damage for passive mob: {}, allowPassiveDamage is false",
+                        mobTypeName
+                    );
+                    CANCEL_EVENT_AND_RETURN
+                }
+            } else if (Config::cfg.mob.customSpecialMobTypeNames.count(mobTypeName) && !tab.allowCustomSpecialDamage) {
+                if (!tab.allowCustomSpecialDamage) {
+                    logger->debug(
+                        "[PlayerAttackEvent] Cancel damage for addon mob: {}, allowCustomSpecialDamage is false",
+                        mobTypeName
+                    );
+                    CANCEL_EVENT_AND_RETURN
+                }
             }
         });
     });
@@ -889,19 +846,28 @@ EventListener::EventListener() {
     RegisterListenerIf(Config::cfg.listeners.MobHurtEffectBeforeEvent, [&]() {
         return bus->emplaceListener<ila::mc::MobHurtEffectBeforeEvent>([db,
                                                                         logger](ila::mc::MobHurtEffectBeforeEvent& ev) {
-            auto&      hurtActor         = ev.self();
-            auto const hurtActorTypeName = hurtActor.getTypeName();
-            logger->debug("[MobHurtEffect] mob: {}", hurtActorTypeName);
+            auto& hurtActor  = ev.self();
+            auto  hurtSource = ev.source();
+            if (!hurtSource) {
+                logger->debug("[MobHurtEffect] 伤害来源为空");
+                return;
+            }
+            auto const hurtActorTypeName  = hurtActor.getTypeName();
+            auto       hurtSourceTypeName = hurtSource->getTypeName();
+            logger->debug("[MobHurtEffect] hurtActor: {}, hurtSource: {}", hurtActorTypeName, hurtSourceTypeName);
             bool const hurtActorIsPlayer = hurtActor.isPlayer();
+            if (hurtSourceTypeName != "minecraft:player") {
+                logger->debug("[MobHurtEffect] 伤害来源不是玩家");
+                return;
+            }
+
 
             auto land = db->getLandAt(hurtActor.getPosition(), hurtActor.getDimensionId());
             if (!land) return;
 
             // 放行来自有权限的玩家伤害
-            if (auto source = ev.source(); source && source->isPlayer()) {
-                auto& player = static_cast<Player&>(source.value());
-                if (PreCheckLandExistsAndPermission(land, player.getUuid().asString())) return; // land not found
-            }
+            auto& player = static_cast<Player&>(hurtSource.value());
+            if (PreCheckLandExistsAndPermission(land, player.getUuid().asString())) return; // land not found
 
             auto const& tab = land->getLandPermTable();
             if (hurtActorIsPlayer) {

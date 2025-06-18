@@ -95,7 +95,6 @@
     // 注意：非必要情况下，请勿关闭事件监听器，否则可能导致领地功能异常
     // 如果您不知道某个事件监听器是做什么的，请不要关闭它
     // 提供的注释仅概括了大致作用，具体行为请查看源码
-    "ActorHurtEvent": true, // 实体受伤事件
     "PlayerDestroyBlockEvent": true, // 玩家破坏方块事件
     "PlayerPlacingBlockEvent": true, // 玩家放置方块事件
     "PlayerInteractBlockEvent": true, // 玩家交互方块事件(使用物品)

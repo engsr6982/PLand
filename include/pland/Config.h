@@ -18,7 +18,7 @@ struct ForbiddenRange {
 };
 
 struct Config {
-    int              version{16};
+    int              version{17};
     ll::io::LogLevel logLevel{ll::io::LogLevel::Info};
 
     struct {
@@ -81,7 +81,6 @@ struct Config {
     } selector;
 
     struct {
-        bool ActorHurtEvent{true};                            // 实体受伤事件
         bool PlayerDestroyBlockEvent{true};                   // 玩家破坏方块事件
         bool PlayerPlacingBlockEvent{true};                   // 玩家放置方块事件
         bool PlayerInteractBlockEvent{true};                  // 玩家交互方块事件(使用物品)
