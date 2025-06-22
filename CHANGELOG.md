@@ -7,12 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1]
+
+### 🐛 问题修复
+
+- 修复领地重新选区购买表单价格显示错误 @engsr6982
+
 ## [0.10.0] - 2025-6-?
 
 ### 🐛 问题修复
 
 - 修复选区器析构时没有正确清理已渲染的选区 #94 @engsr6982
-- 对生物受伤权限进行优化，删除ActorHurtEvent事件，并改为仅对玩家的伤害进行判断 #96 #97 @yangyangzhong82
+- 对生物受伤权限进行优化，删除 ActorHurtEvent 事件，并改为仅对玩家的伤害进行判断 #96 #97 @yangyangzhong82
 
 ### 🧹 其他改动
 

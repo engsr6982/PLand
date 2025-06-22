@@ -262,7 +262,7 @@ void BuyLandGui::impl(Player& player, LandReSelector* reSelector) {
         originalPrice,             // 6
         needPay < 0 ? 0 : needPay, // 7
         refund < 0 ? 0 : refund,   // 8
-        needPay > 0 ? EconomySystem::getInstance().getSpendTip(player, discountedPrice) : ""
+        needPay > 0 ? EconomySystem::getInstance().getSpendTip(player, needPay) : ""
     ));
 
     fm.appendButton(
