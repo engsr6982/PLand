@@ -70,8 +70,8 @@ struct Config {
                 int minHeight{1}; // 最小领地高度
             } squareRange;
 
-            std::vector<LandDimid>        allowDimensions{0, 1, 2};   // 允许的领地维度
-            std::vector<ForbiddenRange>   forbiddenRanges;            // 禁止创建领地的区域
+            std::vector<LandDimid>      allowDimensions{0, 1, 2}; // 允许的领地维度
+            std::vector<ForbiddenRange> forbiddenRanges;          // 禁止创建领地的区域
             std::map<std::string, double> dimensionPriceCoefficients; // 维度价格系数，例如维度id的1 是1.2倍 2是1.5倍
         } bought;
     } land;
@@ -152,13 +152,15 @@ struct Config {
         };
         std::unordered_set<std::string> specialMobTypeNames{
             // 特殊生物
-            "minecraft:iron_golem", "minecraft:snow_golem",   "minecraft:villager",   "minecraft:wandering_trader",
-            "minecraft:fox",        "minecraft:wolf",         "minecraft:cat",        "minecraft:parrot",
-            "minecraft:bee",        "minecraft:dolphin",      "minecraft:llama",      "minecraft:trader_llama",
-            "minecraft:panda",      "minecraft:polar_bear",   "minecraft:pufferfish", "minecraft:salmon",
-            "minecraft:cod",        "minecraft:tropicalfish", "minecraft:squid",      "minecraft:glow_squid",
-            "minecraft:turtle",     "minecraft:axolotl",      "minecraft:goat",       "minecraft:frog",
-            "minecraft:allay",      "minecraft:strider"
+            "minecraft:painting",
+            "minecraft:hopper_minecart",
+            "minecraft:chest_boat",
+            "minecraft:leash_knot",
+            "minecraft:armor_stand",
+            "minecraft:minecart",
+            "minecraft:command_block_minecart",
+            "minecraft:boat",
+            "minecraft:ender_crystal",
         };
         std::unordered_set<std::string> passiveMobTypeNames{// 友好生物
                                                             "minecraft:cow",
