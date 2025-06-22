@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 修复领地重新选区购买表单价格显示错误 @engsr6982
 
-## [0.10.0] - 2025-6-?
+## [0.10.0] - 2025-6-18
 
 ### 🐛 问题修复
 
