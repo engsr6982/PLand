@@ -793,7 +793,8 @@ EventListener::EventListener() {
             // 特殊处理：
             if (land) {
                 auto& tab = land->getLandPermTableConst();
-                if (typeName == "minecraft:minecart" || typeName == "minecraft:boat") {
+                if (typeName == "minecraft:minecart" || typeName == "minecraft:boat"
+                    || typeName == "minecraft:chest_boat") {
                     if (tab.allowRideTrans) return;
                 } else {
                     if (tab.allowRideEntity) return;
