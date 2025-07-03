@@ -4,11 +4,10 @@ add_repositories("liteldev-repo https://github.com/LiteLDev/xmake-repo.git")
 add_repositories("engsr6982-repo https://github.com/engsr6982/xmake-repo.git")
 add_repositories("miracleforest-repo https://github.com/MiracleForest/xmake-repo.git")
 add_repositories("OTOTYAN https://github.com/OEOTYAN/xmake-repo.git")
-
-
+add_repositories("yyz https://github.com/yangyangzhong82/xmake-repo")
 -- LeviMc(LiteLDev)
-add_requires("levilamina 1.3.1", {configs = {target_type = "server"}})
-add_requires("levibuildscript 0.4.0")
+add_requires("levilamina 1.3.3", {configs = {target_type = "server"}})
+add_requires("levibuildscript 0.4.1")
 add_requires("legacymoney 0.9.0-rc.1")
 
 -- OTOTYAN
@@ -19,6 +18,8 @@ add_requires("ilistenattentively 0.6.0")
 
 -- xmake
 add_requires("exprtk 0.0.3")
+
+add_requires("PlayerData 0.0.7")
 
 if has_config("devtool") then
     add_requires("imgui v1.91.6-docking", {configs = { opengl3 = true, glfw = true }})
@@ -70,7 +71,8 @@ target("PLand") -- Change this to your mod name.
         "exprtk",
         "ilistenattentively",
         "legacymoney",
-        "bsci"
+        "bsci",
+        "PlayerData"
     )
 
     set_exceptions("none") -- To avoid conflicts with /EHa.

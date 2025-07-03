@@ -88,7 +88,8 @@
 #include "ila/event/minecraft/world/level/block/SculkCatalystAbsorbExperienceEvent.h"
 #include "ila/event/minecraft/world/level/block/SculkSpreadEvent.h"
 
-
+#include "event/Actor/MobHurtEffectEvent.h"
+#include "event/world/ItemFrameBlockEvent.h"
 // Fix BlockProperty operator&
 inline BlockProperty operator&(BlockProperty a, BlockProperty b) {
     return static_cast<BlockProperty>(static_cast<uint64_t>(a) & static_cast<uint64_t>(b));
@@ -845,10 +846,9 @@ EventListener::EventListener() {
     });
 
     RegisterListenerIf(Config::cfg.listeners.MobHurtEffectBeforeEvent, [&]() {
-        return bus->emplaceListener<ila::mc::MobHurtEffectBeforeEvent>([db,
-                                                                        logger](ila::mc::MobHurtEffectBeforeEvent& ev) {
-            auto& hurtActor  = ev.self();
-            auto  hurtSource = ev.source();
+        return bus->emplaceListener<ma::event::MobHurtEffectEvent>([db, logger](ma::event::MobHurtEffectEvent& ev) {
+            auto& hurtActor  = ev.getMob();
+            auto  hurtSource = ev.getDamageSource();
             if (!hurtSource) {
                 logger->debug("[MobHurtEffect] 伤害来源为空");
                 return;
@@ -914,12 +914,26 @@ EventListener::EventListener() {
     });
 
     RegisterListenerIf(Config::cfg.listeners.PlayerOperatedItemFrameBeforeEvent, [&]() {
-        return bus->emplaceListener<ila::mc::PlayerOperatedItemFrameBeforeEvent>(
-            [db, logger](ila::mc::PlayerOperatedItemFrameBeforeEvent& ev) {
-                logger->debug("[PlayerUseItemFrame] pos: {}", ev.blockPos().toString());
+        return bus->emplaceListener<ma::event::ItemFrameBlockAttackBeforeEvent>(
+            [db, logger](ma::event::ItemFrameBlockAttackBeforeEvent& ev) {
+                logger->debug("[PlayerUseItemFrame] pos: {}", ev.getPos().toString());
 
-                auto land = db->getLandAt(ev.blockPos(), ev.self().getDimensionId());
-                if (PreCheckLandExistsAndPermission(land, ev.self().getUuid().asString())) return;
+                auto land = db->getLandAt(ev.getPos(), ev.getPlayer().getDimensionId());
+                if (PreCheckLandExistsAndPermission(land, ev.getPlayer().getUuid().asString())) return;
+
+                if (land->getLandPermTableConst().useItemFrame) return;
+
+                ev.cancel();
+            }
+        );
+    });
+    RegisterListenerIf(Config::cfg.listeners.PlayerOperatedItemFrameBeforeEvent, [&]() {
+        return bus->emplaceListener<ma::event::ItemFrameBlockUseBeforeEvent>(
+            [db, logger](ma::event::ItemFrameBlockUseBeforeEvent& ev) {
+                logger->debug("[PlayerUseItemFrame] pos: {}", ev.getPos().toString());
+
+                auto land = db->getLandAt(ev.getPos(), ev.getPlayer().getDimensionId());
+                if (PreCheckLandExistsAndPermission(land, ev.getPlayer().getUuid().asString())) return;
 
                 if (land->getLandPermTableConst().useItemFrame) return;
 
