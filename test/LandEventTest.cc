@@ -1,7 +1,7 @@
 #include "pland/LandEvent.h"
 #include "ll/api/event/EventBus.h"
 #include "ll/api/event/ListenerBase.h"
-#include "mod/ModEntry.h"
+#include "pland/mod/ModEntry.h"
 
 #include "LandEventTest.h"
 

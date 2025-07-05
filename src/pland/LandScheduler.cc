@@ -10,12 +10,12 @@
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/level/ChunkPos.h"
 #include "mc/world/level/Level.h"
-#include "mod/ModEntry.h"
 #include "pland/Config.h"
 #include "pland/Global.h"
 #include "pland/LandEvent.h"
 #include "pland/PLand.h"
 #include "pland/Require.h"
+#include "pland/mod/ModEntry.h"
 #include <cstdio>
 #include <stdexcept>
 

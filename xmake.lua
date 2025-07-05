@@ -64,7 +64,8 @@ target("PLand") -- Change this to your mod name.
     )
     add_defines("NOMINMAX", "UNICODE", "LDAPI_EXPORT", "_HAS_CXX23=1")
     add_files("src/**.cpp", "src/**.cc")
-    add_includedirs("src", "include")
+    add_includedirs("src")
+    add_headerfiles("src/pland/(**.hpp)", "src/pland/(**.h)")
     add_packages(
         "levilamina",
         "exprtk",
