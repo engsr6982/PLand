@@ -17,10 +17,10 @@
 #include "pland/PriceCalculate.h"
 #include "pland/gui/CommonUtilGui.hpp"
 #include "pland/gui/LandManageGui.h"
+#include "pland/gui/form/BackSimpleForm.h"
 #include "pland/math/LandAABB.h"
 #include "pland/utils/JSON.h"
 #include "pland/utils/McUtils.h"
-#include "pland/wrapper/FormEx.h"
 #include <cstdint>
 #include <stack>
 #include <string>
@@ -38,7 +38,7 @@ void LandManageGui::impl(Player& player, LandID id) {
         return;
     }
 
-    auto fm = SimpleFormEx::create();
+    auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 领地管理 [{}]"_trf(player, land->getLandID())));
 
     string subContent;
@@ -72,45 +72,45 @@ void LandManageGui::impl(Player& player, LandID id) {
     ));
 
 
-    fm.appendButton("编辑权限"_trf(player), "textures/ui/sidebar_icons/promotag", [land](Player& pl) {
+    fm.appendButton("编辑权限"_trf(player), "textures/ui/sidebar_icons/promotag", "path", [land](Player& pl) {
         EditLandPermGui::impl(pl, land);
     });
-    fm.appendButton("修改成员"_trf(player), "textures/ui/FriendsIcon", [land](Player& pl) {
+    fm.appendButton("修改成员"_trf(player), "textures/ui/FriendsIcon", "path", [land](Player& pl) {
         EditLandMemberGui::impl(pl, land);
     });
-    fm.appendButton("修改领地名称"_trf(player), "textures/ui/book_edit_default", [land](Player& pl) {
+    fm.appendButton("修改领地名称"_trf(player), "textures/ui/book_edit_default", "path", [land](Player& pl) {
         EditLandNameGui::impl(pl, land);
     });
-    fm.appendButton("修改领地描述"_trf(player), "textures/ui/book_edit_default", [land](Player& pl) {
+    fm.appendButton("修改领地描述"_trf(player), "textures/ui/book_edit_default", "path", [land](Player& pl) {
         EditLandDescGui::impl(pl, land);
     });
 
     // 开启了领地传送功能，或者玩家是领地管理员
     if (Config::cfg.land.landTp || PLand::getInstance().isOperator(player.getUuid().asString())) {
-        fm.appendButton("传送到领地"_trf(player), "textures/ui/icon_recipe_nature", [id](Player& pl) {
+        fm.appendButton("传送到领地"_trf(player), "textures/ui/icon_recipe_nature", "path", [id](Player& pl) {
             LandTeleportGui::run(pl, id);
         });
 
         // 如果玩家在领地内，则显示设置传送点按钮
         if (land->mPos.hasPos(player.getPosition())) {
-            fm.appendButton("设置传送点"_trf(player), "textures/ui/Add-Ons_Nav_Icon36x36", [land](Player& pl) {
+            fm.appendButton("设置传送点"_trf(player), "textures/ui/Add-Ons_Nav_Icon36x36", "path", [land](Player& pl) {
                 land->mTeleportPos = pl.getPosition();
                 mc_utils::sendText(pl, "领地传送点已设置!"_trf(pl));
             });
         }
     }
 
-    fm.appendButton("领地过户"_trf(player), "textures/ui/sidebar_icons/my_characters", [land](Player& pl) {
+    fm.appendButton("领地过户"_trf(player), "textures/ui/sidebar_icons/my_characters", "path", [land](Player& pl) {
         EditLandOwnerGui::impl(pl, land);
     });
 
     if (land->isOrdinaryLand()) {
-        fm.appendButton("重新选区"_trf(player), "textures/ui/anvil_icon", [land](Player& pl) {
+        fm.appendButton("重新选区"_trf(player), "textures/ui/anvil_icon", "path", [land](Player& pl) {
             ReSelectLandGui::impl(pl, land);
         });
     }
 
-    fm.appendButton("删除领地"_trf(player), "textures/ui/icon_trash", [land](Player& pl) {
+    fm.appendButton("删除领地"_trf(player), "textures/ui/icon_trash", "path", [land](Player& pl) {
         DeleteLandGui::impl(pl, land);
     });
 
@@ -299,7 +299,7 @@ void LandManageGui::DeleteLandGui::_deleteSubLandImpl(Player& player, LandData_s
 #undef DELETE_LAND_GUI_REMOVE_DEFAULT_LAND_IMPL
 
 void LandManageGui::DeleteLandGui::_deleteParentLandImpl(Player& player, LandData_sptr const& ptr) {
-    auto fm = SimpleFormEx::create<LandManageGui, BackButtonPos::Lower>(ptr->getLandID());
+    auto fm = BackSimpleForm<>::make<LandManageGui::impl>(ptr->getLandID());
     fm.setTitle(PLUGIN_NAME + "| 删除领地 & 父领地"_trf(player));
     fm.setContent(
         "您当前操作的的是父领地\n当前领地下有 {} 个子领地\n您确定要删除领地吗?"_trf(player, ptr->getSubLands().size())
@@ -319,7 +319,7 @@ void LandManageGui::DeleteLandGui::_deleteParentLandImpl(Player& player, LandDat
     fm.sendTo(player);
 }
 void LandManageGui::DeleteLandGui::_deleteMixLandImpl(Player& player, LandData_sptr const& ptr) {
-    auto fm = SimpleFormEx::create<LandManageGui, BackButtonPos::Lower>(ptr->getLandID());
+    auto fm = BackSimpleForm<>::make<LandManageGui::impl>(ptr->getLandID());
     fm.setTitle(PLUGIN_NAME + "| 删除领地 & 混合领地"_trf(player));
     fm.setContent(
         "您当前操作的的是混合领地\n当前领地下有 {} 个子领地\n您确定要删除领地吗?"_trf(player, ptr->getSubLands().size())

@@ -3,12 +3,11 @@
 #include "pland/Global.h"
 #include "pland/LandData.h"
 #include "pland/LandSelector.h"
-#include "pland/wrapper/FormEx.h"
+#include "pland/gui/form/BackSimpleForm.h"
 #include <functional>
 #include <vector>
 
 namespace land {
-using namespace wrapper;
 
 // 独立GUI
 class ChooseLandDimAndNewLand {

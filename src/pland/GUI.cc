@@ -21,12 +21,12 @@
 #include "pland/SafeTeleport.h"
 #include "pland/gui/CommonUtilGui.hpp"
 #include "pland/gui/LandManageGui.h"
+#include "pland/gui/form/BackSimpleForm.h"
 #include "pland/math/LandAABB.h"
 #include "pland/mod/ModEntry.h"
 #include "pland/utils/JSON.h"
 #include "pland/utils/McUtils.h"
 #include "pland/utils/Utils.h"
-#include "pland/wrapper/FormEx.h"
 #include <algorithm>
 #include <climits>
 #include <cstdint>
@@ -177,28 +177,28 @@ void SelectorChangeYGui::impl(Player& player, std::string const& exception) {
 
 // 领地主菜单
 void LandMainGui::impl(Player& player) {
-    auto fm = SimpleFormEx::create();
+    auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 领地菜单"_trf(player)));
     fm.setContent("欢迎使用 Pland 领地管理插件\n\n请选择一个功能"_trf(player));
 
-    fm.appendButton("新建领地"_trf(player), "textures/ui/anvil_icon", [](Player& pl) {
+    fm.appendButton("新建领地"_trf(player), "textures/ui/anvil_icon", "path", [](Player& pl) {
         ChooseLandDimAndNewLand::impl(pl);
     });
-    fm.appendButton("管理领地"_trf(player), "textures/ui/icon_spring", [](Player& pl) {
-        ChooseLandUtilGui::impl<LandMainGui>(pl, LandManageGui::impl);
+    fm.appendButton("管理领地"_trf(player), "textures/ui/icon_spring", "path", [](Player& pl) {
+        ChooseLandUtilGui::impl<LandMainGui::impl>(pl, LandManageGui::impl);
     });
 
     if (Config::cfg.land.landTp || PLand::getInstance().isOperator(player.getUuid().asString())) {
-        fm.appendButton("领地传送"_trf(player), "textures/ui/icon_recipe_nature", [](Player& pl) {
+        fm.appendButton("领地传送"_trf(player), "textures/ui/icon_recipe_nature", "path", [](Player& pl) {
             LandTeleportGui::impl(pl);
         });
     }
 
-    fm.appendButton("个人设置"_trf(player), "textures/ui/icon_recipe_nature", [](Player& pl) {
+    fm.appendButton("个人设置"_trf(player), "textures/ui/icon_recipe_nature", "path", [](Player& pl) {
         EditPlayerSettingGui::impl(pl);
     });
 
-    fm.appendButton("关闭"_trf(player), "textures/ui/cancel");
+    fm.appendButton("关闭"_trf(player), "textures/ui/cancel", "path");
     fm.sendTo(player);
 }
 
@@ -227,9 +227,9 @@ void EditPlayerSettingGui::impl(Player& player) {
 
 // 编辑领地成员
 void EditLandMemberGui::impl(Player& player, LandData_sptr ptr) {
-    auto fm = SimpleFormEx::create<LandManageGui, BackButtonPos::Upper>(ptr->getLandID());
+    auto fm = BackSimpleForm<>::make<LandManageGui::impl>(ptr->getLandID());
 
-    fm.appendButton("添加成员"_trf(player), "textures/ui/color_plus", [ptr](Player& self) {
+    fm.appendButton("添加成员"_trf(player), "textures/ui/color_plus", "path", [ptr](Player& self) {
         AddMemberGui::impl(self, ptr);
     });
 
@@ -248,7 +248,7 @@ void EditLandMemberGui::impl(Player& player, LandData_sptr ptr) {
     fm.sendTo(player);
 }
 void EditLandMemberGui::AddMemberGui::impl(Player& player, LandData_sptr ptr) {
-    ChoosePlayerUtilGui::impl<EditLandMemberGui>(player, [ptr](Player& self, Player* target) {
+    ChoosePlayerUtilGui::impl<EditLandMemberGui::impl>(player, [ptr](Player& self, Player* target) {
         if (!target) {
             mc_utils::sendText<mc_utils::LogLevel::Error>(self, "目标玩家已离线，无法继续操作!"_trf(self));
             return;
@@ -346,7 +346,9 @@ void EditLandMemberGui::RemoveMemberGui::impl(Player& player, LandData_sptr ptr,
 
 
 // 领地传送GUI
-void LandTeleportGui::impl(Player& player) { ChooseLandUtilGui::impl<LandMainGui>(player, LandTeleportGui::run, true); }
+void LandTeleportGui::impl(Player& player) {
+    ChooseLandUtilGui::impl<LandMainGui::impl>(player, LandTeleportGui::run, true);
+}
 void LandTeleportGui::run(Player& player, LandID id) {
     auto land = PLand::getInstance().getLand(id);
     if (!land) {
@@ -371,12 +373,12 @@ void LandOPManagerGui::impl(Player& player) {
         return;
     }
 
-    auto fm = SimpleFormEx::create();
+    auto fm = BackSimpleForm<>::make();
 
     fm.setTitle(PLUGIN_NAME + " | 领地管理"_trf(player));
     fm.setContent("请选择您要进行的操作"_trf(player));
 
-    fm.appendButton("管理脚下领地"_trf(player), "textures/ui/free_download", [db](Player& self) {
+    fm.appendButton("管理脚下领地"_trf(player), "textures/ui/free_download", "path", [db](Player& self) {
         auto lands = db->getLandAt(self.getPosition(), self.getDimensionId());
         if (!lands) {
             mc_utils::sendText<mc_utils::LogLevel::Error>(self, "您当前所处位置没有领地"_trf(self));
@@ -384,10 +386,10 @@ void LandOPManagerGui::impl(Player& player) {
         }
         LandManageGui::impl(self, lands->getLandID());
     });
-    fm.appendButton("管理玩家领地"_trf(player), "textures/ui/FriendsIcon", [](Player& self) {
+    fm.appendButton("管理玩家领地"_trf(player), "textures/ui/FriendsIcon", "path", [](Player& self) {
         IChoosePlayerFromDB::impl(self, ManageLandWithPlayer::impl);
     });
-    fm.appendButton("管理指定领地"_trf(player), "textures/ui/magnifyingGlass", [](Player& self) {
+    fm.appendButton("管理指定领地"_trf(player), "textures/ui/magnifyingGlass", "path", [](Player& self) {
         IChooseLand::impl(self, PLand::getInstance().getLands());
     });
 
@@ -399,7 +401,7 @@ void LandOPManagerGui::ManageLandWithPlayer::impl(Player& player, UUIDs const& t
 
 
 void LandOPManagerGui::IChoosePlayerFromDB::impl(Player& player, ChoosePlayerCall callback) {
-    auto fm = SimpleFormEx::create<LandOPManagerGui, BackButtonPos::Upper>();
+    auto fm = BackSimpleForm<>::make<LandOPManagerGui::impl>();
     fm.setTitle(PLUGIN_NAME + " | 玩家列表"_trf(player));
     fm.setContent("请选择您要管理的玩家"_trf(player));
 
@@ -425,11 +427,11 @@ void LandOPManagerGui::IChoosePlayerFromDB::impl(Player& player, ChoosePlayerCal
 
 
 void LandOPManagerGui::IChooseLand::impl(Player& player, std::vector<LandData_sptr> const& lands) {
-    auto fm = SimpleFormEx::create<LandOPManagerGui, BackButtonPos::Upper>();
+    auto fm = BackSimpleForm<>::make<LandOPManagerGui::impl>();
     fm.setTitle(PLUGIN_NAME + " | 领地列表"_trf(player));
     fm.setContent("请选择您要管理的领地"_trf(player));
 
-    fm.appendButton("模糊搜索领地", "textures/ui/magnifyingGlass", [lands](Player& player) {
+    fm.appendButton("模糊搜索领地", "textures/ui/magnifyingGlass", "path", [lands](Player& player) {
         FuzzySerarchUtilGui::impl(player, lands, LandOPManagerGui::IChooseLand::impl);
     });
 

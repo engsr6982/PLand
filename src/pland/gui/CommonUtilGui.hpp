@@ -5,7 +5,7 @@
 #include "pland/Global.h"
 #include "pland/LandData.h"
 #include "pland/PLand.h"
-#include "pland/wrapper/FormEx.h"
+#include "pland/gui/form/BackSimpleForm.h"
 
 #include "mc/deps/ecs/gamerefs_entity/EntityContext.h"
 #include "mc/deps/ecs/gamerefs_entity/GameRefsEntity.h"
@@ -18,9 +18,9 @@ namespace land {
 class ChooseLandUtilGui {
 public:
     using ChooseCallback = std::function<void(Player&, LandID id)>;
-    template <typename ParentForm = void>
+    template <auto ParentForm = nullptr>
     static void impl(Player& player, ChooseCallback const& callback, bool showShredLand = false) {
-        auto fm = SimpleFormEx::create<ParentForm, BackButtonPos::Upper>();
+        auto fm = BackSimpleForm<>::make<ParentForm>();
         fm.setTitle(PLUGIN_NAME + ("| 选择领地"_trf(player)));
         fm.setContent("请选择一个领地"_trf(player));
 
@@ -29,6 +29,7 @@ public:
             fm.appendButton(
                 "{}\n维度: {} | ID: {}"_trf(player, land->getLandName(), land->getLandDimid(), land->getLandID()),
                 "textures/ui/icon_recipe_nature",
+                "path",
                 [callback, land](Player& pl) { callback(pl, land->getLandID()); }
             );
         }
@@ -41,9 +42,9 @@ public:
 class ChoosePlayerUtilGui {
 public:
     using ChoosePlayerCall = std::function<void(Player&, Player* choosedPlayer)>;
-    template <typename ParentForm = void>
+    template <auto ParentForm = nullptr>
     static void impl(Player& player, ChoosePlayerCall const& callback) {
-        auto fm = SimpleFormEx::create<LandMainGui, BackButtonPos::Upper>();
+        auto fm = BackSimpleForm<>::make<LandMainGui::impl>();
         fm.setTitle(PLUGIN_NAME + ("| 选择玩家"_trf(player)));
 
         ll::service::getLevel()->forEachPlayer([callback, &fm](Player& target) {

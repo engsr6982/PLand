@@ -10,9 +10,9 @@
 #include "pland/LandSelector.h"
 #include "pland/PLand.h"
 #include "pland/PriceCalculate.h"
+#include "pland/gui/form/BackSimpleForm.h"
 #include "pland/math/LandAABB.h"
 #include "pland/utils/McUtils.h"
-#include "pland/wrapper/FormEx.h"
 #include <climits>
 #include <stack>
 #include <stdexcept>
@@ -93,7 +93,7 @@ void BuyLandGui::impl(Player& player, Selector* selector) {
         return;
     }
 
-    auto fm = SimpleFormEx::create();
+    auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 购买领地"_trf(player)));
     fm.setContent("领地类型: {}\n体积: {}x{}x{} = {}\n范围: {}\n原价: {}\n折扣价: {}\n{}"_trf(
         player,
@@ -111,6 +111,7 @@ void BuyLandGui::impl(Player& player, Selector* selector) {
     fm.appendButton(
         "确认购买"_trf(player),
         "textures/ui/realms_green_check",
+        "path",
         [discountedPrice, aabb, length, width, height, is3D, selector](Player& pl) {
             auto& economy = EconomySystem::getInstance();
             if (economy.get(pl) < discountedPrice && Config::cfg.economy.enabled) {
@@ -163,7 +164,10 @@ void BuyLandGui::impl(Player& player, Selector* selector) {
             if (!lands.empty()) {
                 for (auto& land : lands) {
                     if (LandAABB::isCollision(land->mPos, *aabb)) {
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName()));
+                        mc_utils::sendText<mc_utils::LogLevel::Error>(
+                            pl,
+                            "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName())
+                        );
                         return;
                     }
                     if (!LandAABB::isComplisWithMinSpacing(land->mPos, *aabb, Config::cfg.land.minSpacing)) {
@@ -199,8 +203,8 @@ void BuyLandGui::impl(Player& player, Selector* selector) {
             }
         }
     );
-    fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon"); // close
-    fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", [](Player& pl) {
+    fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
+    fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", "path", [](Player& pl) {
         SelectorManager::getInstance().cancel(pl);
     });
 
@@ -250,7 +254,7 @@ void BuyLandGui::impl(Player& player, LandReSelector* reSelector) {
         return;
     }
 
-    auto fm = SimpleFormEx::create();
+    auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 购买领地 & 重新选区"_trf(player)));
     fm.setContent("体积: {0}x{1}x{2} = {3}\n范围: {4}\n原购买价格: {5}\n需补差价: {6}\n需退差价: {7}\n{8}"_trf(
         player,
@@ -268,6 +272,7 @@ void BuyLandGui::impl(Player& player, LandReSelector* reSelector) {
     fm.appendButton(
         "确认购买"_trf(player),
         "textures/ui/realms_green_check",
+        "path",
         [needPay, refund, discountedPrice, aabb, length, width, height, is3D, reSelector, landPtr](Player& pl) {
             auto& eco = EconomySystem::getInstance();
             if ((needPay > 0 && eco.get(pl) < needPay) && Config::cfg.economy.enabled) {
@@ -314,7 +319,10 @@ void BuyLandGui::impl(Player& player, LandReSelector* reSelector) {
                 for (auto& land : lands) {
                     if (land->getLandID() == landPtr->getLandID()) continue; // 跳过自己
                     if (LandAABB::isCollision(land->mPos, *aabb)) {
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName()));
+                        mc_utils::sendText<mc_utils::LogLevel::Error>(
+                            pl,
+                            "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName())
+                        );
                         return;
                     }
                     if (!LandAABB::isComplisWithMinSpacing(land->mPos, *aabb, Config::cfg.land.minSpacing)) {
@@ -352,8 +360,8 @@ void BuyLandGui::impl(Player& player, LandReSelector* reSelector) {
             } else mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地范围修改失败"_trf(pl));
         }
     );
-    fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon"); // close
-    fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", [](Player& pl) {
+    fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
+    fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", "path", [](Player& pl) {
         SelectorManager::getInstance().cancel(pl);
     });
 
@@ -393,7 +401,7 @@ void BuyLandGui::impl(Player& player, SubLandSelector* subSelector) {
         return;
     }
 
-    auto fm = SimpleFormEx::create();
+    auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 购买领地 & 子领地"_trf(player)));
 
     auto& parentPos = subSelector->getParentLandData()->getLandPos();
@@ -422,6 +430,7 @@ void BuyLandGui::impl(Player& player, SubLandSelector* subSelector) {
     fm.appendButton(
         "确认购买"_trf(player),
         "textures/ui/realms_green_check",
+        "path",
         [discountedPrice, aabb, length, width, height, is3D, subSelector, &parentPos](Player& pl) {
             auto& economy = EconomySystem::getInstance();
             if (economy.get(pl) < discountedPrice && Config::cfg.economy.enabled) {
@@ -523,7 +532,10 @@ void BuyLandGui::impl(Player& player, SubLandSelector* subSelector) {
                 if (parentLands.find(land) != parentLands.end()) continue; // 排除父领地
 
                 if (LandAABB::isCollision(land->mPos, *aabb)) {
-                    mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName()));
+                    mc_utils::sendText<mc_utils::LogLevel::Error>(
+                        pl,
+                        "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName())
+                    );
                     return;
                 }
                 if (!LandAABB::isComplisWithMinSpacing(land->mPos, *aabb, Config::cfg.land.subLand.minSpacing)) {
@@ -562,8 +574,8 @@ void BuyLandGui::impl(Player& player, SubLandSelector* subSelector) {
             }
         }
     );
-    fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon"); // close
-    fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", [](Player& pl) {
+    fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
+    fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", "path", [](Player& pl) {
         SelectorManager::getInstance().cancel(pl);
     });
 
