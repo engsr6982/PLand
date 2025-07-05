@@ -32,41 +32,11 @@ jobs:
       - run: |
           xmake -w -y
 
-      # - run: |
-      #     Get-ChildItem -Path bin -Recurse -Filter "*.pdb" | Remove-Item
-
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-windows-x64-${{ github.sha }}
           path: |
             bin/
-
-      # - uses: actions/upload-artifact@v4
-      #   with:
-      #     path: build/windows/x64/release/${{ github.event.repository.name }}.pdb
-
-      # SDK相关任务
-      - name: Create SDK directories
-        run: |
-          mkdir SDK
-          mkdir SDK/lib
-          mkdir SDK/include
-
-      - name: Copy include files to SDK
-        run: |
-          Copy-Item -Path include/* -Destination SDK/include/ -Recurse -Force
-        shell: pwsh
-
-      - name: Copy .lib files to SDK/lib
-        run: |
-          New-Item -Path SDK/lib -ItemType Directory -Force
-          Copy-Item -Path build/windows/x64/release/*.lib -Destination SDK/lib/ -Force
-        shell: pwsh
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: SDK-${{ github.sha }}
-          path: SDK
 
   update-release-notes:
     outputs:
@@ -103,12 +73,6 @@ jobs:
           name: ${{ github.event.repository.name }}-windows-x64-${{ github.sha }}
           path: artifact
 
-      # Download SDK
-      - uses: actions/download-artifact@v4
-        with:
-          name: SDK-${{ github.sha }}
-          path: sdk-artifact
-
       - run: |
           cp CHANGELOG.md README.md LICENSE artifact/
 
@@ -116,62 +80,14 @@ jobs:
           zip -r ../${{ github.event.repository.name }}-windows-x64.zip *
         working-directory: artifact
 
-      # Zip SDK
-      - run: |
-          zip -r ../SDK-${{ github.event.repository.name }}.zip *
-        working-directory: sdk-artifact
-
       - id: calculate-sha256-core
         run: |
           echo sha256=$(sha256sum ${{ github.event.repository.name }}-windows-x64.zip | awk '{print $1}') >> $GITHUB_OUTPUT
-
-      - id: calculate-sha256-sdk
-        run: |
-          echo sha256=$(sha256sum SDK-${{ github.event.repository.name }}.zip | awk '{print $1}') >> $GITHUB_OUTPUT
 
       - uses: softprops/action-gh-release@v1
         with:
           append_body: true
           body: |-
             | ${{ github.event.repository.name }}-windows-x64.zip | ${{ steps.calculate-sha256-core.outputs.sha256 }} |
-            | SDK-${{ github.event.repository.name }}.zip         | ${{ steps.calculate-sha256-sdk.outputs.sha256 }}  |
           files: |
             ${{ github.event.repository.name }}-windows-x64.zip
-            SDK-${{ github.event.repository.name }}.zip
-
-  # upload-to-minebbs:
-  #   needs:
-  #     - build
-  #     - update-release-notes
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     # 检出代码
-  #     - uses: actions/checkout@v4
-
-  #     # 下载构建产物
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: ${{ github.event.repository.name }}-windows-x64-${{ github.sha }}
-  #         path: artifact
-
-  #     # 复制文件
-  #     - run: |
-  #         cp CHANGELOG.md README.md artifact/
-
-  #     # 重新打包
-  #     - run: |
-  #         zip -r ../${{ github.event.repository.name }}-windows-x64.zip *
-  #       working-directory: artifact
-
-  #     - name: Upload to MineBBS
-  #       uses: engsr6982/upload-minebbs@v2
-  #       with:
-  #         minebbs_token: ${{ secrets.MINEBBS_TOKEN }}
-  #         resource_id: "9465"
-  #         upload_file: ${{ github.event.repository.name }}-windows-x64.zip
-  #         update_description: |
-  #           [MD]
-  #           > Tip: 此更新由 Github Actions 自动发布
-
-  #           ${{ needs.update-release-notes.outputs.release_notes }}
-  #           [/MD]

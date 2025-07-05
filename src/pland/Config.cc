@@ -1,6 +1,6 @@
 #include "PLand/Config.h"
 #include "ll/api/Config.h"
-#include "mod/ModEntry.h"
+#include "pland/mod/ModEntry.h"
 #include <filesystem>
 
 

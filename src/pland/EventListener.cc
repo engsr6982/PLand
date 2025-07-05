@@ -34,7 +34,6 @@
 #include "mc/world/phys/HitResult.h"
 
 
-#include "mod/ModEntry.h"
 #include "pland/Config.h"
 #include "pland/DrawHandleManager.h"
 #include "pland/Global.h"
@@ -43,6 +42,7 @@
 #include "pland/LandSelector.h"
 #include "pland/PLand.h"
 #include "pland/math/LandAABB.h"
+#include "pland/mod/ModEntry.h"
 #include "pland/utils/McUtils.h"
 #include <cstdint>
 #include <functional>

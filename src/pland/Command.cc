@@ -25,7 +25,6 @@
 #include "mc/world/level/block/actor/BlockActor.h"
 #include "mc/world/level/chunk/LevelChunk.h"
 #include "mc/world/level/dimension/Dimension.h"
-#include "mod/ModEntry.h"
 #include "pland/Config.h"
 #include "pland/DataConverter.h"
 #include "pland/DrawHandleManager.h"
@@ -34,6 +33,7 @@
 #include "pland/LandSelector.h"
 #include "pland/PLand.h"
 #include "pland/gui/LandManageGui.h"
+#include "pland/mod/ModEntry.h"
 #include "pland/utils/McUtils.h"
 #include "pland/utils/Utils.h"
 #include <filesystem>

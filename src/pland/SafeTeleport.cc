@@ -9,10 +9,10 @@
 #include "mc/world/level/BlockPos.h"
 #include "mc/world/level/ChunkPos.h"
 #include "mc/world/level/block/Block.h"
-#include "mod/ModEntry.h"
 #include "pland/Config.h"
 #include "pland/Global.h"
 #include "pland/PLand.h"
+#include "pland/mod/ModEntry.h"
 #include "pland/utils/McUtils.h"
 #include <algorithm>
 #include <concurrentqueue.h>

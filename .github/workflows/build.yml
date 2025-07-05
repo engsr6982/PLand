@@ -3,13 +3,11 @@ on:
     paths:
       - ".github/workflows/build.yml"
       - "src/**"
-      - "include/**"
       - "xmake.lua"
   push:
     paths:
       - ".github/workflows/build.yml"
       - "src/**"
-      - "include/**"
       - "xmake.lua"
   workflow_dispatch:
 
@@ -42,51 +40,8 @@ jobs:
       - run: |
           xmake -v -y
 
-      # - run: |
-      #     Get-ChildItem -Path bin -Recurse -Filter "*.pdb" | Remove-Item
-
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-windows-x64-${{ github.sha }}
           path: |
             bin/
-
-      # - uses: actions/upload-artifact@v4
-      #   with:
-      #     path: build/windows/x64/release/${{ github.event.repository.name }}.pdb
-
-      # SDK相关任务
-      - name: Create SDK directories
-        run: |
-          mkdir SDK
-          mkdir SDK/lib
-          mkdir SDK/include
-
-      - name: Copy include files to SDK
-        run: |
-          Copy-Item -Path include/* -Destination SDK/include/ -Recurse -Force
-        shell: pwsh
-
-      - name: Copy .lib files to SDK/lib
-        run: |
-          New-Item -Path SDK/lib -ItemType Directory -Force
-          Copy-Item -Path build/windows/x64/release/*.lib -Destination SDK/lib/ -Force
-        shell: pwsh
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: SDK-${{ github.sha }}
-          path: SDK
-
-  # clang-format:
-  #   runs-on: windows-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - run: |
-  #         choco install llvm -y --version=17.0.6
-
-  #     - name: clang-format
-  #       run: |
-  #         Get-ChildItem src/ -Filter *.cpp -Recurse | ForEach-Object { clang-format --dry-run -Werror $_.FullName; if ($LASTEXITCODE -ne 0) { exit 1; } }
-  #         Get-ChildItem src/ -Filter *.h -Recurse | ForEach-Object { clang-format --dry-run -Werror $_.FullName; if ($LASTEXITCODE -ne 0) { exit 1; } }

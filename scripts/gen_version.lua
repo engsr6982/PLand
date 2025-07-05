@@ -14,7 +14,7 @@ end
 function main()
     parse_levilamina_version()
     -- 创建include/pland目录（如果不存在）
-    os.mkdir("include/pland")
+    os.mkdir("src/pland")
     
     -- 获取最新的tag
     local latest_tag = os.iorunv("git", {"describe", "--tags", "--abbrev=0"}) or "v0.0.0"
@@ -79,7 +79,7 @@ function main()
         major, minor, patch, build_number, commit_hash, 
         is_snapshot and "true" or "false", version_string)
 
-    local filePath = "include/pland/Version.h"
+    local filePath = "src/pland/Version.h"
     if os.exists(filePath) then
         import("core.base.bytes")
 

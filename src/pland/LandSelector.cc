@@ -9,12 +9,12 @@
 #include "mc/network/packet/SetTitlePacket.h"
 #include "mc/server/ServerPlayer.h"
 #include "mc/world/item/ItemStack.h"
-#include "mod/ModEntry.h"
 #include "pland/Config.h"
 #include "pland/DrawHandleManager.h"
 #include "pland/GUI.h"
 #include "pland/Global.h"
 #include "pland/LandData.h"
+#include "pland/mod/ModEntry.h"
 #include "pland/utils/Date.h"
 #include "pland/utils/McUtils.h"
 #include <memory>
