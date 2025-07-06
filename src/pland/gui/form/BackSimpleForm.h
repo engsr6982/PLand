@@ -54,15 +54,15 @@ public:
 
     enum class ButtonPos { Upper, Lower };
 
-    using Callback     = SimpleForm::Callback;
-    using BackCallback = std::function<void(Player&)>;
+    using Callback       = SimpleForm::Callback;
+    using ButtonCallback = SimpleForm::ButtonCallback;
 
     using T::appendButton;
     using T::sendTo;
 
     explicit BackSimpleForm() : T{} {}
 
-    explicit BackSimpleForm(BackCallback backCallback, ButtonPos buttonPos = ButtonPos::Upper)
+    explicit BackSimpleForm(ButtonCallback backCallback, ButtonPos buttonPos = ButtonPos::Upper)
     : T{},
       mButtonPos(buttonPos),
       mBackCallback(std::move(backCallback)) {
@@ -92,7 +92,7 @@ public:
     // factory method
     template <auto Fn, typename... Args>
         requires std::invocable<decltype(Fn), Player&, Args...>
-    static BackCallback makeCallback(Args&&... args) {
+    static ButtonCallback makeCallback(Args&&... args) {
         static_assert(
             std::is_invocable_v<decltype(Fn), Player&, Args...>,
             "Fn must be callable with (Player&, Args...)"
@@ -119,9 +119,9 @@ public:
 
 
 private:
-    bool         mIsAddedBackButton{false};
-    ButtonPos    mButtonPos{ButtonPos::Upper};
-    BackCallback mBackCallback{nullptr};
+    bool           mIsAddedBackButton{false};
+    ButtonPos      mButtonPos{ButtonPos::Upper};
+    ButtonCallback mBackCallback{nullptr};
 };
 
 } // namespace land
