@@ -1,5 +1,5 @@
 #include "pland/Command.h"
-#include "Pland/gui/BuyLandGui.h"
+#include "Pland/gui/LandBuyGUI.h"
 #include "ll/api/command/CommandRegistrar.h"
 #include "ll/api/form/CustomForm.h"
 #include "ll/api/service/Bedrock.h"
@@ -28,11 +28,13 @@
 #include "pland/Config.h"
 #include "pland/DataConverter.h"
 #include "pland/DrawHandleManager.h"
-#include "pland/GUI.h"
 #include "pland/Global.h"
 #include "pland/LandSelector.h"
 #include "pland/PLand.h"
-#include "pland/gui/LandManageGui.h"
+#include "pland/gui/LandMainMenuGUI.h"
+#include "pland/gui/LandManagerGUI.h"
+#include "pland/gui/LandOperatorManagerGUI.h"
+#include "pland/gui/NewLandGUI.h"
 #include "pland/mod/ModEntry.h"
 #include "pland/utils/McUtils.h"
 #include "pland/utils/Utils.h"
@@ -89,14 +91,14 @@ namespace Lambda {
 static auto const Root = [](CommandOrigin const& ori, CommandOutput& out) {
     CHECK_TYPE(ori, out, CommandOriginType::Player);
     auto& player = *static_cast<Player*>(ori.getEntity());
-    LandMainGui::impl(player);
+    LandMainMenuGUI::sendTo(player);
 };
 
 
 static auto const Mgr = [](CommandOrigin const& ori, CommandOutput& out) {
     CHECK_TYPE(ori, out, CommandOriginType::Player);
     auto& player = *static_cast<Player*>(ori.getEntity());
-    LandOPManagerGui::impl(player);
+    LandOperatorManagerGUI::sendMainMenu(player);
 };
 
 
@@ -172,7 +174,7 @@ static auto const New = [](CommandOrigin const& ori, CommandOutput& out, NewPara
 
     switch (param.type) {
     case NewType::Default: {
-        ChooseLandDimAndNewLand::impl(player);
+        NewLandGUI::sendChooseLandDim(player);
         break;
     }
 
@@ -256,7 +258,7 @@ static auto const Cancel = [](CommandOrigin const& ori, CommandOutput& out) {
 static auto const Buy = [](CommandOrigin const& ori, CommandOutput& out) {
     CHECK_TYPE(ori, out, CommandOriginType::Player);
     auto& player = *static_cast<Player*>(ori.getEntity());
-    BuyLandGui::impl(player);
+    LandBuyGUI::impl(player);
 };
 
 static auto const Reload = [](CommandOrigin const& ori, CommandOutput& out) {
@@ -418,7 +420,7 @@ static auto const This = [](CommandOrigin const& ori, CommandOutput& out) {
         return;
     }
 
-    LandManageGui::impl(player, land->getLandID());
+    LandManagerGUI::impl(player, land->getLandID());
 };
 
 }; // namespace Lambda

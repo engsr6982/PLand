@@ -25,7 +25,7 @@ public:
 
 private:
     friend class SelectorManager;
-    friend class SelectorChangeYGui;
+    friend class NewLandGUI;
 
 protected:
     Type const mType;

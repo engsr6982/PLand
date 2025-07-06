@@ -5,7 +5,7 @@
 
 namespace land {
 
-class BuyLandGui {
+class LandBuyGUI {
 public:
     /**
      * @brief 购买领地(调用对应的impl函数)

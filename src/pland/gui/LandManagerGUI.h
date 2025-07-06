@@ -6,7 +6,7 @@
 namespace land {
 
 
-class LandManageGui {
+class LandManagerGUI {
 public:
     LDAPI static void impl(Player& player, LandID id);
 
@@ -41,6 +41,21 @@ public:
     class ReSelectLandGui {
     public:
         LDAPI static void impl(Player& player, LandData_sptr const& ptr);
+    };
+
+    class EditLandMemberGui {
+    public:
+        LDAPI static void impl(Player& player, LandData_sptr ptr);
+
+        class AddMemberGui {
+        public:
+            LDAPI static void impl(Player& player, LandData_sptr ptr);
+        };
+
+        class RemoveMemberGui {
+        public:
+            LDAPI static void impl(Player& player, LandData_sptr ptr, UUIDs members);
+        };
     };
 };
 

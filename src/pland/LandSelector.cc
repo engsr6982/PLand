@@ -11,9 +11,9 @@
 #include "mc/world/item/ItemStack.h"
 #include "pland/Config.h"
 #include "pland/DrawHandleManager.h"
-#include "pland/GUI.h"
 #include "pland/Global.h"
 #include "pland/LandData.h"
+#include "pland/gui/NewLandGUI.h"
 #include "pland/mod/ModEntry.h"
 #include "pland/utils/Date.h"
 #include "pland/utils/McUtils.h"
@@ -116,7 +116,7 @@ void Selector::onABSelected() {
 
     if (is3D()) {
         // 3DLand
-        SelectorChangeYGui::impl(player); // 发送GUI
+        NewLandGUI::sendConfirmPrecinctsYRange(player); // 发送GUI
     } else {
         // 2DLand
         if (auto dim = player.getLevel().getDimension(mDimensionId).lock(); dim) {
@@ -172,7 +172,7 @@ LandData_sptr SubLandSelector::getParentLandData() const { return mParentLandDat
 
 void SubLandSelector::onABSelected() {
     // Selector::onABSelected(); // Call base class
-    SelectorChangeYGui::impl(getPlayer()); // 发送GUI
+    NewLandGUI::sendConfirmPrecinctsYRange(getPlayer()); // 发送GUI
 }
 
 } // namespace land

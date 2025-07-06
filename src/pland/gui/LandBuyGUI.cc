@@ -1,9 +1,8 @@
-#include "pland/gui/BuyLandGui.h"
+#include "pland/gui/LandBuyGUI.h"
 #include "ll/api/event/EventBus.h"
 #include "mc/world/actor/player/Player.h"
 #include "pland/Config.h"
 #include "pland/EconomySystem.h"
-#include "pland/GUI.h"
 #include "pland/Global.h"
 #include "pland/LandData.h"
 #include "pland/LandEvent.h"
@@ -23,7 +22,7 @@
 
 namespace land {
 
-void BuyLandGui::impl(Player& player) {
+void LandBuyGUI::impl(Player& player) {
     auto selector = SelectorManager::getInstance().get(player);
     if (!selector) {
         mc_utils::sendText<mc_utils::LogLevel::Error>(player, "请先使用 /pland new 来选择领地"_trf(player));
@@ -52,7 +51,7 @@ void BuyLandGui::impl(Player& player) {
     }
 }
 
-void BuyLandGui::impl(Player& player, Selector* selector) {
+void LandBuyGUI::impl(Player& player, Selector* selector) {
     if (selector->getType() != Selector::Type::Default) {
         throw std::runtime_error("invalid selector type");
         return;
@@ -211,7 +210,7 @@ void BuyLandGui::impl(Player& player, Selector* selector) {
     fm.sendTo(player);
 }
 
-void BuyLandGui::impl(Player& player, LandReSelector* reSelector) {
+void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
     bool const& is3D = reSelector->is3D();
     auto        aabb = reSelector->getAABB();
 
@@ -368,7 +367,7 @@ void BuyLandGui::impl(Player& player, LandReSelector* reSelector) {
     fm.sendTo(player);
 }
 
-void BuyLandGui::impl(Player& player, SubLandSelector* subSelector) {
+void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
     bool const& is3D = subSelector->is3D();
     auto        aabb = subSelector->getAABB();
 
