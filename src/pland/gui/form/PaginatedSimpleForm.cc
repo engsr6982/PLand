@@ -107,6 +107,10 @@ void PaginatedSimpleFormFactory::buildAndSendTo(Player& player) {
         }
     }
 
+    if (counter > 1 && counter < mPageButtons) {
+        endBuildPage(paginatedForm, player, pageNumber, pageCount); // 最后一页按钮数量不足，补齐
+    }
+
     paginatedForm->sendTo(player);
 }
 
@@ -124,10 +128,14 @@ void PaginatedSimpleFormFactory::beginBuildPage(
     if (pageNumber == 1) {
         return; // 第一页不需要添加上一页按钮
     }
-    auto data = ButtonData{.mText = "上一页\n页码: {}/{}"_trf(player, pageNumber, pageSize)};
+    auto data = ButtonData{
+        .mText      = "上一页\n页码: {}/{}"_trf(player, pageNumber, pageSize),
+        .mImageData = "textures/ui/book_pageleft_default",
+        .mImageType = "path"
+    };
 
     auto& page = fm->getPage(pageNumber);
-    page.first->appendButton(data.mText, [thiz = fm](Player& self) {
+    page.first->appendButton(data.mText, data.mImageData, data.mImageType, [thiz = fm](Player& self) {
         if (thiz) {
             thiz->sendPrevPage(self);
         }
@@ -144,8 +152,12 @@ void PaginatedSimpleFormFactory::endBuildPage(
 
     if (pageNumber != pageSize) {
         // 不是最后一页，添加下一页按钮
-        auto data = ButtonData{.mText = "下一页\n页码: {}/{}"_trf(player, pageNumber, pageSize)};
-        page.first->appendButton(data.mText, [thiz = fm](Player& self) {
+        auto data = ButtonData{
+            .mText      = "下一页\n页码: {}/{}"_trf(player, pageNumber, pageSize),
+            .mImageData = "textures/ui/book_pageright_default",
+            .mImageType = "path"
+        };
+        page.first->appendButton(data.mText, data.mImageData, data.mImageType, [thiz = fm](Player& self) {
             if (thiz) {
                 thiz->sendNextPage(self);
             }
@@ -153,22 +165,31 @@ void PaginatedSimpleFormFactory::endBuildPage(
         page.second.push_back(std::move(data));
     }
 
-    {
-        // 添加第一页和最后一页的跳转按钮
-        auto first = ButtonData{.mText = "跳转到第一页"_trf(player)};
-        auto last  = ButtonData{.mText = "跳转到最后一页"_trf(player)};
-
-        page.first->appendButton(first.mText, [thiz = fm](Player& self) {
+    if (pageNumber != 1) {
+        auto first = ButtonData{
+            .mText      = "跳转到第一页"_trf(player),
+            .mImageData = "textures/ui/book_shiftleft_hover",
+            .mImageType = "path"
+        };
+        page.first->appendButton(first.mText, first.mImageData, first.mImageType, [thiz = fm](Player& self) {
             if (thiz) {
                 thiz->sendFirstPage(self);
             }
         });
-        page.first->appendButton(last.mText, [thiz = fm](Player& self) {
+        page.second.push_back(std::move(first));
+    }
+
+    if (pageNumber != pageSize) {
+        auto last = ButtonData{
+            .mText      = "跳转到最后一页"_trf(player),
+            .mImageData = "textures/ui/book_shiftright_hover",
+            .mImageType = "path"
+        };
+        page.first->appendButton(last.mText, last.mImageData, last.mImageType, [thiz = fm](Player& self) {
             if (thiz) {
                 thiz->sendLastPage(self);
             }
         });
-        page.second.push_back(std::move(first));
         page.second.push_back(std::move(last));
     }
 }
