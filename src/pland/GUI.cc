@@ -21,6 +21,7 @@
 #include "pland/SafeTeleport.h"
 #include "pland/gui/CommonUtilGui.hpp"
 #include "pland/gui/LandManageGui.h"
+#include "pland/gui/form/BackPaginatedSimpleForm.h"
 #include "pland/gui/form/BackSimpleForm.h"
 #include "pland/math/LandAABB.h"
 #include "pland/mod/ModEntry.h"
@@ -427,7 +428,8 @@ void LandOPManagerGui::IChoosePlayerFromDB::impl(Player& player, ChoosePlayerCal
 
 
 void LandOPManagerGui::IChooseLand::impl(Player& player, std::vector<LandData_sptr> const& lands) {
-    auto fm = BackSimpleForm<>::make<LandOPManagerGui::impl>();
+    // auto fm = BackSimpleForm<>::make<LandOPManagerGui::impl>();
+    auto fm = BackSimpleForm<BackPaginatedSimpleForm>::make<LandOPManagerGui::impl>();
     fm.setTitle(PLUGIN_NAME + " | 领地列表"_trf(player));
     fm.setContent("请选择您要管理的领地"_trf(player));
 

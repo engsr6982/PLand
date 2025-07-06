@@ -36,13 +36,20 @@ concept HasAppendButtonMethods = requires(
 };
 
 template <typename T>
-concept HasSendToMethod = requires(T t, Player& player, SimpleForm::Callback callback) {
+concept HasSendTo1Arg = requires(T t, Player& p) {
     requires (
-        requires { { t.sendTo(player) } -> std::same_as<T&>; } ||
-        requires { { t.sendTo(player) } -> std::same_as<void>; } ||
-        requires { { t.sendTo(player, callback) } -> std::same_as<T&>; }
+        requires { { t.sendTo(p) } -> std::same_as<T&>; } ||
+        requires { { t.sendTo(p) } -> std::same_as<void>; } 
     );
 };
+
+template <typename T>
+concept HasSendTo2Arg = requires(T t, Player& p, SimpleForm::Callback cb) {
+    { t.sendTo(p, cb) } -> std::same_as<T&>;
+};
+
+template <typename T>
+concept HasSendToMethod = HasSendTo1Arg<T> || HasSendTo2Arg<T>;
 
 
 template <typename T = SimpleForm>
@@ -57,8 +64,8 @@ public:
     using Callback       = SimpleForm::Callback;
     using ButtonCallback = SimpleForm::ButtonCallback;
 
-    using T::appendButton;
-    using T::sendTo;
+    // using T::appendButton;
+    // using T::sendTo;
 
     explicit BackSimpleForm() : T{} {}
 
@@ -77,15 +84,22 @@ public:
     BackSimpleForm(const BackSimpleForm&)            = delete;
     BackSimpleForm& operator=(const BackSimpleForm&) = delete;
 
-    // hiding methods
-    BackSimpleForm& sendTo(Player& player, Callback callback = {}) {
+    BackSimpleForm& sendTo(Player& player) {
         if (mBackCallback && !mIsAddedBackButton) {
             if (mButtonPos == ButtonPos::Lower) {
                 mIsAddedBackButton = true;
                 T::appendButton("Back", "textures/ui/icon_import", "path", mBackCallback);
             }
         }
-        T::sendTo(player, std::move(callback));
+
+        if constexpr (HasSendTo2Arg<T>) {
+            T::sendTo(player, SimpleForm::Callback{});
+        } else if constexpr (HasSendTo1Arg<T>) {
+            T::sendTo(player);
+        } else {
+            static_assert(HasSendToMethod<T>, "T must satisfy HasSendToMethod");
+        }
+
         return *this;
     }
 
