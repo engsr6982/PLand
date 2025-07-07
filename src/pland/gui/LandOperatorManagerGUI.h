@@ -14,22 +14,11 @@ class LandOperatorManagerGUI {
 public:
     LDAPI static void sendMainMenu(Player& player);
 
-    class ManageLandWithPlayer {
-    public:
-        LDAPI static void impl(Player& player, UUIDs const& targetPlayer);
-    };
+    using ChoosePlayerCallback = std::function<void(Player& self, UUIDs const& target)>;
+    LDAPI static void sendChoosePlayerFromDb(Player& player, ChoosePlayerCallback callback);
 
-
-    // 辅助
-    class IChoosePlayerFromDB {
-    public:
-        using ChoosePlayerCall = std::function<void(Player& self, UUIDs target)>;
-        LDAPI static void impl(Player& player, ChoosePlayerCall callback);
-    };
-    class IChooseLand {
-    public:
-        LDAPI static void impl(Player& player, std::vector<LandData_sptr> const& lands);
-    };
+    LDAPI static void sendChooseLandGUI(Player& player, UUIDs const& targetPlayer);
+    LDAPI static void sendChooseLandGUI(Player& player, std::vector<LandData_sptr> lands);
 };
 
 

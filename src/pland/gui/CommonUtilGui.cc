@@ -104,7 +104,7 @@ void FuzzySerarchUtilGUI::sendTo(Player& player, std::vector<LandData_sptr> list
                     filtered.push_back(ptr);
                 }
             }
-            cb(player, filtered);
+            cb(player, std::move(filtered));
         }
     );
 }

@@ -32,20 +32,17 @@ void LandOperatorManagerGUI::sendMainMenu(Player& player) {
         LandManagerGUI::impl(self, lands->getLandID());
     });
     fm.appendButton("管理玩家领地"_trf(player), "textures/ui/FriendsIcon", "path", [](Player& self) {
-        IChoosePlayerFromDB::impl(self, ManageLandWithPlayer::impl);
+        sendChoosePlayerFromDb(self, static_cast<void (*)(Player&, UUIDs const&)>(sendChooseLandGUI));
     });
     fm.appendButton("管理指定领地"_trf(player), "textures/ui/magnifyingGlass", "path", [](Player& self) {
-        IChooseLand::impl(self, PLand::getInstance().getLands());
+        sendChooseLandGUI(self, PLand::getInstance().getLands());
     });
 
     fm.sendTo(player);
 }
-void LandOperatorManagerGUI::ManageLandWithPlayer::impl(Player& player, UUIDs const& targetPlayer) {
-    IChooseLand::impl(player, PLand::getInstance().getLands(targetPlayer));
-}
 
 
-void LandOperatorManagerGUI::IChoosePlayerFromDB::impl(Player& player, ChoosePlayerCall callback) {
+void LandOperatorManagerGUI::sendChoosePlayerFromDb(Player& player, ChoosePlayerCallback callback) {
     auto fm = BackSimpleForm<>::make<LandOperatorManagerGUI::sendMainMenu>();
     fm.setTitle(PLUGIN_NAME + " | 玩家列表"_trf(player));
     fm.setContent("请选择您要管理的玩家"_trf(player));
@@ -71,14 +68,22 @@ void LandOperatorManagerGUI::IChoosePlayerFromDB::impl(Player& player, ChoosePla
 }
 
 
-void LandOperatorManagerGUI::IChooseLand::impl(Player& player, std::vector<LandData_sptr> const& lands) {
+void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, UUIDs const& targetPlayer) {
+    sendChooseLandGUI(player, PLand::getInstance().getLands(targetPlayer));
+}
+
+void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, std::vector<LandData_sptr> lands) {
     // auto fm = BackSimpleForm<>::make<LandOperatorManagerGUI::sendMainMenu>();
     auto fm = BackSimpleForm<BackPaginatedSimpleForm>::make<LandOperatorManagerGUI::sendMainMenu>();
     fm.setTitle(PLUGIN_NAME + " | 领地列表"_trf(player));
     fm.setContent("请选择您要管理的领地"_trf(player));
 
     fm.appendButton("模糊搜索领地", "textures/ui/magnifyingGlass", "path", [lands](Player& player) {
-        FuzzySerarchUtilGUI::sendTo(player, lands, LandOperatorManagerGUI::IChooseLand::impl);
+        FuzzySerarchUtilGUI::sendTo(
+            player,
+            lands,
+            static_cast<void (*)(Player&, std::vector<std::shared_ptr<LandData>>)>(sendChooseLandGUI)
+        );
     });
 
     auto const& infos = ll::service::PlayerInfo::getInstance();
