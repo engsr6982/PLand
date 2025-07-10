@@ -1,6 +1,6 @@
 #include "LandCacheViewer.h"
 #include "ll/api/service/PlayerInfo.h"
-#include "pland/PLand.h"
+#include "pland/land/LandRegistry.h"
 #include "pland/mod/ModEntry.h"
 
 
@@ -23,25 +23,25 @@ void LandCacheViewer::tick() { window_->tick(); }
 // LandCacheViewerWindow
 LandCacheViewerWindow::LandCacheViewerWindow() { this->setOpenFlag(true); }
 
-void LandCacheViewerWindow::handleButtonClicked(Buttons bt, land::LandData_sptr land) {
+void LandCacheViewerWindow::handleButtonClicked(Buttons bt, land::Land_sptr land) {
     switch (bt) {
-    case EditLandData:
-        handleEditLandData(land);
+    case EditLand:
+        handleEditLand(land);
         break;
-    case ExportLandData:
-        handleExportLandData(land);
+    case ExportLand:
+        handleExportLand(land);
         break;
     }
 }
-void LandCacheViewerWindow::handleEditLandData(land::LandData_sptr land) {
+void LandCacheViewerWindow::handleEditLand(land::Land_sptr land) {
     auto id = land->getLandID();
     if (!editors_.contains(id)) {
-        editors_.emplace(id, std::make_unique<LandDataEditor>(land));
+        editors_.emplace(id, std::make_unique<LandEditor>(land));
     }
     auto const& editor = editors_[id];
     editor->setOpenFlag(!editor->isOpen());
 }
-void LandCacheViewerWindow::handleExportLandData(land::LandData_sptr land) {
+void LandCacheViewerWindow::handleExportLand(land::Land_sptr land) {
     namespace fs = std::filesystem;
     auto dir     = mod::ModEntry::getInstance().getSelf().getModDir() / "devtool_exports";
     if (!fs::exists(dir)) {
@@ -54,7 +54,7 @@ void LandCacheViewerWindow::handleExportLandData(land::LandData_sptr land) {
 }
 
 void LandCacheViewerWindow::preBuildData() {
-    lands_ = std::move(land::PLand::getInstance().getLandsByOwner());
+    lands_ = std::move(land::LandRegistry::getInstance().getLandsByOwner());
 
     auto& playerInfo = ll::service::PlayerInfo::getInstance();
     for (const auto& owner : lands_ | std::views::keys) {
@@ -192,7 +192,7 @@ void LandCacheViewerWindow::renderCacheLand() {
             ImGui::Text("%s", ld->mPos.toString().c_str());
             ImGui::TableNextColumn(); // 操作
             if (ImGui::Button(fmt::format("编辑数据##{}", ld->mLandID).c_str())) {
-                handleButtonClicked(EditLandData, ld);
+                handleButtonClicked(EditLand, ld);
             }
             ImGui::SameLine();
             if (ImGui::Button(fmt::format("复制##{}", ld->mLandID).c_str())) {
@@ -200,7 +200,7 @@ void LandCacheViewerWindow::renderCacheLand() {
             }
             ImGui::SameLine();
             if (ImGui::Button(fmt::format("导出##{}", ld->mLandID).c_str())) {
-                handleButtonClicked(ExportLandData, ld);
+                handleButtonClicked(ExportLand, ld);
             }
             if (ImGui::IsItemHovered()) ImGui::SetItemTooltip("将当前领地数据导出到 pland/devtool_exports 下");
         }
@@ -230,12 +230,12 @@ void LandCacheViewerWindow::tick() {
 }
 
 
-// LandDataEditor
-LandDataEditor::LandDataEditor(land::LandData_sptr land) : CodeEditor(land->toJSON().dump(4)), land_(land) {}
+// LandEditor
+LandEditor::LandEditor(land::Land_sptr land) : CodeEditor(land->toJSON().dump(4)), land_(land) {}
 
-void LandDataEditor::renderMenuElement() {
+void LandEditor::renderMenuElement() {
     CodeEditor::renderMenuElement();
-    if (ImGui::BeginMenu("LandData")) {
+    if (ImGui::BeginMenu("Land")) {
         if (ImGui::Button("写入")) {
             auto land = land_.lock();
             if (!land) {

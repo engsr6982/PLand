@@ -1,6 +1,6 @@
 #pragma once
 #include "pland/Global.h"
-#include "pland/LandData.h"
+#include "pland/land/Land.h"
 
 
 namespace land {
@@ -8,55 +8,26 @@ namespace land {
 
 class LandManagerGUI {
 public:
-    LDAPI static void impl(Player& player, LandID id);
+    LandManagerGUI() = delete;
 
-    class EditLandPermGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
-    };
+    LDAPI static void sendMainMenu(Player& player, Land_sptr land);
 
-    class DeleteLandGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
+    LDAPI static void sendEditLandPermGUI(Player& player, Land_sptr const& ptr); // 编辑领地权限
 
-        LDAPI static void recursionCalculationRefoundPrice(int& refundPrice, LandData_sptr const& ptr);
-        LDAPI static void _deleteOrdinaryLandImpl(Player& player, LandData_sptr const& ptr); // 删除普通领地
-        LDAPI static void _deleteSubLandImpl(Player& player, LandData_sptr const& ptr);      // 删除子领地
-        LDAPI static void _deleteParentLandImpl(Player& player, LandData_sptr const& ptr);   // 删除父领地
-        LDAPI static void _deleteMixLandImpl(Player& player, LandData_sptr const& ptr);      // 删除混合领地
-    };
+    // 删除领地
+    LDAPI static void sendRemoveConfirmGUI(Player& player, Land_sptr const& ptr);                // 删除领地确认
+    LDAPI static void _implRemoveWithOrdinaryOrSubLandGUI(Player& player, Land_sptr const& ptr); // 删除普通或子领地
+    LDAPI static void _implRemoveParentLandGUI(Player& player, Land_sptr const& ptr);            // 删除父领地
+    LDAPI static void _implRemoveMixLandGUI(Player& player, Land_sptr const& ptr);               // 删除混合领地
 
-    class EditLandNameGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
-    };
-    class EditLandDescGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
-    };
-    class EditLandOwnerGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
-    };
-    class ReSelectLandGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr const& ptr);
-    };
+    LDAPI static void sendEditLandNameGUI(Player& player, Land_sptr const& ptr);   // 编辑领地名称
+    LDAPI static void sendEditLandDescGUI(Player& player, Land_sptr const& ptr);   // 编辑领地描述
+    LDAPI static void sendTransferLandGUI(Player& player, Land_sptr const& ptr);   // 转让领地
+    LDAPI static void sendChangLandRangeGUI(Player& player, Land_sptr const& ptr); // 更改领地范围
 
-    class EditLandMemberGui {
-    public:
-        LDAPI static void impl(Player& player, LandData_sptr ptr);
-
-        class AddMemberGui {
-        public:
-            LDAPI static void impl(Player& player, LandData_sptr ptr);
-        };
-
-        class RemoveMemberGui {
-        public:
-            LDAPI static void impl(Player& player, LandData_sptr ptr, UUIDs members);
-        };
-    };
+    LDAPI static void sendChangeMemberGUI(Player& player, Land_sptr ptr);                 // 更改成员
+    LDAPI static void _sendAddMemberGUI(Player& player, Land_sptr ptr);                   // 添加成员
+    LDAPI static void _sendRemoveMemberGUI(Player& player, Land_sptr ptr, UUIDs members); // 移除成员
 };
 
 

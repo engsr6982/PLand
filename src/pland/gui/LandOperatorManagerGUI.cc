@@ -2,9 +2,9 @@
 #include "CommonUtilGUI.h"
 #include "LandManagerGUI.h"
 #include "ll/api/service/PlayerInfo.h"
-#include "pland/PLand.h"
 #include "pland/gui/form/BackPaginatedSimpleForm.h"
 #include "pland/gui/form/BackSimpleForm.h"
+#include "pland/land/LandRegistry.h"
 #include "pland/utils/McUtils.h"
 
 
@@ -12,7 +12,7 @@ namespace land {
 
 
 void LandOperatorManagerGUI::sendMainMenu(Player& player) {
-    auto* db = &PLand::getInstance();
+    auto* db = &LandRegistry::getInstance();
     if (!db->isOperator(player.getUuid().asString())) {
         mc_utils::sendText<mc_utils::LogLevel::Error>(player, "无权限访问此表单"_trf(player));
         return;
@@ -29,13 +29,13 @@ void LandOperatorManagerGUI::sendMainMenu(Player& player) {
             mc_utils::sendText<mc_utils::LogLevel::Error>(self, "您当前所处位置没有领地"_trf(self));
             return;
         }
-        LandManagerGUI::impl(self, lands->getLandID());
+        LandManagerGUI::sendMainMenu(self, lands);
     });
     fm.appendButton("管理玩家领地"_trf(player), "textures/ui/FriendsIcon", "path", [](Player& self) {
         sendChoosePlayerFromDb(self, static_cast<void (*)(Player&, UUIDs const&)>(sendChooseLandGUI));
     });
     fm.appendButton("管理指定领地"_trf(player), "textures/ui/magnifyingGlass", "path", [](Player& self) {
-        sendChooseLandGUI(self, PLand::getInstance().getLands());
+        sendChooseLandGUI(self, LandRegistry::getInstance().getLands());
     });
 
     fm.sendTo(player);
@@ -47,7 +47,7 @@ void LandOperatorManagerGUI::sendChoosePlayerFromDb(Player& player, ChoosePlayer
     fm.setTitle(PLUGIN_NAME + " | 玩家列表"_trf(player));
     fm.setContent("请选择您要管理的玩家"_trf(player));
 
-    auto const& db    = PLand::getInstance();
+    auto const& db    = LandRegistry::getInstance();
     auto const& infos = ll::service::PlayerInfo::getInstance();
     auto const  lands = db.getLands();
 
@@ -69,10 +69,10 @@ void LandOperatorManagerGUI::sendChoosePlayerFromDb(Player& player, ChoosePlayer
 
 
 void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, UUIDs const& targetPlayer) {
-    sendChooseLandGUI(player, PLand::getInstance().getLands(targetPlayer));
+    sendChooseLandGUI(player, LandRegistry::getInstance().getLands(targetPlayer));
 }
 
-void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, std::vector<LandData_sptr> lands) {
+void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, std::vector<Land_sptr> lands) {
     // auto fm = BackSimpleForm<>::make<LandOperatorManagerGUI::sendMainMenu>();
     auto fm = BackSimpleForm<BackPaginatedSimpleForm>::make<LandOperatorManagerGUI::sendMainMenu>();
     fm.setTitle(PLUGIN_NAME + " | 领地列表"_trf(player));
@@ -82,7 +82,7 @@ void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, std::vector<LandD
         FuzzySerarchUtilGUI::sendTo(
             player,
             lands,
-            static_cast<void (*)(Player&, std::vector<std::shared_ptr<LandData>>)>(sendChooseLandGUI)
+            static_cast<void (*)(Player&, std::vector<std::shared_ptr<Land>>)>(sendChooseLandGUI)
         );
     });
 
@@ -96,7 +96,7 @@ void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, std::vector<LandD
                 ptr->getLandID(),
                 info.has_value() ? info->name : ptr->getLandOwner()
             ),
-            [ptr](Player& self) { LandManagerGUI::impl(self, ptr->getLandID()); }
+            [ptr](Player& self) { LandManagerGUI::sendMainMenu(self, ptr); }
         );
     }
 

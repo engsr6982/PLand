@@ -1,7 +1,7 @@
 #include "PlayerSettingGUI.h"
 #include "ll/api/form/CustomForm.h"
 #include "mc/world/actor/player/Player.h"
-#include "pland/PLand.h"
+#include "pland/land/LandRegistry.h"
 #include "pland/utils/McUtils.h"
 
 
@@ -11,7 +11,7 @@ namespace land {
 void PlayerSettingGUI::sendTo(Player& player) {
     using namespace ll::form;
 
-    auto setting = PLand::getInstance().getPlayerSettings(player.getUuid().asString());
+    auto setting = LandRegistry::getInstance().getPlayerSettings(player.getUuid().asString());
 
     CustomForm fm(PLUGIN_NAME + ("| 玩家设置"_trf(player)));
 

@@ -1,4 +1,4 @@
-#include "pland/LandEvent.h"
+#include "pland/land/LandEvent.h"
 #include "ll/api/event/EventBus.h"
 #include "ll/api/event/ListenerBase.h"
 #include "pland/mod/ModEntry.h"
@@ -35,7 +35,7 @@ void SetupEventListener() {
             logger->debug(
                 "[Test] PlayerBuyLandAfterEvent - Player: {}, LandID: {}",
                 ev.getPlayer().getRealName(),
-                ev.getLandData()->getLandID()
+                ev.getLand()->getLandID()
             );
         }),
         bus.emplaceListener<land::PlayerEnterLandEvent>([logger](land::PlayerEnterLandEvent& ev) {
@@ -103,7 +103,7 @@ void SetupEventListener() {
             logger->debug(
                 "[Test] LandRangeChangeBeforeEvent - Player: {}, LandID: {}, NeedPay: {}, RefundPrice: {}",
                 ev.getPlayer().getRealName(),
-                ev.getLandData()->getLandID(),
+                ev.getLand()->getLandID(),
                 ev.getNeedPay(),
                 ev.getRefundPrice()
             );
@@ -112,7 +112,7 @@ void SetupEventListener() {
             logger->debug(
                 "[Test] LandRangeChangeAfterEvent - Player: {}, LandID: {}, NeedPay: {}, RefundPrice: {}",
                 ev.getPlayer().getRealName(),
-                ev.getLandData()->getLandID(),
+                ev.getLand()->getLandID(),
                 ev.getNeedPay(),
                 ev.getRefundPrice()
             );

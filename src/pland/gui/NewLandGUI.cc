@@ -4,15 +4,15 @@
 #include "ll/api/form/FormBase.h"
 #include "ll/api/form/ModalForm.h"
 #include "mc/world/actor/player/Player.h"
-#include "pland/Config.h"
 #include "pland/Global.h"
-#include "pland/LandData.h"
-#include "pland/LandEvent.h"
-#include "pland/LandSelector.h"
-#include "pland/PLand.h"
+#include "pland/aabb/LandAABB.h"
 #include "pland/gui/CommonUtilGUI.h"
-#include "pland/math/LandAABB.h"
+#include "pland/infra/Config.h"
+#include "pland/land/Land.h"
+#include "pland/land/LandEvent.h"
+#include "pland/land/LandRegistry.h"
 #include "pland/mod/ModEntry.h"
+#include "pland/selector/LandSelector.h"
 #include "pland/utils/McUtils.h"
 #include "pland/utils/Utils.h"
 #include <string>
@@ -83,13 +83,13 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
 
     fm.appendLabel("确认选区的Y轴范围\n您可以在此调节Y轴范围，如果不需要修改，请直接点击提交"_trf(player));
 
-    bool const       isSubLand      = selector->getType() == Selector::Type::SubLand;
-    SubLandSelector* subSelector    = nullptr;
-    LandData_sptr    parentLandData = nullptr;
+    bool const       isSubLand   = selector->getType() == Selector::Type::SubLand;
+    SubLandSelector* subSelector = nullptr;
+    Land_sptr        parentLand  = nullptr;
     if (isSubLand) {
         if (subSelector = selector->As<SubLandSelector>(); subSelector) {
-            if (parentLandData = subSelector->getParentLandData(); parentLandData) {
-                auto& aabb = parentLandData->getLandPos();
+            if (parentLand = subSelector->getParentLand(); parentLand) {
+                auto& aabb = parentLand->getLandPos();
                 fm.appendLabel("当前为子领地模式，子领地的Y轴范围不能超过父领地。\n父领地Y轴范围: {} ~ {}"_trf(
                     player,
                     aabb.min.y,
@@ -106,7 +106,7 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
 
     fm.sendTo(
         player,
-        [selector, isSubLand, subSelector, parentLandData](Player& pl, CustomFormResult res, FormCancelReason) {
+        [selector, isSubLand, subSelector, parentLand](Player& pl, CustomFormResult res, FormCancelReason) {
             if (!res.has_value()) {
                 return;
             }
@@ -129,11 +129,11 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
                 }
 
                 if (isSubLand) {
-                    if (!subSelector || !parentLandData) {
-                        throw std::runtime_error("subSelector or parentLandData is nullptr");
+                    if (!subSelector || !parentLand) {
+                        throw std::runtime_error("subSelector or parentLand is nullptr");
                     }
 
-                    auto& aabb = parentLandData->getLandPos();
+                    auto& aabb = parentLand->getLandPos();
                     if (startY < aabb.min.y || endY > aabb.max.y) {
                         sendConfirmPrecinctsYRange(pl, "请输入正确的Y轴范围, 子领地的Y轴范围不能超过父领地"_trf(pl));
                         return;

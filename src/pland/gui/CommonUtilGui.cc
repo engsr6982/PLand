@@ -6,8 +6,8 @@
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/level/Level.h"
 #include "pland/Global.h"
-#include "pland/LandData.h"
-#include "pland/PLand.h"
+#include "pland/land/Land.h"
+#include "pland/land/LandRegistry.h"
 #include <algorithm>
 #include <string>
 
@@ -26,7 +26,7 @@ void ChooseLandUtilGUI::sendTo(
     fm.setTitle(PLUGIN_NAME + ("| 选择领地"_trf(player)));
     fm.setContent("请选择一个领地"_trf(player));
 
-    auto lands = PLand::getInstance().getLands(player.getUuid().asString(), showShredLand);
+    auto lands = LandRegistry::getInstance().getLands(player.getUuid().asString(), showShredLand);
     for (auto& land : lands) {
         fm.appendButton(
             "{}\n维度: {} | ID: {}"_trf(player, land->getLandName(), land->getLandDimid(), land->getLandID()),
@@ -34,7 +34,7 @@ void ChooseLandUtilGUI::sendTo(
             "path",
             [callback, land = std::weak_ptr(land)](Player& pl) {
                 if (auto p = land.lock()) {
-                    callback(pl, p->getLandID());
+                    callback(pl, p);
                 }
             }
         );
@@ -43,7 +43,7 @@ void ChooseLandUtilGUI::sendTo(
     fm.sendTo(player);
 }
 
-void ChoosePlayerUtilGUI::sendTo(
+void ChooseOnlinePlayerUtilGUI::sendTo(
     Player&                          player,
     ChoosePlayerCall const&          callback,
     BackSimpleForm<>::ButtonCallback back
@@ -86,7 +86,7 @@ void EditStringUtilGUI::sendTo(
 }
 
 
-void FuzzySerarchUtilGUI::sendTo(Player& player, std::vector<LandData_sptr> list, CallBack callback) {
+void FuzzySerarchUtilGUI::sendTo(Player& player, std::vector<Land_sptr> list, CallBack callback) {
     CustomForm fm;
     fm.setTitle(PLUGIN_NAME + " | 模糊搜索领地"_trf(player));
     fm.appendInput("name", "请输入领地名称"_trf(player), "string");
@@ -98,7 +98,7 @@ void FuzzySerarchUtilGUI::sendTo(Player& player, std::vector<LandData_sptr> list
                 return;
             }
             auto                       name = std::get<string>(res->at("name"));
-            std::vector<LandData_sptr> filtered;
+            std::vector<Land_sptr> filtered;
             for (auto const& ptr : list) {
                 if (ptr->getLandName().find(name) != std::string::npos) {
                     filtered.push_back(ptr);

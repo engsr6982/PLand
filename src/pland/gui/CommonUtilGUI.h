@@ -1,6 +1,6 @@
 #pragma once
 #include "pland/Global.h"
-#include "pland/LandData.h"
+#include "pland/land/Land.h"
 #include "pland/gui/form/BackSimpleForm.h"
 
 
@@ -12,7 +12,7 @@ class ChooseLandUtilGUI {
 public:
     ChooseLandUtilGUI() = delete;
 
-    using ChooseCallback = std::function<void(Player&, LandID id)>;
+    using ChooseCallback = std::function<void(Player&, Land_sptr choosedLand)>;
     LDAPI static void sendTo(
         Player&                          player,
         ChooseCallback const&            callback,
@@ -22,11 +22,11 @@ public:
 };
 
 
-class ChoosePlayerUtilGUI {
+class ChooseOnlinePlayerUtilGUI {
 public:
-    ChoosePlayerUtilGUI() = delete;
+    ChooseOnlinePlayerUtilGUI() = delete;
 
-    using ChoosePlayerCall = std::function<void(Player&, Player* choosedPlayer)>;
+    using ChoosePlayerCall = std::function<void(Player&, Player& choosedPlayer)>;
     LDAPI static void
     sendTo(Player& player, ChoosePlayerCall const& callback, BackSimpleForm<>::ButtonCallback back = {});
 };
@@ -51,8 +51,8 @@ class FuzzySerarchUtilGUI {
 public:
     FuzzySerarchUtilGUI() = delete;
 
-    using CallBack = std::function<void(Player& slef, std::vector<LandData_sptr> result)>;
-    LDAPI static void sendTo(Player& player, std::vector<LandData_sptr> list, CallBack callback);
+    using CallBack = std::function<void(Player& slef, std::vector<Land_sptr> result)>;
+    LDAPI static void sendTo(Player& player, std::vector<Land_sptr> list, CallBack callback);
 };
 
 

@@ -7,14 +7,16 @@
 #include "ll/api/utils/SystemUtils.h"
 
 #include "ll/api/io/LogLevel.h"
-#include "pland/Command.h"
-#include "pland/Config.h"
-#include "pland/EventListener.h"
 #include "pland/Global.h"
-#include "pland/LandScheduler.h"
-#include "pland/LandSelector.h"
-#include "pland/PLand.h"
 #include "pland/Version.h"
+#include "pland/command/Command.h"
+#include "pland/hooks/EventListener.h"
+#include "pland/infra/Config.h"
+#include "pland/land/LandRegistry.h"
+#include "pland/land/LandScheduler.h"
+#include "pland/selector/LandSelector.h"
+
+
 
 #ifdef LD_TEST
 #include "LandEventTest.h"
@@ -59,7 +61,7 @@ bool ModEntry::load() {
     land::Config::tryLoad();
     logger.setLevel(land::Config::cfg.logLevel);
 
-    land::PLand::getInstance().init();
+    land::LandRegistry::getInstance().init();
 
 #ifdef DEBUG
     logger.warn("Debug Mode");
@@ -94,9 +96,9 @@ bool ModEntry::disable() {
 
     auto& logger = getSelf().getLogger();
     logger.info("Stopping thread and saving data...");
-    land::PLand::getInstance().stopThread(); // 请求关闭线程
+    land::LandRegistry::getInstance().stopThread(); // 请求关闭线程
     logger.debug("[Main] Saving land data...");
-    land::PLand::getInstance().save();
+    land::LandRegistry::getInstance().save();
     logger.debug("[Main] Land data saved.");
 
     logger.debug("Stopping coroutine...");

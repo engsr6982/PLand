@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ll/api/mod/NativeMod.h"
-#include "pland/EventListener.h"
-#include "pland/LandScheduler.h"
+#include "pland/hooks/EventListener.h"
+#include "pland/land/LandScheduler.h"
 #include <memory>
 
 namespace mod {

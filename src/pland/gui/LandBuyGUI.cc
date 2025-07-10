@@ -1,16 +1,16 @@
 #include "pland/gui/LandBuyGUI.h"
 #include "ll/api/event/EventBus.h"
 #include "mc/world/actor/player/Player.h"
-#include "pland/Config.h"
-#include "pland/EconomySystem.h"
 #include "pland/Global.h"
-#include "pland/LandData.h"
-#include "pland/LandEvent.h"
-#include "pland/LandSelector.h"
-#include "pland/PLand.h"
-#include "pland/PriceCalculate.h"
+#include "pland/aabb/LandAABB.h"
+#include "pland/economy/EconomySystem.h"
+#include "pland/economy/PriceCalculate.h"
 #include "pland/gui/form/BackSimpleForm.h"
-#include "pland/math/LandAABB.h"
+#include "pland/infra/Config.h"
+#include "pland/land/Land.h"
+#include "pland/land/LandEvent.h"
+#include "pland/land/LandRegistry.h"
+#include "pland/selector/LandSelector.h"
 #include "pland/utils/McUtils.h"
 #include <climits>
 #include <stack>
@@ -118,7 +118,7 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
                 return; // 预检查经济
             }
 
-            auto& db = PLand::getInstance();
+            auto& db = LandRegistry::getInstance();
             if (!db.isOperator(pl.getUuid().asString())) { // 领地管理员跳过检查
                 if ((int)db.getLands(pl.getUuid().asString()).size() >= Config::cfg.land.maxLand) {
                     mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您已经达到最大领地数量"_trf(pl));
@@ -182,24 +182,22 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
                 return;
             }
 
-            LandData_sptr landPtr       = selector->newLandData();
-            auto          addLandResult = db.addLand(landPtr);
-            if (addLandResult.has_value() && addLandResult.value()) {
-                landPtr->mOriginalBuyPrice = discountedPrice; // 保存购买价格
-                mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
+            Land_sptr landPtr = selector->newLand();
+            // TODO: fix
+            // auto          addLandResult = LandService::tryCreateLand(landPtr);
+            // if (addLandResult.has_value()) {
+            //     landPtr->mOriginalBuyPrice = discountedPrice; // 保存购买价格
+            //     mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
 
-                PlayerBuyLandAfterEvent ev(pl, landPtr);
-                ll::event::EventBus::getInstance().publish(ev);
+            //     PlayerBuyLandAfterEvent ev(pl, landPtr);
+            //     ll::event::EventBus::getInstance().publish(ev);
 
-                SelectorManager::getInstance().cancel(pl);
+            //     SelectorManager::getInstance().cancel(pl);
 
-            } else {
-                mc_utils::sendText<mc_utils::LogLevel::Error>(
-                    pl,
-                    "购买领地失败，原因: {}"_trf(pl, addLandResult.error())
-                );
-                economy.add(pl, discountedPrice); // 补回经济
-            }
+            // } else {
+            //     mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "购买领地失败"_trf(pl));
+            //     economy.add(pl, discountedPrice); // 补回经济
+            // }
         }
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
@@ -220,7 +218,7 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
     int const width  = aabb->getWidth();
     int const height = aabb->getHeight();
 
-    auto       landPtr       = reSelector->getLandData();
+    auto       landPtr       = reSelector->getLand();
     int const& originalPrice = landPtr->mOriginalBuyPrice;                                     // 原始购买价格
     auto       _variables    = PriceCalculate::Variable::make(*aabb, landPtr->getLandDimid()); // 传入维度ID
     double     newRangePrice = PriceCalculate::eval(
@@ -280,7 +278,7 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
             }
 
 
-            if (!PLand::getInstance().isOperator(pl.getUuid().asString())) { // 领地管理员跳过检查
+            if (!LandRegistry::getInstance().isOperator(pl.getUuid().asString())) { // 领地管理员跳过检查
                 auto const& squareRange = Config::cfg.land.bought.squareRange;
                 if ((length < squareRange.min || width < squareRange.min) || // 长度和宽度必须大于最小值
                     (length > squareRange.max || width > squareRange.max) || // 长度和宽度必须小于最大值
@@ -302,7 +300,7 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
             }
 
             // 检查是否在禁止区域内 (领地管理员跳过检查)
-            if (!PLand::getInstance().isOperator(pl.getUuid().asString())) {
+            if (!LandRegistry::getInstance().isOperator(pl.getUuid().asString())) {
                 for (auto const& forbiddenRange : Config::cfg.land.bought.forbiddenRanges) {
                     if (forbiddenRange.dimensionId == landPtr->getLandDimid()
                         && LandAABB::isCollision(forbiddenRange.aabb, *aabb)) { // 将坐标换成AABB
@@ -312,7 +310,7 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
                 }
             }
 
-            auto& db    = PLand::getInstance();
+            auto& db    = LandRegistry::getInstance();
             auto  lands = db.getLandAt(aabb->min, aabb->max, landPtr->getLandDimid());
             if (!lands.empty()) {
                 for (auto& land : lands) {
@@ -403,7 +401,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
     auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 购买领地 & 子领地"_trf(player)));
 
-    auto& parentPos = subSelector->getParentLandData()->getLandPos();
+    auto& parentPos = subSelector->getParentLand()->getLandPos();
     fm.setContent(
         "[父领地]\n体积: {}x{}x{}={}\n范围: {}\n\n[子领地]\n体积: {}x{}x{}={}\n范围: {}\n\n[价格]\n原价: {}\n折扣价: {}\n{}"_trf(
             player,
@@ -437,7 +435,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
                 return; // 预检查经济
             }
 
-            auto& db = PLand::getInstance();
+            auto& db = LandRegistry::getInstance();
             if (!db.isOperator(pl.getUuid().asString())) { // 领地管理员跳过检查
                 if ((int)db.getLands(pl.getUuid().asString()).size() >= Config::cfg.land.maxLand) {
                     mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您已经达到最大领地数量"_trf(pl));
@@ -494,15 +492,15 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
                 return;
             }
 
-            auto parentLand = subSelector->getParentLandData();
+            auto parentLand = subSelector->getParentLand();
             auto rootLand   = parentLand->getRootLand();
             if (!rootLand) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "父领地不存在"_trf(pl));
                 return;
             }
 
-            std::unordered_set<LandData_sptr> lands;
-            std::stack<LandData_sptr>         stack;
+            std::unordered_set<Land_sptr> lands;
+            std::stack<Land_sptr>         stack;
             stack.push(rootLand);
             while (!stack.empty()) {
                 auto cur = stack.top();
@@ -514,7 +512,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
                 }
             }
 
-            std::unordered_set<LandData_sptr> parentLands; // 要创建子领地的领地的父领地集合
+            std::unordered_set<Land_sptr> parentLands; // 要创建子领地的领地的父领地集合
             stack.push(parentLand);
             while (!stack.empty()) {
                 auto cur = stack.top();
@@ -550,27 +548,25 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
             }
 
             // 创建领地
-            LandData_sptr landPtr       = subSelector->newLandData();
-            auto          addLandResult = db.addLand(landPtr);
-            if (addLandResult.has_value() && addLandResult.value()) {
-                SelectorManager::getInstance().cancel(pl);
+            Land_sptr landPtr = subSelector->newLand();
+            // TODO: fix
+            // auto          addLandResult = LandService::tryCreateLand(landPtr);
+            // if (addLandResult.has_value()) {
+            //     SelectorManager::getInstance().cancel(pl);
 
-                landPtr->mOriginalBuyPrice = discountedPrice;            // 保存购买价格
-                parentLand->mSubLandIDs.push_back(landPtr->getLandID()); // 添加子领地
-                landPtr->mParentLandID = parentLand->getLandID();        // 设置父领地
+            //     landPtr->mOriginalBuyPrice = discountedPrice;            // 保存购买价格
+            //     parentLand->mSubLandIDs.push_back(landPtr->getLandID()); // 添加子领地
+            //     landPtr->mParentLandID = parentLand->getLandID();        // 设置父领地
 
-                PlayerBuyLandAfterEvent ev(pl, landPtr);
-                ll::event::EventBus::getInstance().publish(ev);
+            //     PlayerBuyLandAfterEvent ev(pl, landPtr);
+            //     ll::event::EventBus::getInstance().publish(ev);
 
-                mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
+            //     mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
 
-            } else {
-                mc_utils::sendText<mc_utils::LogLevel::Error>(
-                    pl,
-                    "购买领地失败，原因: {}"_trf(pl, addLandResult.error())
-                );
-                economy.add(pl, discountedPrice); // 补回经济
-            }
+            // } else {
+            //     mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "购买领地失败"_trf(pl));
+            //     economy.add(pl, discountedPrice); // 补回经济
+            // }
         }
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close

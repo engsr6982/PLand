@@ -1,5 +1,6 @@
 #pragma once
 #include "pland/Global.h"
+#include "pland/land/Land.h"
 
 class Player;
 
@@ -12,7 +13,7 @@ public:
 
     LDAPI static void sendTo(Player& player); // sendTo -> impl
 
-    LDAPI static void impl(Player& player, LandID id);
+    LDAPI static void impl(Player& player, Land_sptr land);
 };
 
 
