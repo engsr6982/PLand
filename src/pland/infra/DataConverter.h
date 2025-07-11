@@ -28,9 +28,9 @@ public:
 
     std::unique_ptr<nlohmann::json> loadJson(fs::path const& file) const;
 
-    void writeToDb(Land_sptr const& data);
+    void writeToDb(SharedLand const& data);
 
-    void writeToDb(std::vector<Land_sptr> const& data);
+    void writeToDb(std::vector<SharedLand> const& data);
 
     template <class T>
     T reflection(nlohmann::json const& json) const;
@@ -146,7 +146,7 @@ public:
 public:
     explicit iLandConverter(const string& relationShipPath, const string& dataPath, bool clear_db = false);
 
-    Land_sptr convert(RawData::iLand const& raw, string const& xuid, std::optional<UUIDs> uuids);
+    SharedLand convert(RawData::iLand const& raw, string const& xuid, std::optional<UUIDs> uuids);
 
     bool execute() override;
 };

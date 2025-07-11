@@ -43,18 +43,18 @@ std::unique_ptr<nlohmann::json> DataConverter::loadJson(fs::path const& file) co
     }
 }
 
-void DataConverter::writeToDb(Land_sptr const& data) {
+void DataConverter::writeToDb(SharedLand const& data) {
     auto& db = LandRegistry::getInstance();
     if (mClearDb && !mIsCleanedDb) {
         mIsCleanedDb = true;
         for (auto& land : db.getLands()) {
-            db.removeLand(land->getLandID());
+            db.removeLand(land->getId());
         }
     }
     db.addLand(data);
 }
 
-void DataConverter::writeToDb(std::vector<Land_sptr> const& data) {
+void DataConverter::writeToDb(std::vector<SharedLand> const& data) {
     for (auto& land : data) {
         writeToDb(land);
     }
@@ -115,33 +115,32 @@ iLandConverter::iLandConverter(const string& relationShipPath, const string& dat
   mRelationShipPath{relationShipPath},
   mDataPath{dataPath} {}
 
-Land_sptr iLandConverter::convert(RawData::iLand const& raw, string const& xuid, std::optional<UUIDs> uuids) {
-    Land_sptr ptr = Land::make();
-
+SharedLand iLandConverter::convert(RawData::iLand const& raw, string const& xuid, std::optional<UUIDs> uuids) {
+    auto ctx = LandContext{};
     // pos
     {
         auto& rawPosA = raw.range.start_position;
         auto& rawPosB = raw.range.end_position;
-        ptr->mPos.min = LandPos{rawPosA[0], rawPosA[1], rawPosA[2]};
-        ptr->mPos.max = LandPos{rawPosB[0], rawPosB[1], rawPosB[2]};
-        ptr->mPos.fix();
-        ptr->mLandDimid = raw.range.dimid;
-        ptr->mIs3DLand  = true; // TODO: 由于iLand没有3D数据，所以这里暂时默认为true
+        ctx.mPos.min  = LandPos{rawPosA[0], rawPosA[1], rawPosA[2]};
+        ctx.mPos.max  = LandPos{rawPosB[0], rawPosB[1], rawPosB[2]};
+        ctx.mPos.fix();
+        ctx.mLandDimid = raw.range.dimid;
+        ctx.mIs3DLand  = true; // TODO: 由于iLand没有3D数据，所以这里暂时默认为true
     }
 
     // base info
     {
-        ptr->mIsConvertedLand = true;
-        ptr->mOwnerDataIsXUID = !uuids.has_value();
-        ptr->mLandOwner       = uuids.value_or(xuid);
-        // ptr->mLandMembers = raw.settings.share; // TODO
-        ptr->mLandName     = raw.settings.nickname;
-        ptr->mLandDescribe = raw.settings.describe;
+        ctx.mIsConvertedLand = true;
+        ctx.mOwnerDataIsXUID = !uuids.has_value();
+        ctx.mLandOwner       = uuids.value_or(xuid);
+        // ctx.mLandMembers = raw.settings.share; // TODO
+        ctx.mLandName     = raw.settings.nickname;
+        ctx.mLandDescribe = raw.settings.describe;
     }
 
     // permission
     {
-        auto& tab = ptr->mLandPermTable;
+        auto& tab = ctx.mLandPermTable;
         // settings
         tab.allowFarmDecay            = raw.settings.ev_farmland_decay;
         tab.allowExplode              = raw.settings.ev_explode;
@@ -201,7 +200,7 @@ Land_sptr iLandConverter::convert(RawData::iLand const& raw, string const& xuid,
         tab.useBell             = p.use_bell;
     }
 
-    return ptr;
+    return Land::make(std::move(ctx));
 }
 
 bool iLandConverter::execute() {
@@ -225,8 +224,8 @@ bool iLandConverter::execute() {
     auto&       infos = ll::service::PlayerInfo::getInstance();
     logger.info("Start the data transformation...");
 
-    size_t                 total = 0, progress = 0;
-    std::vector<Land_sptr> result;
+    size_t                  total = 0, progress = 0;
+    std::vector<SharedLand> result;
     result.reserve(data.size()); // reserve space to avoid reallocation
     for (auto& [xuid, lands] : mRelationShip.Owner) {
         progress  = 0;
@@ -253,7 +252,7 @@ bool iLandConverter::execute() {
             );
 
             // 转换数据
-            Land_sptr landData;
+            SharedLand landData;
             if (info.has_value()) landData = convert(iter->second, xuid, info->uuid.asString());
             else landData = convert(iter->second, xuid, std::nullopt);
             if (!landData) {

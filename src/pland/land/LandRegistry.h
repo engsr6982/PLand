@@ -41,7 +41,7 @@ private:
     std::unique_ptr<ll::data::KeyValueDB>     mDB;                       // 领地数据库
     std::vector<UUIDs>                        mLandOperators;            // 领地操作员
     std::unordered_map<UUIDs, PlayerSettings> mPlayerSettings;           // 玩家设置
-    std::unordered_map<LandID, Land_sptr>     mLandCache;                // 领地缓存
+    std::unordered_map<LandID, SharedLand>    mLandCache;                // 领地缓存
     mutable std::shared_mutex                 mMutex;                    // 读写锁
     std::thread                               mThread;                   // 线程
     std::atomic<bool>                         mThreadStopFlag{false};    // 线程停止标志
@@ -63,14 +63,14 @@ private: //! private 方法非线程安全
 
     void _initLandMap();
 
-    void _updateLandMap(Land_sptr const& ptr, bool add);
-    void _refreshLandRange(Land_sptr const& ptr);
+    void _updateLandMap(SharedLand const& ptr, bool add);
+    void _refreshLandRange(SharedLand const& ptr);
 
     LandID getNextLandID();
 
-    Result<void, StorageLayerError::Error> _removeLand(Land_sptr const& ptr);
+    Result<void, StorageLayerError::Error> _removeLand(SharedLand const& ptr);
 
-    Result<void, StorageLayerError::Error> addLand(Land_sptr land);
+    Result<void, StorageLayerError::Error> addLand(SharedLand land);
 
 public:
     LDNDAPI static LandRegistry& getInstance();
@@ -96,7 +96,7 @@ public:
 
     LDNDAPI bool hasLand(LandID id) const;
 
-    LDAPI void refreshLandRange(Land_sptr const& ptr); // 刷新领地范围 (_refreshLandRange)
+    LDAPI void refreshLandRange(SharedLand const& ptr); // 刷新领地范围 (_refreshLandRange)
 
     /**
      * @brief 移除领地
@@ -107,47 +107,47 @@ public:
     /**
      * @brief 移除普通领地
      */
-    LDNDAPI Result<void, StorageLayerError::Error> removeOrdinaryLand(Land_sptr const& ptr);
+    LDNDAPI Result<void, StorageLayerError::Error> removeOrdinaryLand(SharedLand const& ptr);
 
     /**
      * @brief 移除子领地
      */
-    LDNDAPI Result<void, StorageLayerError::Error> removeSubLand(Land_sptr const& ptr);
+    LDNDAPI Result<void, StorageLayerError::Error> removeSubLand(SharedLand const& ptr);
 
     /**
      * @brief 移除领地和其子领地
      */
-    LDNDAPI Result<void, StorageLayerError::Error> removeLandAndSubLands(Land_sptr const& ptr);
+    LDNDAPI Result<void, StorageLayerError::Error> removeLandAndSubLands(SharedLand const& ptr);
 
     /**
      * @brief 移除当前领地并提升子领地为普通领地
      */
-    LDNDAPI Result<void, StorageLayerError::Error> removeLandAndPromoteSubLands(Land_sptr const& ptr);
+    LDNDAPI Result<void, StorageLayerError::Error> removeLandAndPromoteSubLands(SharedLand const& ptr);
 
     /**
      * @brief 移除当前领地并移交子领地给当前领地的父领地
      */
-    LDNDAPI Result<void, StorageLayerError::Error> removeLandAndTransferSubLands(Land_sptr const& ptr);
+    LDNDAPI Result<void, StorageLayerError::Error> removeLandAndTransferSubLands(SharedLand const& ptr);
 
 
 public: // 领地查询API
-    LDNDAPI Land_wptr getLandWeakPtr(LandID id) const;
-    LDNDAPI Land_sptr getLand(LandID id) const;
-    LDNDAPI std::vector<Land_sptr> getLands() const;
-    LDNDAPI std::vector<Land_sptr> getLands(std::vector<LandID> const& ids) const;
-    LDNDAPI std::vector<Land_sptr> getLands(LandDimid dimid) const;
-    LDNDAPI std::vector<Land_sptr> getLands(UUIDs const& uuid, bool includeShared = false) const;
-    LDNDAPI std::vector<Land_sptr> getLands(UUIDs const& uuid, LandDimid dimid) const;
-    LDNDAPI std::unordered_map<UUIDs, std::unordered_set<Land_sptr>> getLandsByOwner() const;
-    LDNDAPI std::unordered_map<UUIDs, std::unordered_set<Land_sptr>> getLandsByOwner(LandDimid dimid) const;
+    LDNDAPI WeakLand   getLandWeakPtr(LandID id) const;
+    LDNDAPI SharedLand getLand(LandID id) const;
+    LDNDAPI std::vector<SharedLand> getLands() const;
+    LDNDAPI std::vector<SharedLand> getLands(std::vector<LandID> const& ids) const;
+    LDNDAPI std::vector<SharedLand> getLands(LandDimid dimid) const;
+    LDNDAPI std::vector<SharedLand> getLands(UUIDs const& uuid, bool includeShared = false) const;
+    LDNDAPI std::vector<SharedLand> getLands(UUIDs const& uuid, LandDimid dimid) const;
+    LDNDAPI std::unordered_map<UUIDs, std::unordered_set<SharedLand>> getLandsByOwner() const;
+    LDNDAPI std::unordered_map<UUIDs, std::unordered_set<SharedLand>> getLandsByOwner(LandDimid dimid) const;
 
     LDNDAPI LandPermType getPermType(UUIDs const& uuid, LandID id = 0, bool ignoreOperator = false) const;
 
-    LDNDAPI Land_sptr getLandAt(BlockPos const& pos, LandDimid dimid) const;
+    LDNDAPI SharedLand getLandAt(BlockPos const& pos, LandDimid dimid) const;
 
-    LDNDAPI std::unordered_set<Land_sptr> getLandAt(BlockPos const& center, int radius, LandDimid dimid) const;
+    LDNDAPI std::unordered_set<SharedLand> getLandAt(BlockPos const& center, int radius, LandDimid dimid) const;
 
-    LDNDAPI std::unordered_set<Land_sptr> getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid dimid) const;
+    LDNDAPI std::unordered_set<SharedLand> getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid dimid) const;
 
 public:
     LDAPI static ChunkID             EncodeChunkID(int x, int z);

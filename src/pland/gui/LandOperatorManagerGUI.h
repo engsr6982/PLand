@@ -20,7 +20,7 @@ public:
     LDAPI static void sendChoosePlayerFromDb(Player& player, ChoosePlayerCallback callback);
 
     LDAPI static void sendChooseLandGUI(Player& player, UUIDs const& targetPlayer);
-    LDAPI static void sendChooseLandGUI(Player& player, std::vector<Land_sptr> lands);
+    LDAPI static void sendChooseLandGUI(Player& player, std::vector<SharedLand> lands);
 };
 
 

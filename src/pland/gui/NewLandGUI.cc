@@ -85,16 +85,18 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
 
     bool const       isSubLand   = selector->getType() == Selector::Type::SubLand;
     SubLandSelector* subSelector = nullptr;
-    Land_sptr        parentLand  = nullptr;
+    SharedLand       parentLand  = nullptr;
     if (isSubLand) {
         if (subSelector = selector->As<SubLandSelector>(); subSelector) {
             if (parentLand = subSelector->getParentLand(); parentLand) {
-                auto& aabb = parentLand->getLandPos();
-                fm.appendLabel("当前为子领地模式，子领地的Y轴范围不能超过父领地。\n父领地Y轴范围: {} ~ {}"_trf(
-                    player,
-                    aabb.min.y,
-                    aabb.max.y
-                ));
+                auto& aabb = parentLand->getAABB();
+                fm.appendLabel(
+                    "当前为子领地模式，子领地的Y轴范围不能超过父领地。\n父领地Y轴范围: {} ~ {}"_trf(
+                        player,
+                        aabb.min.y,
+                        aabb.max.y
+                    )
+                );
             }
         }
     }
@@ -133,7 +135,7 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
                         throw std::runtime_error("subSelector or parentLand is nullptr");
                     }
 
-                    auto& aabb = parentLand->getLandPos();
+                    auto& aabb = parentLand->getAABB();
                     if (startY < aabb.min.y || endY > aabb.max.y) {
                         sendConfirmPrecinctsYRange(pl, "请输入正确的Y轴范围, 子领地的Y轴范围不能超过父领地"_trf(pl));
                         return;

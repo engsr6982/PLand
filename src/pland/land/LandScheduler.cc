@@ -50,7 +50,7 @@ LandScheduler::LandScheduler() {
                 auto& lastLandID = LandScheduler::mLandidMap[uuid]; // 获取玩家上一次所在的领地ID
 
                 auto   land      = db->getLandAt(curPos, curDimid);
-                LandID curLandID = land ? land->getLandID() : -1; // 如果没有领地,设置为-1
+                LandID curLandID = land ? land->getId() : -1; // 如果没有领地,设置为-1
 
                 // 处理维度变化
                 if (curDimid != lastDimid) {
@@ -98,7 +98,7 @@ LandScheduler::LandScheduler() {
 
             LandID landid = ev.getLandID();
 
-            Land_sptr land = db->getLand(landid);
+            SharedLand land = db->getLand(landid);
             if (!land) {
                 return;
             }
@@ -106,18 +106,18 @@ LandScheduler::LandScheduler() {
             SetTitlePacket title(SetTitlePacket::TitleType::Title);
             SetTitlePacket subTitle(SetTitlePacket::TitleType::Subtitle);
 
-            if (land->isLandOwner(player.getUuid().asString())) {
-                title.mTitleText    = land->getLandName();
+            if (land->isOwner(player.getUuid().asString())) {
+                title.mTitleText    = land->getName();
                 subTitle.mTitleText = "欢迎回来"_trf(player);
             } else {
-                auto owner = land->getLandOwner();
+                auto owner = land->getOwner();
                 auto info  = infos->fromUuid(mce::UUID::fromString(owner));
                 if (!info.has_value()) {
                     logger->warn("Failed to get the name of player \"{}\", please check the PlayerInfo status.", owner);
                 }
 
                 title.mTitleText    = "Welcome to"_trf(player);
-                subTitle.mTitleText = land->getLandName();
+                subTitle.mTitleText = land->getName();
             }
 
             title.sendTo(player);
@@ -156,10 +156,10 @@ LandScheduler::LandScheduler() {
                         continue;
                     }
 
-                    auto const owner = UUIDm::fromString(land->getLandOwner());
+                    auto const owner = UUIDm::fromString(land->getOwner());
                     auto       info  = infos->fromUuid(owner);
-                    if (land->isLandOwner(curPlayerUUID.asString())) {
-                        pkt.mTitleText = "[Land] 当前正在领地 {}"_trf(*player, land->getLandName());
+                    if (land->isOwner(curPlayerUUID.asString())) {
+                        pkt.mTitleText = "[Land] 当前正在领地 {}"_trf(*player, land->getName());
                     } else {
                         pkt.mTitleText =
                             "[Land] 这里是 {} 的领地"_trf(*player, info.has_value() ? info->name : owner.asString());

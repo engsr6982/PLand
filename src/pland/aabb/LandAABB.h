@@ -16,6 +16,9 @@ public:
 
     LDAPI void fix(); // fix min/max
 
+    LandPos const& getMin() const;
+    LandPos const& getMax() const;
+
     LDNDAPI int   getDepth() const;  // (长) X
     LDNDAPI int   getHeight() const; // (高) Y
     LDNDAPI int   getWidth() const;  // (宽) Z

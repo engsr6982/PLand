@@ -62,7 +62,7 @@ std::optional<LandAABB> Selector::getAABB() const {
     return std::nullopt;
 }
 
-Land_sptr Selector::newLand() const {
+SharedLand Selector::newLand() const {
     if (auto aabb = getAABB(); aabb) {
         return Land::make(aabb.value(), mDimensionId, mIs3D, mPlayer->getUuid().asString());
     }
@@ -138,11 +138,11 @@ void Selector::onFixesY() { drawAABB(); }
 namespace land {
 
 // 重新选区器
-LandReSelector::LandReSelector(Player& player, Land_sptr const& data)
-: Selector(player, data->getLandDimid(), data->is3DLand(), Type::ReSelector),
+LandReSelector::LandReSelector(Player& player, SharedLand const& data)
+: Selector(player, data->getDimensionId(), data->is3D(), Type::ReSelector),
   mLand(data) {
     mOldBoxGeoId = DrawHandleManager::getInstance().getOrCreateHandle(player)->draw(
-        data->mPos,
+        data->getAABB(),
         mDimensionId,
         mce::Color::ORANGE()
     );
@@ -152,22 +152,25 @@ LandReSelector::~LandReSelector() {
     DrawHandleManager::getInstance().getOrCreateHandle(*mPlayer)->remove(mOldBoxGeoId);
 }
 
-Land_sptr LandReSelector::getLand() const { return mLand.lock(); }
+SharedLand LandReSelector::getLand() const { return mLand.lock(); }
 
 
 // 子领地选区器
-SubLandSelector::SubLandSelector(Player& player, Land_sptr const& data)
-: Selector(player, data->getLandDimid(), data->is3DLand(), Type::SubLand),
+SubLandSelector::SubLandSelector(Player& player, SharedLand const& data)
+: Selector(player, data->getDimensionId(), data->is3D(), Type::SubLand),
   mParentLand(data) {
-    this->mParentRangeBoxGeoId =
-        DrawHandleManager::getInstance().getOrCreateHandle(player)->draw(data->mPos, mDimensionId, mce::Color::RED());
+    this->mParentRangeBoxGeoId = DrawHandleManager::getInstance().getOrCreateHandle(player)->draw(
+        data->getAABB(),
+        mDimensionId,
+        mce::Color::RED()
+    );
 }
 
 SubLandSelector::~SubLandSelector() {
     DrawHandleManager::getInstance().getOrCreateHandle(*mPlayer)->remove(mParentRangeBoxGeoId);
 }
 
-Land_sptr SubLandSelector::getParentLand() const { return mParentLand.lock(); }
+SharedLand SubLandSelector::getParentLand() const { return mParentLand.lock(); }
 
 
 void SubLandSelector::onABSelected() {

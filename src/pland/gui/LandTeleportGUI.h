@@ -13,7 +13,7 @@ public:
 
     LDAPI static void sendTo(Player& player); // sendTo -> impl
 
-    LDAPI static void impl(Player& player, Land_sptr land);
+    LDAPI static void impl(Player& player, SharedLand land);
 };
 
 

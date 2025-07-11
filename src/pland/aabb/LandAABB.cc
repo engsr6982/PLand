@@ -3,6 +3,9 @@
 
 namespace land {
 
+LandPos const& LandAABB::getMin() const { return min; }
+LandPos const& LandAABB::getMax() const { return max; }
+
 int   LandAABB::getDepth() const { return max.x - min.x; }
 int   LandAABB::getHeight() const { return max.y - min.y; }
 int   LandAABB::getWidth() const { return max.z - min.z; }

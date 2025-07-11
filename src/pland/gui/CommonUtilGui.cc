@@ -29,7 +29,7 @@ void ChooseLandUtilGUI::sendTo(
     auto lands = LandRegistry::getInstance().getLands(player.getUuid().asString(), showShredLand);
     for (auto& land : lands) {
         fm.appendButton(
-            "{}\n维度: {} | ID: {}"_trf(player, land->getLandName(), land->getLandDimid(), land->getLandID()),
+            "{}\n维度: {} | ID: {}"_trf(player, land->getName(), land->getDimensionId(), land->getId()),
             "textures/ui/icon_recipe_nature",
             "path",
             [callback, land = std::weak_ptr(land)](Player& pl) {
@@ -86,7 +86,7 @@ void EditStringUtilGUI::sendTo(
 }
 
 
-void FuzzySerarchUtilGUI::sendTo(Player& player, std::vector<Land_sptr> list, CallBack callback) {
+void FuzzySerarchUtilGUI::sendTo(Player& player, std::vector<SharedLand> list, CallBack callback) {
     CustomForm fm;
     fm.setTitle(PLUGIN_NAME + " | 模糊搜索领地"_trf(player));
     fm.appendInput("name", "请输入领地名称"_trf(player), "string");
@@ -97,10 +97,10 @@ void FuzzySerarchUtilGUI::sendTo(Player& player, std::vector<Land_sptr> list, Ca
             if (!res) {
                 return;
             }
-            auto                       name = std::get<string>(res->at("name"));
-            std::vector<Land_sptr> filtered;
+            auto                    name = std::get<string>(res->at("name"));
+            std::vector<SharedLand> filtered;
             for (auto const& ptr : list) {
-                if (ptr->getLandName().find(name) != std::string::npos) {
+                if (ptr->getName().find(name) != std::string::npos) {
                     filtered.push_back(ptr);
                 }
             }

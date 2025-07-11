@@ -11,11 +11,11 @@ Player& PlayerAskCreateLandAfterEvent::getPlayer() const { return mPlayer; }
 bool    PlayerAskCreateLandAfterEvent::is3DLand() const { return mIs3DLand; }
 
 
-Player&   PlayerBuyLandBeforeEvent::getPlayer() const { return mPlayer; }
-Selector* PlayerBuyLandBeforeEvent::getSelector() const { return mSelector; }
-int&      PlayerBuyLandBeforeEvent::getPrice() const { return mPrice; }
-Player&   PlayerBuyLandAfterEvent::getPlayer() const { return mPlayer; }
-Land_sptr PlayerBuyLandAfterEvent::getLand() const { return mLand; }
+Player&    PlayerBuyLandBeforeEvent::getPlayer() const { return mPlayer; }
+Selector*  PlayerBuyLandBeforeEvent::getSelector() const { return mSelector; }
+int&       PlayerBuyLandBeforeEvent::getPrice() const { return mPrice; }
+Player&    PlayerBuyLandAfterEvent::getPlayer() const { return mPlayer; }
+SharedLand PlayerBuyLandAfterEvent::getLand() const { return mLand; }
 
 
 Player& PlayerEnterLandEvent::getPlayer() const { return mPlayer; }
@@ -49,16 +49,16 @@ Player& LandOwnerChangeAfterEvent::getNewOwner() const { return mNewOwner; }
 LandID  LandOwnerChangeAfterEvent::getLandID() const { return mLandID; }
 
 
-Player&          LandRangeChangeBeforeEvent::getPlayer() const { return mPlayer; }
-Land_sptr const& LandRangeChangeBeforeEvent::getLand() const { return mLand; }
-LandAABB const&  LandRangeChangeBeforeEvent::getNewRange() const { return mNewRange; }
-int const&       LandRangeChangeBeforeEvent::getNeedPay() const { return mNeedPay; }
-int const&       LandRangeChangeBeforeEvent::getRefundPrice() const { return mRefundPrice; }
-Player&          LandRangeChangeAfterEvent::getPlayer() const { return mPlayer; }
-Land_sptr const& LandRangeChangeAfterEvent::getLand() const { return mLand; }
-LandAABB const&  LandRangeChangeAfterEvent::getNewRange() const { return mNewRange; }
-int const&       LandRangeChangeAfterEvent::getNeedPay() const { return mNeedPay; }
-int const&       LandRangeChangeAfterEvent::getRefundPrice() const { return mRefundPrice; }
+Player&           LandRangeChangeBeforeEvent::getPlayer() const { return mPlayer; }
+SharedLand const& LandRangeChangeBeforeEvent::getLand() const { return mLand; }
+LandAABB const&   LandRangeChangeBeforeEvent::getNewRange() const { return mNewRange; }
+int const&        LandRangeChangeBeforeEvent::getNeedPay() const { return mNeedPay; }
+int const&        LandRangeChangeBeforeEvent::getRefundPrice() const { return mRefundPrice; }
+Player&           LandRangeChangeAfterEvent::getPlayer() const { return mPlayer; }
+SharedLand const& LandRangeChangeAfterEvent::getLand() const { return mLand; }
+LandAABB const&   LandRangeChangeAfterEvent::getNewRange() const { return mNewRange; }
+int const&        LandRangeChangeAfterEvent::getNeedPay() const { return mNeedPay; }
+int const&        LandRangeChangeAfterEvent::getRefundPrice() const { return mRefundPrice; }
 
 
 // EventEmitter

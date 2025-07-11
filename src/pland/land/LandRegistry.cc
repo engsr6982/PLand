@@ -26,7 +26,6 @@
 #include <vector>
 
 
-
 namespace land {
 std::string PlayerSettings::SYSTEM_LOCALE_CODE() { return "system"; }
 std::string PlayerSettings::SERVER_LOCALE_CODE() { return "server"; }
@@ -78,44 +77,44 @@ void LandRegistry::_openDBAndCheckVersion() {
     auto const dbVersionKey = DB_KEY_VERSION();
     if (!mDB->has(dbVersionKey)) {
         if (isNewCreatedDB) {
-            mDB->set(dbVersionKey, std::to_string(LandVersion)); // 设置初始版本号
+            mDB->set(dbVersionKey, std::to_string(LandContextVersion)); // 设置初始版本号
         } else {
             mDB->set(dbVersionKey, "-1"); // 数据库存在，但没有版本号，表示是旧版数据库(0.8.1之前)
         }
     }
 
     auto version = std::stoi(*mDB->get(dbVersionKey));
-    if (version != LandVersion) {
-        if (version > LandVersion) {
+    if (version != LandContextVersion) {
+        if (version > LandContextVersion) {
             logger.fatal(
                 "数据库版本过高，当前版本: {}, 期望版本: {}。为了保证数据安全，插件拒绝加载！",
                 version,
-                LandVersion
+                LandContextVersion
             );
             logger.fatal(
                 "The database version is too high, current version: {}, expected version: {}. In order to "
                 "keep the data safe, the plugin refuses to load!",
                 version,
-                LandVersion
+                LandContextVersion
             );
             throw std::runtime_error("The database versions do not match");
 
-        } else if (version < LandVersion) {
+        } else if (version < LandContextVersion) {
             logger.warn(
                 "数据库版本过低，当前版本: {}, 期望版本: {}，插件将尝试备份并升级数据库...",
                 version,
-                LandVersion
+                LandContextVersion
             );
             logger.warn(
                 "The database version is too low, the current version: {}, the expected version: {}, the "
                 "plugin will try to back up and upgrade the database...",
                 version,
-                LandVersion
+                LandContextVersion
             );
             mDB.reset();
             backup();
             mDB = std::make_unique<ll::data::KeyValueDB>(dbDir);
-            mDB->set(dbVersionKey, std::to_string(LandVersion)); // 更新版本号
+            mDB->set(dbVersionKey, std::to_string(LandContextVersion)); // 更新版本号
             // 这里只需要修改版本号以及备份，其它兼容转换操作将在 _checkAndAdaptBreakingChanges 中进行
         }
     }
@@ -130,7 +129,7 @@ void LandRegistry::_checkAndAdaptBreakingChanges(nlohmann::json& landData) {
         constexpr auto NEW_MAX_KEY    = "max";
         constexpr auto NEW_MIN_KEY    = "min";
 
-        auto& pos = landData["mPos"];
+        auto& pos = landData["getAABB()"];
         if (pos.contains(LEGACY_MAX_KEY)) {
             auto legacyMax = pos[LEGACY_MAX_KEY]; // copy
             pos.erase(LEGACY_MAX_KEY);
@@ -157,18 +156,18 @@ void LandRegistry::_loadLands() {
         if (key == operatorKey || key == playerSettingKey || key == versionKey) continue;
 
         auto json = JSON::parse(value);
-        auto land = Land::make();
+        auto ctx  = LandContext{};
 
         _checkAndAdaptBreakingChanges(json);
-
-        JSON::jsonToStruct(json, *land);
+        JSON::jsonToStruct(json, ctx);
+        auto land = Land::make(std::move(ctx));
 
         // 保证landID唯一
-        if (safeId <= land->getLandID()) {
-            safeId = land->getLandID() + 1;
+        if (safeId <= land->getId()) {
+            safeId = land->getId() + 1;
         }
 
-        mLandCache.emplace(land->getLandID(), std::move(land));
+        mLandCache.emplace(land->getId(), std::move(land));
     }
 
     mLandIdAllocator = std::make_unique<LandIdAllocator>(safeId); // 初始化ID分配器
@@ -180,46 +179,46 @@ void LandRegistry::_loadLands() {
 
 void LandRegistry::_initLandMap() {
     for (auto& [id, land] : mLandCache) {
-        auto& chunkMap = mLandMap[LandDimid(land->getLandDimid())]; // 区块表
+        auto& chunkMap = mLandMap[LandDimid(land->getDimensionId())]; // 区块表
 
-        auto chs = land->mPos.getChunks();
+        auto chs = land->getAABB().getChunks();
         for (auto& ch : chs) {
             auto  chunkID      = LandRegistry::EncodeChunkID(ch.x, ch.z);
             auto& chunkLandVec = chunkMap[chunkID]; // 区块领地数组
 
-            chunkLandVec.insert(land->getLandID());
+            chunkLandVec.insert(land->getId());
         }
     }
     mod::ModEntry::getInstance().getSelf().getLogger().info("初始化领地缓存系统完成");
 }
 
-void LandRegistry::_updateLandMap(Land_sptr const& ptr, bool add) {
-    auto chunks = ptr->mPos.getChunks();
+void LandRegistry::_updateLandMap(SharedLand const& ptr, bool add) {
+    auto chunks = ptr->getAABB().getChunks();
     for (auto& ch : chunks) {
-        auto& chunkLands = mLandMap[ptr->mLandDimid][EncodeChunkID(ch.x, ch.z)];
+        auto& chunkLands = mLandMap[ptr->getDimensionId()][EncodeChunkID(ch.x, ch.z)];
 
         if (add) {
-            chunkLands.insert(ptr->getLandID());
+            chunkLands.insert(ptr->getId());
         } else {
-            chunkLands.erase(ptr->getLandID());
+            chunkLands.erase(ptr->getId());
         }
     }
 }
-void LandRegistry::_refreshLandRange(Land_sptr const& ptr) {
+void LandRegistry::_refreshLandRange(SharedLand const& ptr) {
     _updateLandMap(ptr, false);
     _updateLandMap(ptr, true);
 }
 
 LandID LandRegistry::getNextLandID() { return mLandIdAllocator->nextId(); }
 
-Result<void, StorageLayerError::Error> LandRegistry::_removeLand(Land_sptr const& ptr) {
+Result<void, StorageLayerError::Error> LandRegistry::_removeLand(SharedLand const& ptr) {
     _updateLandMap(ptr, false); // 擦除映射表
-    if (!mLandCache.erase(ptr->getLandID())) {
+    if (!mLandCache.erase(ptr->getId())) {
         return std::unexpected(StorageLayerError::Error::STLMapError);
     }
 
-    if (!this->mDB->del(std::to_string(ptr->getLandID()))) {
-        mLandCache.emplace(ptr->getLandID(), ptr); // rollback
+    if (!this->mDB->del(std::to_string(ptr->getId()))) {
+        mLandCache.emplace(ptr->getId(), ptr); // rollback
         _updateLandMap(ptr, true);
         return std::unexpected(StorageLayerError::Error::DBError);
     }
@@ -267,7 +266,7 @@ void LandRegistry::save() {
     mDB->set(DB_KEY_PLAYER_SETTINGS(), JSON::stringify(JSON::structTojson(mPlayerSettings)));
 
     for (auto& [id, land] : mLandCache) {
-        mDB->set(std::to_string(land->mLandID), JSON::stringify(JSON::structTojson(*land)));
+        mDB->set(std::to_string(land->getId()), JSON::stringify(JSON::structTojson(land->mContext)));
     }
 }
 void LandRegistry::stopThread() {
@@ -334,8 +333,8 @@ bool LandRegistry::hasLand(LandID id) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
     return mLandCache.find(id) != mLandCache.end();
 }
-Result<void, StorageLayerError::Error> LandRegistry::addLand(Land_sptr land) {
-    if (!land || land->mLandID != LandID(-1)) {
+Result<void, StorageLayerError::Error> LandRegistry::addLand(SharedLand land) {
+    if (!land || land->getId() != LandID(-1)) {
         return std::unexpected(StorageLayerError::Error::InvalidLand);
     }
 
@@ -351,13 +350,14 @@ Result<void, StorageLayerError::Error> LandRegistry::addLand(Land_sptr land) {
             return std::unexpected(StorageLayerError::Error::AssignLandIdFailed);
         }
     }
-    land->mLandID = id;
+    land->mContext.mLandID = id;
+    land->mDirtyCounter.increment();
 
     std::unique_lock<std::shared_mutex> lock(mMutex);
 
-    auto result = mLandCache.emplace(land->mLandID, land);
+    auto result = mLandCache.emplace(land->getId(), land);
     if (!result.second) {
-        mod::ModEntry::getInstance().getSelf().getLogger().warn("添加领地失败, ID: {}", land->mLandID);
+        mod::ModEntry::getInstance().getSelf().getLogger().warn("添加领地失败, ID: {}", land->getId());
         return std::unexpected(StorageLayerError::Error::STLMapError);
     }
 
@@ -365,7 +365,7 @@ Result<void, StorageLayerError::Error> LandRegistry::addLand(Land_sptr land) {
 
     return {};
 }
-void LandRegistry::refreshLandRange(Land_sptr const& ptr) {
+void LandRegistry::refreshLandRange(SharedLand const& ptr) {
     std::unique_lock<std::shared_mutex> lock(mMutex);
     _refreshLandRange(ptr);
 }
@@ -387,7 +387,7 @@ bool LandRegistry::removeLand(LandID landId) {
     }
     return true;
 }
-Result<void, StorageLayerError::Error> LandRegistry::removeOrdinaryLand(Land_sptr const& ptr) {
+Result<void, StorageLayerError::Error> LandRegistry::removeOrdinaryLand(SharedLand const& ptr) {
     if (!ptr->isOrdinaryLand()) {
         return std::unexpected(StorageLayerError::Error::LandTypeWithRequireTypeNotMatch);
     }
@@ -395,7 +395,7 @@ Result<void, StorageLayerError::Error> LandRegistry::removeOrdinaryLand(Land_spt
     std::unique_lock<std::shared_mutex> lock(mMutex); // 获取锁
     return _removeLand(ptr);
 }
-Result<void, StorageLayerError::Error> LandRegistry::removeSubLand(Land_sptr const& ptr) {
+Result<void, StorageLayerError::Error> LandRegistry::removeSubLand(SharedLand const& ptr) {
     if (!ptr->isSubLand()) {
         return std::unexpected(StorageLayerError::Error::LandTypeWithRequireTypeNotMatch);
     }
@@ -408,29 +408,29 @@ Result<void, StorageLayerError::Error> LandRegistry::removeSubLand(Land_sptr con
     std::unique_lock<std::shared_mutex> lock(mMutex); // 获取锁
 
     // 移除父领地中的记录
-    std::erase_if(parent->mSubLandIDs, [&](LandID const& id) { return id == ptr->getLandID(); });
+    std::erase_if(parent->mContext.mSubLandIDs, [&](LandID const& id) { return id == ptr->getId(); });
 
     auto result = _removeLand(ptr);
     if (!result.has_value()) {
-        parent->mSubLandIDs.push_back(ptr->getLandID()); // 恢复父领地的子领地列表
+        parent->mContext.mSubLandIDs.push_back(ptr->getId()); // 恢复父领地的子领地列表
     }
-
+    parent->mDirtyCounter.increment();
     return result;
 }
-Result<void, StorageLayerError::Error> LandRegistry::removeLandAndSubLands(Land_sptr const& ptr) {
+Result<void, StorageLayerError::Error> LandRegistry::removeLandAndSubLands(SharedLand const& ptr) {
     if (!ptr->isParentLand() && !ptr->isMixLand()) {
         return std::unexpected(StorageLayerError::Error::LandTypeWithRequireTypeNotMatch);
     }
 
-    auto currentId = ptr->getLandID();
+    auto currentId = ptr->getId();
     auto parent    = ptr->getParentLand();
     if (parent) {
-        std::erase_if(parent->mSubLandIDs, [&](LandID const& id) { return id == currentId; });
+        std::erase_if(parent->mContext.mSubLandIDs, [&](LandID const& id) { return id == currentId; });
     }
 
     std::unique_lock<std::shared_mutex> lock(mMutex);
-    std::stack<Land_sptr>               stack;        // 栈
-    std::vector<Land_sptr>              removedLands; // 已移除的领地
+    std::stack<SharedLand>              stack;        // 栈
+    std::vector<SharedLand>             removedLands; // 已移除的领地
 
     stack.push(ptr);
 
@@ -453,11 +453,11 @@ Result<void, StorageLayerError::Error> LandRegistry::removeLandAndSubLands(Land_
         } else {
             // rollback
             for (auto land : removedLands) {
-                mLandCache.emplace(land->getLandID(), land);
+                mLandCache.emplace(land->getId(), land);
                 _updateLandMap(land, true);
             }
             if (parent) {
-                parent->mSubLandIDs.push_back(currentId); // 恢复父领地的子领地列表
+                parent->mContext.mSubLandIDs.push_back(currentId); // 恢复父领地的子领地列表
             }
             // return std::unexpected("remove land or sub land failed!");
             return result;
@@ -465,7 +465,7 @@ Result<void, StorageLayerError::Error> LandRegistry::removeLandAndSubLands(Land_
     }
     return {};
 }
-Result<void, StorageLayerError::Error> LandRegistry::removeLandAndPromoteSubLands(Land_sptr const& ptr) {
+Result<void, StorageLayerError::Error> LandRegistry::removeLandAndPromoteSubLands(SharedLand const& ptr) {
     if (!ptr->isParentLand()) {
         return std::unexpected(StorageLayerError::Error::LandTypeWithRequireTypeNotMatch);
     }
@@ -475,21 +475,21 @@ Result<void, StorageLayerError::Error> LandRegistry::removeLandAndPromoteSubLand
 
     std::unique_lock<std::shared_mutex> lock(mMutex);
     for (auto& subLand : subLands) {
-        static const auto invalidID = LandID(-1); // 无效ID
-        subLand->mParentLandID      = invalidID;
+        static const auto invalidID     = LandID(-1); // 无效ID
+        subLand->mContext.mParentLandID = invalidID;
     }
 
     auto result = _removeLand(ptr);
     if (!result.has_value()) {
         // rollback
-        auto currentId = ptr->getLandID();
+        auto currentId = ptr->getId();
         for (auto& subLand : subLands) {
-            subLand->mParentLandID = currentId;
+            subLand->mContext.mParentLandID = currentId;
         }
     }
     return result;
 }
-Result<void, StorageLayerError::Error> LandRegistry::removeLandAndTransferSubLands(Land_sptr const& ptr) {
+Result<void, StorageLayerError::Error> LandRegistry::removeLandAndTransferSubLands(SharedLand const& ptr) {
     if (!ptr->isMixLand()) {
         return std::unexpected(StorageLayerError::Error::LandTypeWithRequireTypeNotMatch);
     }
@@ -498,35 +498,35 @@ Result<void, StorageLayerError::Error> LandRegistry::removeLandAndTransferSubLan
     if (!parent) {
         return std::unexpected(StorageLayerError::Error::DataConsistencyError);
     }
-    auto parentID = parent->getLandID();
+    auto parentID = parent->getId();
     auto subLands = ptr->getSubLands();
 
     std::unique_lock<std::shared_mutex> lock(mMutex);
 
     for (auto& subLand : subLands) {
-        subLand->mParentLandID = parentID;                   // 当前领地的子领地移交给父领地
-        parent->mSubLandIDs.push_back(subLand->getLandID()); // 父领地记录中添加当前领地的子领地
+        subLand->mContext.mParentLandID = parentID;               // 当前领地的子领地移交给父领地
+        parent->mContext.mSubLandIDs.push_back(subLand->getId()); // 父领地记录中添加当前领地的子领地
     }
 
     // 父领地记录中擦粗当前领地
-    std::erase_if(parent->mSubLandIDs, [&](LandID const& id) { return id == ptr->getLandID(); });
+    std::erase_if(parent->mContext.mSubLandIDs, [&](LandID const& id) { return id == ptr->getId(); });
 
     auto result = _removeLand(ptr);
     if (!result.has_value()) {
         // rollback
-        auto currentId = ptr->getLandID();
+        auto currentId = ptr->getId();
         for (auto& subLand : subLands) {
-            subLand->mParentLandID = currentId;
-            std::erase_if(parent->mSubLandIDs, [&](LandID const& id) { return id == subLand->getLandID(); });
+            subLand->mContext.mParentLandID = currentId;
+            std::erase_if(parent->mContext.mSubLandIDs, [&](LandID const& id) { return id == subLand->getId(); });
         }
-        parent->mSubLandIDs.push_back(currentId); // 恢复父领地的子领地列表
+        parent->mContext.mSubLandIDs.push_back(currentId); // 恢复父领地的子领地列表
     }
 
     return result;
 }
 
 
-Land_wptr LandRegistry::getLandWeakPtr(LandID id) const {
+WeakLand LandRegistry::getLandWeakPtr(LandID id) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
     auto landIt = mLandCache.find(id);
@@ -535,7 +535,7 @@ Land_wptr LandRegistry::getLandWeakPtr(LandID id) const {
     }
     return {}; // 返回一个空的weak_ptr
 }
-Land_sptr LandRegistry::getLand(LandID id) const {
+SharedLand LandRegistry::getLand(LandID id) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
     auto landIt = mLandCache.find(id);
@@ -544,20 +544,20 @@ Land_sptr LandRegistry::getLand(LandID id) const {
     }
     return nullptr;
 }
-std::vector<Land_sptr> LandRegistry::getLands() const {
+std::vector<SharedLand> LandRegistry::getLands() const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    std::vector<Land_sptr> lands;
+    std::vector<SharedLand> lands;
     lands.reserve(mLandCache.size());
     for (auto& land : mLandCache) {
         lands.push_back(land.second);
     }
     return lands;
 }
-std::vector<Land_sptr> LandRegistry::getLands(std::vector<LandID> const& ids) const {
+std::vector<SharedLand> LandRegistry::getLands(std::vector<LandID> const& ids) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    std::vector<Land_sptr> lands;
+    std::vector<SharedLand> lands;
     for (auto id : ids) {
         if (auto iter = mLandCache.find(id); iter != mLandCache.end()) {
             lands.push_back(iter->second);
@@ -565,58 +565,58 @@ std::vector<Land_sptr> LandRegistry::getLands(std::vector<LandID> const& ids) co
     }
     return lands;
 }
-std::vector<Land_sptr> LandRegistry::getLands(LandDimid dimid) const {
+std::vector<SharedLand> LandRegistry::getLands(LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    std::vector<Land_sptr> lands;
+    std::vector<SharedLand> lands;
     for (auto& land : mLandCache) {
-        if (land.second->mLandDimid == dimid) {
+        if (land.second->getDimensionId() == dimid) {
             lands.push_back(land.second);
         }
     }
     return lands;
 }
-std::vector<Land_sptr> LandRegistry::getLands(UUIDs const& uuid, bool includeShared) const {
+std::vector<SharedLand> LandRegistry::getLands(UUIDs const& uuid, bool includeShared) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    std::vector<Land_sptr> lands;
+    std::vector<SharedLand> lands;
     for (auto& land : mLandCache) {
-        if (land.second->isLandOwner(uuid) || (includeShared && land.second->isLandMember(uuid))) {
+        if (land.second->isOwner(uuid) || (includeShared && land.second->isMember(uuid))) {
             lands.push_back(land.second);
         }
     }
     return lands;
 }
-std::vector<Land_sptr> LandRegistry::getLands(UUIDs const& uuid, LandDimid dimid) const {
+std::vector<SharedLand> LandRegistry::getLands(UUIDs const& uuid, LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    std::vector<Land_sptr> lands;
+    std::vector<SharedLand> lands;
     for (auto& land : mLandCache) {
-        if (land.second->mLandDimid == dimid && land.second->isLandOwner(uuid)) {
+        if (land.second->getDimensionId() == dimid && land.second->isOwner(uuid)) {
             lands.push_back(land.second);
         }
     }
     return lands;
 }
-std::unordered_map<UUIDs, std::unordered_set<Land_sptr>> LandRegistry::getLandsByOwner() const {
+std::unordered_map<UUIDs, std::unordered_set<SharedLand>> LandRegistry::getLandsByOwner() const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    std::unordered_map<UUIDs, std::unordered_set<Land_sptr>> lands;
+    std::unordered_map<UUIDs, std::unordered_set<SharedLand>> lands;
     for (const auto& ptr : mLandCache | std::views::values) {
-        auto& owner = ptr->getLandOwner();
+        auto& owner = ptr->getOwner();
         lands[owner].insert(ptr);
     }
     return lands;
 }
-std::unordered_map<UUIDs, std::unordered_set<Land_sptr>> LandRegistry::getLandsByOwner(LandDimid dimid) const {
+std::unordered_map<UUIDs, std::unordered_set<SharedLand>> LandRegistry::getLandsByOwner(LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    std::unordered_map<UUIDs, std::unordered_set<Land_sptr>> res;
+    std::unordered_map<UUIDs, std::unordered_set<SharedLand>> res;
     for (const auto& ptr : mLandCache | std::views::values) {
-        if (ptr->getLandDimid() != dimid) {
+        if (ptr->getDimensionId() != dimid) {
             continue;
         }
-        auto& owner = ptr->getLandOwner();
+        auto& owner = ptr->getOwner();
         res[owner].insert(ptr);
     }
     return res;
@@ -636,10 +636,10 @@ LandPermType LandRegistry::getPermType(UUIDs const& uuid, LandID id, bool ignore
 }
 
 
-Land_sptr LandRegistry::getLandAt(BlockPos const& pos, LandDimid dimid) const {
+SharedLand LandRegistry::getLandAt(BlockPos const& pos, LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    std::unordered_set<Land_sptr> result;
+    std::unordered_set<SharedLand> result;
 
     ChunkID chunkId = EncodeChunkID(pos.x >> 4, pos.z >> 4);
     auto    dimIt   = mLandMap.find(dimid); // 查找维度
@@ -648,8 +648,7 @@ Land_sptr LandRegistry::getLandAt(BlockPos const& pos, LandDimid dimid) const {
         if (chunkIt != dimIt->second.end()) {
             for (const auto& landId : chunkIt->second) {
                 auto landIt = mLandCache.find(landId); // 查找领地
-                if (landIt != mLandCache.end()
-                    && landIt->second->getLandPos().hasPos(pos, !landIt->second->is3DLand())) {
+                if (landIt != mLandCache.end() && landIt->second->getAABB().hasPos(pos, !landIt->second->is3D())) {
                     // return landIt->second;
                     result.insert(landIt->second);
                 }
@@ -663,8 +662,8 @@ Land_sptr LandRegistry::getLandAt(BlockPos const& pos, LandDimid dimid) const {
         }
 
         // 子领地优先级最高
-        Land_sptr deepestLand = nullptr;
-        int       maxLevel    = -1;
+        SharedLand deepestLand = nullptr;
+        int        maxLevel    = -1;
         for (auto& land : result) {
             int currentLevel = land->getNestedLevel();
             if (currentLevel > maxLevel) {
@@ -677,7 +676,7 @@ Land_sptr LandRegistry::getLandAt(BlockPos const& pos, LandDimid dimid) const {
 
     return nullptr;
 }
-std::unordered_set<Land_sptr> LandRegistry::getLandAt(BlockPos const& center, int radius, LandDimid dimid) const {
+std::unordered_set<SharedLand> LandRegistry::getLandAt(BlockPos const& center, int radius, LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
     auto dimIter = mLandMap.find(dimid); // 查找维度
@@ -685,9 +684,9 @@ std::unordered_set<Land_sptr> LandRegistry::getLandAt(BlockPos const& center, in
         return {};
     }
 
-    auto&                         dim = dimIter->second;
-    std::unordered_set<ChunkID>   visitedChunks; // 记录已访问的区块
-    std::unordered_set<Land_sptr> lands;
+    auto&                          dim = dimIter->second;
+    std::unordered_set<ChunkID>    visitedChunks; // 记录已访问的区块
+    std::unordered_set<SharedLand> lands;
 
     int minChunkX = (center.x - radius) >> 4;
     int minChunkZ = (center.z - radius) >> 4;
@@ -706,7 +705,7 @@ std::unordered_set<Land_sptr> LandRegistry::getLandAt(BlockPos const& center, in
             if (chunkIt != dim.end()) {
                 for (const auto& landId : chunkIt->second) {
                     auto landIt = mLandCache.find(landId); // 查找领地
-                    if (landIt != mLandCache.end() && landIt->second->isRadiusInLand(center, radius)) {
+                    if (landIt != mLandCache.end() && landIt->second->isCollision(center, radius)) {
                         lands.insert(landIt->second);
                     }
                 }
@@ -715,7 +714,7 @@ std::unordered_set<Land_sptr> LandRegistry::getLandAt(BlockPos const& center, in
     }
     return lands;
 }
-std::unordered_set<Land_sptr>
+std::unordered_set<SharedLand>
 LandRegistry::getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
@@ -724,9 +723,9 @@ LandRegistry::getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid di
         return {};
     }
 
-    auto&                         dim = dimIter->second;
-    std::unordered_set<ChunkID>   visitedChunks;
-    std::unordered_set<Land_sptr> lands;
+    auto&                          dim = dimIter->second;
+    std::unordered_set<ChunkID>    visitedChunks;
+    std::unordered_set<SharedLand> lands;
 
     int minChunkX = std::min(pos1.x, pos2.x) >> 4;
     int minChunkZ = std::min(pos1.z, pos2.z) >> 4;
@@ -745,7 +744,7 @@ LandRegistry::getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid di
             if (chunkIt != dim.end()) {
                 for (const auto& landId : chunkIt->second) {
                     auto landIt = mLandCache.find(landId); // 查找领地
-                    if (landIt != mLandCache.end() && landIt->second->isAABBInLand(pos1, pos2)) {
+                    if (landIt != mLandCache.end() && landIt->second->isCollision(pos1, pos2)) {
                         lands.insert(landIt->second);
                     }
                 }

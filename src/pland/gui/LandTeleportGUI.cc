@@ -15,13 +15,12 @@ void LandTeleportGUI::sendTo(Player& player) {
     ChooseLandUtilGUI::sendTo(player, impl, true, BackSimpleForm<>::makeCallback<LandMainMenuGUI::sendTo>());
 }
 
-void LandTeleportGUI::impl(Player& player, Land_sptr land) {
-    if (land->mTeleportPos.isZero()) {
-        SafeTeleport::getInstance().teleportTo(player, land->mPos.min, land->getLandDimid());
+void LandTeleportGUI::impl(Player& player, SharedLand land) {
+    if (land->getTeleportPos().isZero()) {
+        SafeTeleport::getInstance().teleportTo(player, land->getAABB().getMin().as(), land->getDimensionId());
         return;
     }
-
-    player.teleport(land->mTeleportPos, land->getLandDimid());
+    player.teleport(land->getTeleportPos().as(), land->getDimensionId());
 }
 
 

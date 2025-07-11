@@ -32,8 +32,8 @@ struct DrawIdImpl : public DrawHandle::DrawId {
 
 class DarwHandleImpl : public DrawHandle {
 private:
-    std::unique_ptr<bsci::GeometryGroup>                           mGeometryGroup;
-    std::unordered_map<LandID, std::pair<Land_wptr, UniqueDrawId>> mLandGeoMap;
+    std::unique_ptr<bsci::GeometryGroup>                          mGeometryGroup;
+    std::unordered_map<LandID, std::pair<WeakLand, UniqueDrawId>> mLandGeoMap;
 
 public:
     explicit DarwHandleImpl() : DrawHandle(), mGeometryGroup(bsci::GeometryGroup::createDefault()) {}
@@ -53,13 +53,13 @@ public:
         return std::make_unique<DrawIdImpl>(result);
     }
 
-    void draw(Land_sptr const& land, const mce::Color& color) override {
-        auto iter = mLandGeoMap.find(land->getLandID());
+    void draw(SharedLand const& land, const mce::Color& color) override {
+        auto iter = mLandGeoMap.find(land->getId());
         if (iter != mLandGeoMap.end()) {
             return;
         }
-        auto geoid = draw(land->getLandPos(), land->getLandDimid(), color);
-        mLandGeoMap.emplace(land->getLandID(), std::make_pair(land, std::move(geoid)));
+        auto geoid = draw(land->getAABB(), land->getDimensionId(), color);
+        mLandGeoMap.emplace(land->getId(), std::make_pair(land, std::move(geoid)));
     }
 
     void remove(LandID landID) override {

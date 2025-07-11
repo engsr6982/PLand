@@ -106,7 +106,7 @@ inline BlockProperty operator&(BlockProperty a, BlockProperty b) {
 
 namespace land {
 
-inline bool PreCheckLandExistsAndPermission(Land_sptr const& ptr, UUIDs const& uuid = "") {
+inline bool PreCheckLandExistsAndPermission(SharedLand const& ptr, UUIDs const& uuid = "") {
     if (!ptr ||                                           // 无领地
         (LandRegistry::getInstance().isOperator(uuid)) || // 管理员
         (ptr->getPermType(uuid) != LandPermType::Guest)   // 主人/成员
@@ -192,10 +192,7 @@ EventListener::EventListener() {
                 logger->info("Update land owner data from xuid to uuid for player {}", ev.self().getRealName());
                 auto uuid = ev.self().getUuid().asString();
                 for (auto& land : lands) {
-                    if (land->mIsConvertedLand && land->mOwnerDataIsXUID) {
-                        land->mLandOwner       = uuid; // xuid -> uuid
-                        land->mOwnerDataIsXUID = false;
-                    }
+                    land->updateXUIDToUUID(uuid);
                 }
             }
         }),
@@ -229,7 +226,7 @@ EventListener::EventListener() {
                     return;
                 }
 
-                auto& tab = land->getLandPermTableConst();
+                auto& tab = land->getPermTable();
                 if (tab.allowDestroy) {
                     return;
                 }
@@ -252,7 +249,7 @@ EventListener::EventListener() {
                     return;
                 }
 
-                auto& tab = land->getLandPermTableConst();
+                auto& tab = land->getPermTable();
                 if (tab.allowPlace) {
                     return;
                 }
@@ -273,7 +270,7 @@ EventListener::EventListener() {
             if (PreCheckLandExistsAndPermission(land)) return; // land not found
 
 
-            auto& tab = land->getLandPermTableConst();
+            auto& tab = land->getPermTable();
             if (tab.allowActorDestroy) {
                 return;
             }
@@ -294,7 +291,7 @@ EventListener::EventListener() {
                 if (PreCheckLandExistsAndPermission(land)) return; // land not found
 
 
-                auto& tab = land->getLandPermTableConst();
+                auto& tab = land->getPermTable();
                 if (tab.allowActorDestroy) {
                     return;
                 }
@@ -316,7 +313,7 @@ EventListener::EventListener() {
                 if (PreCheckLandExistsAndPermission(land)) return; // land not found
 
 
-                auto& tab = land->getLandPermTableConst();
+                auto& tab = land->getPermTable();
                 if (tab.allowActorDestroy) {
                     return;
                 }
@@ -354,12 +351,12 @@ EventListener::EventListener() {
                 logger->debug(
                     "[InteractBlock] PreCheck returned true. Player: {}, Land: {}",
                     player.getUuid().asString(),
-                    land ? land->getLandName() : "nullptr"
+                    land ? land->getName() : "nullptr"
                 );
                 return;
             }
 
-            auto const& tab        = land->getLandPermTableConst();
+            auto const& tab        = land->getPermTable();
             bool        itemCancel = false;
 
             if (actualItem) {                                                      // 判空
@@ -580,7 +577,7 @@ EventListener::EventListener() {
                 auto  land   = db->getLandAt(entity.getPosition(), ev.self().getDimensionId());
                 if (PreCheckLandExistsAndPermission(land, ev.self().getUuid().asString())) return;
 
-                if (land->getLandPermTableConst().allowInteractEntity) return;
+                if (land->getPermTable().allowInteractEntity) return;
 
                 ev.cancel();
             }
@@ -596,7 +593,7 @@ EventListener::EventListener() {
                 return;
             }
 
-            if (land->getLandPermTableConst().allowFireSpread) {
+            if (land->getPermTable().allowFireSpread) {
                 return;
             }
 
@@ -618,7 +615,7 @@ EventListener::EventListener() {
             }
 
             auto const& mobTypeName = mob.getTypeName();
-            auto const& tab         = land->getLandPermTableConst();
+            auto const& tab         = land->getPermTable();
             if (Config::cfg.mob.hostileMobTypeNames.contains(mobTypeName) && !tab.allowMonsterDamage) {
                 logger->debug("[PlayerAttackEvent] Mob is hostile: {}", mobTypeName);
 
@@ -676,7 +673,7 @@ EventListener::EventListener() {
                 return;
             }
 
-            if (land->getLandPermTableConst().allowPickupItem) return;
+            if (land->getPermTable().allowPickupItem) return;
 
             ev.cancel();
         });
@@ -698,7 +695,7 @@ EventListener::EventListener() {
                 return;
             }
 
-            auto const& tab       = land->getLandPermTableConst();
+            auto const& tab       = land->getPermTable();
             bool        isMonster = mob->hasCategory(::ActorCategory::Monster) || mob->hasFamily("monster");
 
             if (isMonster) {
@@ -716,22 +713,20 @@ EventListener::EventListener() {
 
     // ila
     RegisterListenerIf(Config::cfg.listeners.PlayerAttackBlockBeforeEvent, [&]() {
-        return bus->emplaceListener<ila::mc::PlayerAttackBlockBeforeEvent>(
-            [db, logger](ila::mc::PlayerAttackBlockBeforeEvent& ev) {
-                auto& self = ev.self();
-                auto& pos  = ev.pos();
+        return bus->emplaceListener<ila::mc::PlayerAttackBlockBeforeEvent>([db, logger](
+                                                                               ila::mc::PlayerAttackBlockBeforeEvent& ev
+                                                                           ) {
+            auto& self = ev.self();
+            auto& pos  = ev.pos();
 
-                logger->debug("[AttackBlock] {}", pos.toString());
+            logger->debug("[AttackBlock] {}", pos.toString());
 
-                auto land = db->getLandAt(pos, self.getDimensionId());
-                if (PreCheckLandExistsAndPermission(land, self.getUuid().asString())) return; // land not found
+            auto land = db->getLandAt(pos, self.getDimensionId());
+            if (PreCheckLandExistsAndPermission(land, self.getUuid().asString())) return; // land not found
 
-                auto const& blockTypeName = self.getDimensionBlockSourceConst().getBlock(pos).getTypeName();
-                CANCEL_AND_RETURN_IF(
-                    !land->getLandPermTableConst().allowAttackDragonEgg && blockTypeName == "minecraft:dragon_egg"
-                );
-            }
-        );
+            auto const& blockTypeName = self.getDimensionBlockSourceConst().getBlock(pos).getTypeName();
+            CANCEL_AND_RETURN_IF(!land->getPermTable().allowAttackDragonEgg && blockTypeName == "minecraft:dragon_egg");
+        });
     });
 
     RegisterListenerIf(Config::cfg.listeners.ArmorStandSwapItemBeforeEvent, [&]() {
@@ -746,7 +741,7 @@ EventListener::EventListener() {
                     return;
                 }
 
-                if (land->getLandPermTableConst().useArmorStand) return;
+                if (land->getPermTable().useArmorStand) return;
 
                 ev.cancel();
             }
@@ -765,7 +760,7 @@ EventListener::EventListener() {
                     return;
                 }
 
-                if (land->getLandPermTableConst().allowDropItem) return;
+                if (land->getPermTable().allowDropItem) return;
 
                 ev.cancel();
             }
@@ -792,7 +787,7 @@ EventListener::EventListener() {
             if (PreCheckLandExistsAndPermission(land)) return; // land not found
             // 特殊处理：
             if (land) {
-                auto& tab = land->getLandPermTableConst();
+                auto& tab = land->getPermTable();
                 if (typeName == "minecraft:minecart" || typeName == "minecraft:boat"
                     || typeName == "minecraft:chest_boat") {
                     if (tab.allowRideTrans) return;
@@ -822,7 +817,7 @@ EventListener::EventListener() {
                 ev.blockSource().getDimensionId()
             );
             for (auto& p : lands) {
-                if (!p->getLandPermTableConst().allowExplode) {
+                if (!p->getPermTable().allowExplode) {
                     ev.cancel();
                     break;
                 }
@@ -837,7 +832,7 @@ EventListener::EventListener() {
             auto land = db->getLandAt(ev.pos(), ev.blockSource().getDimensionId());
             if (PreCheckLandExistsAndPermission(land)) return; // land not found
             if (land) {
-                if (land->getLandPermTableConst().allowFarmDecay) return;
+                if (land->getPermTable().allowFarmDecay) return;
             }
 
             ev.cancel();
@@ -870,7 +865,7 @@ EventListener::EventListener() {
             auto& player = static_cast<Player&>(hurtSource.value());
             if (PreCheckLandExistsAndPermission(land, player.getUuid().asString())) return; // land not found
 
-            auto const& tab = land->getLandPermTable();
+            auto const& tab = land->getPermTable();
             if (hurtActorIsPlayer) {
                 CANCEL_AND_RETURN_IF(!tab.allowPlayerDamage);
 
@@ -900,10 +895,10 @@ EventListener::EventListener() {
 
             auto pistonLand = db->getLandAt(piston, dimid);
             auto pushLand   = db->getLandAt(push, dimid);
-            if ((!pistonLand &&                                               // 活塞所在位置没有领地
-                 pushLand &&                                                  // 被推动的位置有领地
-                 !pushLand->getLandPermTableConst().allowPistonPushOnBoundary // 被推动的位置领地不允许活塞在边界推动
-                 && (pushLand->getLandPos().isOnOuterBoundary(piston) || pushLand->getLandPos().isOnInnerBoundary(push))
+            if ((!pistonLand &&                                      // 活塞所在位置没有领地
+                 pushLand &&                                         // 被推动的位置有领地
+                 !pushLand->getPermTable().allowPistonPushOnBoundary // 被推动的位置领地不允许活塞在边界推动
+                 && (pushLand->getAABB().isOnOuterBoundary(piston) || pushLand->getAABB().isOnInnerBoundary(push))
                 ) // 被推动的位置领地在边界上 (活塞在边界或边界外，被推的方块在边界内)
                 || (pistonLand && pushLand && pistonLand != pushLand
                 ) // 活塞和被推动的位置不在同一个领地 (例如：父子领地/无间距领地)
@@ -921,7 +916,7 @@ EventListener::EventListener() {
                 auto land = db->getLandAt(ev.blockPos(), ev.self().getDimensionId());
                 if (PreCheckLandExistsAndPermission(land, ev.self().getUuid().asString())) return;
 
-                if (land->getLandPermTableConst().useItemFrame) return;
+                if (land->getPermTable().useItemFrame) return;
 
                 ev.cancel();
             }
@@ -934,7 +929,7 @@ EventListener::EventListener() {
                 logger->debug("[PressurePlateTrigger] pos: {}", ev.pos().toString());
 
                 auto land = db->getLandAt(ev.pos(), ev.self().getDimensionId());
-                if (land && land->getLandPermTableConst().usePressurePlate) return;
+                if (land && land->getPermTable().usePressurePlate) return;
                 if (PreCheckLandExistsAndPermission(land)) return; // land not found
 
                 auto& entity = ev.self();
@@ -973,7 +968,7 @@ EventListener::EventListener() {
                 }
 
                 if (land) {
-                    auto const& tab = land->getLandPermTableConst();
+                    auto const& tab = land->getPermTable();
                     if (mob->isPlayer()) {
                         // 钓鱼钩单独判断，其他抛射物统一判断
                         if (type == "minecraft:fishing_hook") {
@@ -996,7 +991,7 @@ EventListener::EventListener() {
                 auto land = db->getLandAt(ev.pos(), ev.blockSource().getDimensionId());
                 if (PreCheckLandExistsAndPermission(land)) return; // land not found
                 if (land) {
-                    if (land->getLandPermTableConst().allowRedstoneUpdate) return;
+                    if (land->getPermTable().allowRedstoneUpdate) return;
                 }
 
                 ev.cancel();
@@ -1010,13 +1005,13 @@ EventListener::EventListener() {
 
             auto land = db->getLandAt(ev.pos(), ev.blockSource().getDimensionId());
             if (land) {
-                auto const& tab = land->getLandPermTableConst();
+                auto const& tab = land->getPermTable();
                 // 不允许方块掉落
                 CANCEL_AND_RETURN_IF(!tab.allowBlockFall);
 
                 // 位于领地之外（上方）的方块下落，且领地不允许方块下落，则拦截
-                if (land->getLandPos().isAboveLand(ev.pos()) && !tab.allowBlockFall) {
-                    logger->debug("[BlockFall] Block fall above land, cancelled for land: {}", land->getLandName());
+                if (land->getAABB().isAboveLand(ev.pos()) && !tab.allowBlockFall) {
+                    logger->debug("[BlockFall] Block fall above land, cancelled for land: {}", land->getName());
                     CANCEL_EVENT_AND_RETURN
                 }
             }
@@ -1031,7 +1026,7 @@ EventListener::EventListener() {
 
             auto lands = db->getLandAt(aabb.min, aabb.max, ev.blockSource().getDimensionId());
             for (auto const& p : lands) {
-                if (!p->getLandPermTableConst().allowWitherDestroy) {
+                if (!p->getPermTable().allowWitherDestroy) {
                     ev.cancel();
                     break;
                 }
@@ -1046,13 +1041,13 @@ EventListener::EventListener() {
             auto const& pos = ev.pos();
 
             auto land = db->getLandAt(pos, ev.blockSource().getDimensionId());
-            if (!land || land->getLandPermTableConst().useBoneMeal) {
+            if (!land || land->getPermTable().useBoneMeal) {
                 return;
             }
 
             auto lds = db->getLandAt(pos - 9, pos + 9, ev.blockSource().getDimensionId());
             for (auto const& p : lds) {
-                if (p->getLandPermTableConst().useBoneMeal) {
+                if (p->getPermTable().useBoneMeal) {
                     return;
                 }
             }
@@ -1072,12 +1067,12 @@ EventListener::EventListener() {
 
             // 源头在领地外
             if (landTo) { // 判空
-                if (!landTo->getLandPermTableConst().allowLiquidFlow && landTo->getLandPos().isOnOuterBoundary(sou)
-                    && landTo->getLandPos().isOnInnerBoundary(to)) {
-                    logger->debug("[LiquidFlow] 液体流动成功拦截 {}", landTo->getLandName());
+                if (!landTo->getPermTable().allowLiquidFlow && landTo->getAABB().isOnOuterBoundary(sou)
+                    && landTo->getAABB().isOnInnerBoundary(to)) {
+                    logger->debug("[LiquidFlow] 液体流动成功拦截 {}", landTo->getName());
                     ev.cancel();
                 }
-                logger->debug("[LiquidFlow] 液体流动: {}", landTo->getLandName());
+                logger->debug("[LiquidFlow] 液体流动: {}", landTo->getName());
             }
             // logger->debug("[LiquidFlow] Land:null");
         });
@@ -1091,7 +1086,7 @@ EventListener::EventListener() {
 
                 auto land = db->getLandAt(pos, ev.blockSource().getDimensionId());
                 if (land) {
-                    if (!land->getLandPermTableConst().allowAttackDragonEgg) {
+                    if (!land->getPermTable().allowAttackDragonEgg) {
                         ev.cancel();
                     }
                 }
@@ -1107,7 +1102,7 @@ EventListener::EventListener() {
 
                 auto land = db->getLandAt(pos, ev.blockSource().getDimensionId());
                 if (land) {
-                    if (!land->getLandPermTableConst().allowSculkBlockGrowth) {
+                    if (!land->getPermTable().allowSculkBlockGrowth) {
                         ev.cancel();
                     }
                 }
@@ -1144,7 +1139,7 @@ EventListener::EventListener() {
                     return;
                 }
 
-                if (land && !land->getLandPermTableConst().editSign) {
+                if (land && !land->getPermTable().editSign) {
                     ev.cancel();
                 }
             }

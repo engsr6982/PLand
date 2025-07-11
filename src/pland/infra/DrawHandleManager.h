@@ -48,7 +48,7 @@ public:
     /**
      * @brief 绘制领地范围
      */
-    LDAPI virtual void draw(Land_sptr const& land, const mce::Color& color) = 0;
+    LDAPI virtual void draw(SharedLand const& land, const mce::Color& color) = 0;
 
     /**
      * @brief 移除一个领地的绘制

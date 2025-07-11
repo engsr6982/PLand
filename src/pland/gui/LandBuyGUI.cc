@@ -94,18 +94,20 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
 
     auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 购买领地"_trf(player)));
-    fm.setContent("领地类型: {}\n体积: {}x{}x{} = {}\n范围: {}\n原价: {}\n折扣价: {}\n{}"_trf(
-        player,
-        is3D ? "3D" : "2D",
-        length,
-        width,
-        height,
-        volume,
-        aabb->toString(),
-        originalPrice,
-        discountedPrice,
-        EconomySystem::getInstance().getSpendTip(player, discountedPrice)
-    ));
+    fm.setContent(
+        "领地类型: {}\n体积: {}x{}x{} = {}\n范围: {}\n原价: {}\n折扣价: {}\n{}"_trf(
+            player,
+            is3D ? "3D" : "2D",
+            length,
+            width,
+            height,
+            volume,
+            aabb->toString(),
+            originalPrice,
+            discountedPrice,
+            EconomySystem::getInstance().getSpendTip(player, discountedPrice)
+        )
+    );
 
     fm.appendButton(
         "确认购买"_trf(player),
@@ -159,17 +161,17 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
                 }
             }
 
-            auto lands = db.getLandAt(aabb->min, aabb->max, selector->getDimensionId());
+            auto lands = db.getLandAt(aabb->min.as<>(), aabb->max.as<>(), selector->getDimensionId());
             if (!lands.empty()) {
                 for (auto& land : lands) {
-                    if (LandAABB::isCollision(land->mPos, *aabb)) {
+                    if (LandAABB::isCollision(land->getAABB(), *aabb)) {
                         mc_utils::sendText<mc_utils::LogLevel::Error>(
                             pl,
-                            "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName())
+                            "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getName())
                         );
                         return;
                     }
-                    if (!LandAABB::isComplisWithMinSpacing(land->mPos, *aabb, Config::cfg.land.minSpacing)) {
+                    if (!LandAABB::isComplisWithMinSpacing(land->getAABB(), *aabb, Config::cfg.land.minSpacing)) {
                         mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地距离过近，请重新选择"_trf(pl));
                         return;
                     }
@@ -182,11 +184,11 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
                 return;
             }
 
-            Land_sptr landPtr = selector->newLand();
+            SharedLand landPtr = selector->newLand();
             // TODO: fix
             // auto          addLandResult = LandService::tryCreateLand(landPtr);
             // if (addLandResult.has_value()) {
-            //     landPtr->mOriginalBuyPrice = discountedPrice; // 保存购买价格
+            //     landPtr->getOriginalBuyPrice() = discountedPrice; // 保存购买价格
             //     mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
 
             //     PlayerBuyLandAfterEvent ev(pl, landPtr);
@@ -219,15 +221,15 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
     int const height = aabb->getHeight();
 
     auto       landPtr       = reSelector->getLand();
-    int const& originalPrice = landPtr->mOriginalBuyPrice;                                     // 原始购买价格
-    auto       _variables    = PriceCalculate::Variable::make(*aabb, landPtr->getLandDimid()); // 传入维度ID
+    int const& originalPrice = landPtr->getOriginalBuyPrice();                                   // 原始购买价格
+    auto       _variables    = PriceCalculate::Variable::make(*aabb, landPtr->getDimensionId()); // 传入维度ID
     double     newRangePrice = PriceCalculate::eval(
         is3D ? Config::cfg.land.bought.threeDimensionl.calculate : Config::cfg.land.bought.twoDimensionl.calculate,
         _variables
     );
 
     // 应用维度价格系数
-    auto it = Config::cfg.land.bought.dimensionPriceCoefficients.find(std::to_string(landPtr->getLandDimid()));
+    auto it = Config::cfg.land.bought.dimensionPriceCoefficients.find(std::to_string(landPtr->getDimensionId()));
     if (it != Config::cfg.land.bought.dimensionPriceCoefficients.end()) {
         newRangePrice *= it->second;
     }
@@ -253,18 +255,20 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
 
     auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 购买领地 & 重新选区"_trf(player)));
-    fm.setContent("体积: {0}x{1}x{2} = {3}\n范围: {4}\n原购买价格: {5}\n需补差价: {6}\n需退差价: {7}\n{8}"_trf(
-        player,
-        length,                    // 1
-        width,                     // 2
-        height,                    // 3
-        volume,                    // 4
-        aabb->toString(),          // 5
-        originalPrice,             // 6
-        needPay < 0 ? 0 : needPay, // 7
-        refund < 0 ? 0 : refund,   // 8
-        needPay > 0 ? EconomySystem::getInstance().getSpendTip(player, needPay) : ""
-    ));
+    fm.setContent(
+        "体积: {0}x{1}x{2} = {3}\n范围: {4}\n原购买价格: {5}\n需补差价: {6}\n需退差价: {7}\n{8}"_trf(
+            player,
+            length,                    // 1
+            width,                     // 2
+            height,                    // 3
+            volume,                    // 4
+            aabb->toString(),          // 5
+            originalPrice,             // 6
+            needPay < 0 ? 0 : needPay, // 7
+            refund < 0 ? 0 : refund,   // 8
+            needPay > 0 ? EconomySystem::getInstance().getSpendTip(player, needPay) : ""
+        )
+    );
 
     fm.appendButton(
         "确认购买"_trf(player),
@@ -302,7 +306,7 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
             // 检查是否在禁止区域内 (领地管理员跳过检查)
             if (!LandRegistry::getInstance().isOperator(pl.getUuid().asString())) {
                 for (auto const& forbiddenRange : Config::cfg.land.bought.forbiddenRanges) {
-                    if (forbiddenRange.dimensionId == landPtr->getLandDimid()
+                    if (forbiddenRange.dimensionId == landPtr->getDimensionId()
                         && LandAABB::isCollision(forbiddenRange.aabb, *aabb)) { // 将坐标换成AABB
                         mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "此区域禁止修改领地范围，请重新选择"_trf(pl));
                         return;
@@ -311,18 +315,18 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
             }
 
             auto& db    = LandRegistry::getInstance();
-            auto  lands = db.getLandAt(aabb->min, aabb->max, landPtr->getLandDimid());
+            auto  lands = db.getLandAt(aabb->min.as<>(), aabb->max.as<>(), landPtr->getDimensionId());
             if (!lands.empty()) {
                 for (auto& land : lands) {
-                    if (land->getLandID() == landPtr->getLandID()) continue; // 跳过自己
-                    if (LandAABB::isCollision(land->mPos, *aabb)) {
+                    if (land->getId() == landPtr->getId()) continue; // 跳过自己
+                    if (LandAABB::isCollision(land->getAABB(), *aabb)) {
                         mc_utils::sendText<mc_utils::LogLevel::Error>(
                             pl,
-                            "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName())
+                            "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getName())
                         );
                         return;
                     }
-                    if (!LandAABB::isComplisWithMinSpacing(land->mPos, *aabb, Config::cfg.land.minSpacing)) {
+                    if (!LandAABB::isComplisWithMinSpacing(land->getAABB(), *aabb, Config::cfg.land.minSpacing)) {
                         mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地距离过近，请重新选择"_trf(pl));
                         return;
                     }
@@ -342,19 +346,17 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
                 }
             }
 
-            if (landPtr->_setLandPos(*aabb)) {
-                landPtr->mOriginalBuyPrice = discountedPrice; // 保存购买价格
+            landPtr->setAABB(*aabb);
+            landPtr->setOriginalBuyPrice(discountedPrice);
 
-                db.refreshLandRange(landPtr); // 刷新领地范围
+            db.refreshLandRange(landPtr); // 刷新领地范围
 
-                mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "领地范围修改成功"_trf(pl));
+            mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "领地范围修改成功"_trf(pl));
 
-                LandRangeChangeAfterEvent ev(pl, landPtr, *aabb, needPay, refund);
-                ll::event::EventBus::getInstance().publish(ev);
+            LandRangeChangeAfterEvent ev(pl, landPtr, *aabb, needPay, refund);
+            ll::event::EventBus::getInstance().publish(ev);
 
-                SelectorManager::getInstance().cancel(pl);
-
-            } else mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地范围修改失败"_trf(pl));
+            SelectorManager::getInstance().cancel(pl);
         }
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
@@ -401,7 +403,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
     auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 购买领地 & 子领地"_trf(player)));
 
-    auto& parentPos = subSelector->getParentLand()->getLandPos();
+    auto& parentPos = subSelector->getParentLand()->getAABB();
     fm.setContent(
         "[父领地]\n体积: {}x{}x{}={}\n范围: {}\n\n[子领地]\n体积: {}x{}x{}={}\n范围: {}\n\n[价格]\n原价: {}\n折扣价: {}\n{}"_trf(
             player,
@@ -499,8 +501,8 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
                 return;
             }
 
-            std::unordered_set<Land_sptr> lands;
-            std::stack<Land_sptr>         stack;
+            std::unordered_set<SharedLand> lands;
+            std::stack<SharedLand>         stack;
             stack.push(rootLand);
             while (!stack.empty()) {
                 auto cur = stack.top();
@@ -512,7 +514,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
                 }
             }
 
-            std::unordered_set<Land_sptr> parentLands; // 要创建子领地的领地的父领地集合
+            std::unordered_set<SharedLand> parentLands; // 要创建子领地的领地的父领地集合
             stack.push(parentLand);
             while (!stack.empty()) {
                 auto cur = stack.top();
@@ -528,14 +530,14 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
                 if (land == parentLand) continue;                          // 排除当前领地
                 if (parentLands.find(land) != parentLands.end()) continue; // 排除父领地
 
-                if (LandAABB::isCollision(land->mPos, *aabb)) {
+                if (LandAABB::isCollision(land->getAABB(), *aabb)) {
                     mc_utils::sendText<mc_utils::LogLevel::Error>(
                         pl,
-                        "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getLandName())
+                        "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getName())
                     );
                     return;
                 }
-                if (!LandAABB::isComplisWithMinSpacing(land->mPos, *aabb, Config::cfg.land.subLand.minSpacing)) {
+                if (!LandAABB::isComplisWithMinSpacing(land->getAABB(), *aabb, Config::cfg.land.subLand.minSpacing)) {
                     mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地距离过近，请重新选择"_trf(pl));
                     return;
                 }
@@ -548,15 +550,15 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
             }
 
             // 创建领地
-            Land_sptr landPtr = subSelector->newLand();
+            SharedLand landPtr = subSelector->newLand();
             // TODO: fix
             // auto          addLandResult = LandService::tryCreateLand(landPtr);
             // if (addLandResult.has_value()) {
             //     SelectorManager::getInstance().cancel(pl);
 
-            //     landPtr->mOriginalBuyPrice = discountedPrice;            // 保存购买价格
-            //     parentLand->mSubLandIDs.push_back(landPtr->getLandID()); // 添加子领地
-            //     landPtr->mParentLandID = parentLand->getLandID();        // 设置父领地
+            //     landPtr->getOriginalBuyPrice() = discountedPrice;            // 保存购买价格
+            //     parentLand->mSubLandIDs.push_back(landPtr->getId()); // 添加子领地
+            //     landPtr->mParentLandID = parentLand->getId();        // 设置父领地
 
             //     PlayerBuyLandAfterEvent ev(pl, landPtr);
             //     ll::event::EventBus::getInstance().publish(ev);

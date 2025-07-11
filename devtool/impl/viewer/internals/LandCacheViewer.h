@@ -7,21 +7,21 @@
 namespace devtool::internals {
 
 class LandEditor : public CodeEditor {
-    land::Land_wptr land_;
+    land::WeakLand land_;
 
     friend class LandCacheViewerWindow;
 
 public:
-    explicit LandEditor(land::Land_sptr land);
+    explicit LandEditor(land::SharedLand land);
 
     void renderMenuElement() override;
 };
 
 class LandCacheViewerWindow : public IWindow {
-    std::unordered_map<land::UUIDs, std::unordered_set<land::Land_sptr>> lands_;     // 领地缓存
-    std::unordered_map<land::UUIDs, std::string>                         realNames_; // 玩家名缓存
-    std::unordered_map<land::UUIDs, bool>                                isShow_;    // 是否显示该玩家的领地
-    std::unordered_map<land::LandID, std::unique_ptr<LandEditor>>        editors_;   // 领地数据编辑器
+    std::unordered_map<land::UUIDs, std::unordered_set<land::SharedLand>> lands_;     // 领地缓存
+    std::unordered_map<land::UUIDs, std::string>                          realNames_; // 玩家名缓存
+    std::unordered_map<land::UUIDs, bool>                                 isShow_;    // 是否显示该玩家的领地
+    std::unordered_map<land::LandID, std::unique_ptr<LandEditor>>         editors_;   // 领地数据编辑器
 
     bool showAllPlayerLand_{true}; // 是否显示所有玩家的领地
     bool showOrdinaryLand_{true};  // 是否显示普通领地
@@ -38,10 +38,10 @@ public:
         EditLand,  // 编辑领地数据
         ExportLand // 导出领地数据
     };
-    void handleButtonClicked(Buttons bt, land::Land_sptr land);
+    void handleButtonClicked(Buttons bt, land::SharedLand land);
 
-    void handleEditLand(land::Land_sptr land);
-    void handleExportLand(land::Land_sptr land);
+    void handleEditLand(land::SharedLand land);
+    void handleExportLand(land::SharedLand land);
 
     void renderCacheLand(); // 渲染缓存的领地
 

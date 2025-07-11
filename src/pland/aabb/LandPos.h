@@ -7,6 +7,12 @@
 
 namespace land {
 
+template <typename T>
+concept HasXYZ = requires(T const& t) {
+    { t.x } -> std::convertible_to<int>;
+    { t.y } -> std::convertible_to<int>;
+    { t.z } -> std::convertible_to<int>;
+};
 
 /**
  * @brief 领地坐标
@@ -16,7 +22,18 @@ public:
     int x, y, z;
 
     LDNDAPI static LandPos make(int x, int y, int z);
-    LDNDAPI static LandPos make(BlockPos const& pos);
+
+    template <typename T>
+        requires HasXYZ<T>
+    static LandPos make(T const& t) {
+        return make(t.x, t.y, t.z);
+    }
+
+    template <typename T = BlockPos>
+        requires HasXYZ<T>
+    T as() const {
+        return {x, y, z};
+    }
 
     LDNDAPI std::string toString() const;
 
@@ -30,8 +47,6 @@ public:
     LDAPI LandPos& operator=(BlockPos const& pos);
     LDAPI bool     operator==(BlockPos const& pos) const;
     LDAPI bool     operator!=(BlockPos const& pos) const;
-    LDAPI          operator BlockPos() const;
-    LDAPI          operator Vec3() const;
 };
 
 

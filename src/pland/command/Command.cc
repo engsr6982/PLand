@@ -192,7 +192,7 @@ static auto const New = [](CommandOrigin const& ori, CommandOutput& out, NewPara
         }
 
         auto uuidStr = player.getUuid().asString();
-        if (!land->isLandOwner(uuidStr)) {
+        if (!land->isOwner(uuidStr)) {
             mc_utils::sendText(out, "当前位置不是你的领地"_trf(player));
             return;
         }
@@ -352,11 +352,11 @@ static auto const SetLandTeleportPos = [](CommandOrigin const& ori, CommandOutpu
     }
 
     auto uuid = player.getUuid().asString();
-    if (!land->isLandOwner(uuid) && !db.isOperator(uuid)) {
+    if (!land->isOwner(uuid) && !db.isOperator(uuid)) {
         mc_utils::sendText<mc_utils::LogLevel::Error>(out, "您不是领地主人，无法设置传送点"_trf(player));
         return;
     }
-    land->mTeleportPos = player.getPosition();
+    land->setTeleportPos(LandPos::make(player.getPosition()))  ;
 };
 
 
@@ -416,7 +416,7 @@ static auto const This = [](CommandOrigin const& ori, CommandOutput& out) {
     }
 
     auto uuidStr = player.getUuid().asString();
-    if (!land->isLandOwner(uuidStr) && !LandRegistry::getInstance().isOperator(uuidStr)) {
+    if (!land->isOwner(uuidStr) && !LandRegistry::getInstance().isOperator(uuidStr)) {
         mc_utils::sendText<mc_utils::LogLevel::Info>(player, "当前位置不是你的领地"_trf(player));
         return;
     }

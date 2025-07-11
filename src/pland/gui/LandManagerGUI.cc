@@ -30,15 +30,14 @@
 #include <vector>
 
 
-
 using namespace ll::form;
 
 namespace land {
 
 
-void LandManagerGUI::sendMainMenu(Player& player, Land_sptr land) {
+void LandManagerGUI::sendMainMenu(Player& player, SharedLand land) {
     auto fm = BackSimpleForm<>::make();
-    fm.setTitle(PLUGIN_NAME + ("| 领地管理 [{}]"_trf(player, land->getLandID())));
+    fm.setTitle(PLUGIN_NAME + ("| 领地管理 [{}]"_trf(player, land->getId())));
 
     string subContent;
     if (land->isParentLand()) {
@@ -47,28 +46,30 @@ void LandManagerGUI::sendMainMenu(Player& player, Land_sptr land) {
         subContent = "下属子领地: {}\n父领地ID: {}\n父领地名称: {}"_trf(
             player,
             land->getSubLands().size(),
-            land->mParentLandID,
-            land->getParentLand() ? land->getParentLand()->getLandName() : "nullptr"
+            land->getParentLand()->getId(),
+            land->getParentLand() ? land->getParentLand()->getName() : "nullptr"
         );
     } else {
         subContent = "父领地ID: {}\n父领地名称: {}"_trf(
             player,
-            land->mParentLandID,
-            land->getParentLand() ? land->getParentLand()->getLandName() : "nullptr"
+            land->getParentLand()->getId(),
+            land->getParentLand() ? land->getParentLand()->getName() : "nullptr"
         );
     }
 
-    fm.setContent("领地: {}\n类型: {}\n大小: {}x{}x{} = {}\n范围: {}\n\n{}"_trf(
-        player,
-        land->getLandName(),
-        land->is3DLand() ? "3D" : "2D",
-        land->getLandPos().getDepth(),
-        land->getLandPos().getWidth(),
-        land->getLandPos().getHeight(),
-        land->getLandPos().getVolume(),
-        land->getLandPos().toString(),
-        subContent
-    ));
+    fm.setContent(
+        "领地: {}\n类型: {}\n大小: {}x{}x{} = {}\n范围: {}\n\n{}"_trf(
+            player,
+            land->getName(),
+            land->is3D() ? "3D" : "2D",
+            land->getAABB().getDepth(),
+            land->getAABB().getWidth(),
+            land->getAABB().getHeight(),
+            land->getAABB().getVolume(),
+            land->getAABB().toString(),
+            subContent
+        )
+    );
 
 
     fm.appendButton("编辑权限"_trf(player), "textures/ui/sidebar_icons/promotag", "path", [land](Player& pl) {
@@ -91,9 +92,9 @@ void LandManagerGUI::sendMainMenu(Player& player, Land_sptr land) {
         });
 
         // 如果玩家在领地内，则显示设置传送点按钮
-        if (land->mPos.hasPos(player.getPosition())) {
+        if (land->getAABB().hasPos(player.getPosition())) {
             fm.appendButton("设置传送点"_trf(player), "textures/ui/Add-Ons_Nav_Icon36x36", "path", [land](Player& pl) {
-                land->mTeleportPos = pl.getPosition();
+                land->setTeleportPos(LandPos::make(pl.getPosition()));
                 mc_utils::sendText(pl, "领地传送点已设置!"_trf(pl));
             });
         }
@@ -116,14 +117,14 @@ void LandManagerGUI::sendMainMenu(Player& player, Land_sptr land) {
     fm.sendTo(player);
 }
 
-void LandManagerGUI::sendEditLandPermGUI(Player& player, Land_sptr const& ptr) {
+void LandManagerGUI::sendEditLandPermGUI(Player& player, SharedLand const& ptr) {
     CustomForm fm(PLUGIN_NAME + " | 编辑权限"_trf(player));
 
     auto& i18n = ll::i18n::getInstance();
 
     auto localeCode = GetPlayerLocaleCodeFromSettings(player);
 
-    auto js = JSON::structTojson(ptr->getLandPermTableConst());
+    auto js = JSON::structTojson(ptr->getPermTable());
     for (auto& [k, v] : js.items()) {
         fm.appendToggle(k, (string)i18n.get(k, localeCode), v);
     }
@@ -133,21 +134,22 @@ void LandManagerGUI::sendEditLandPermGUI(Player& player, Land_sptr const& ptr) {
             return;
         }
 
-        auto& perm = ptr->getLandPermTable();
-        auto  j    = JSON::structTojson(perm);
+        auto obj = ptr->getPermTable();
+        auto j   = JSON::structTojson(obj);
         for (auto const& [key, value] : j.items()) {
             bool const val = std::get<uint64_t>(res->at(key));
             j[key]         = val;
         }
 
-        JSON::jsonToStructNoMerge(j, perm);
+        JSON::jsonToStructNoMerge(j, obj);
+        ptr->setPermTable(obj);
 
         mc_utils::sendText(pl, "权限表已更新"_trf(pl));
     });
 }
 
 
-void LandManagerGUI::sendRemoveConfirmGUI(Player& player, Land_sptr const& ptr) {
+void LandManagerGUI::sendRemoveConfirmGUI(Player& player, SharedLand const& ptr) {
     if (ptr->isOrdinaryLand() || ptr->isSubLand()) {
         _implRemoveWithOrdinaryOrSubLandGUI(player, ptr);
     } else if (ptr->isParentLand()) {
@@ -157,9 +159,9 @@ void LandManagerGUI::sendRemoveConfirmGUI(Player& player, Land_sptr const& ptr) 
     }
 }
 
-void LandManagerGUI::_implRemoveWithOrdinaryOrSubLandGUI(Player& player, Land_sptr const& ptr) {
-    int price = static_cast<int>(Land::calculatePriceRecursively(ptr, [](Land_sptr const& land, llong& price) {
-        price += PriceCalculate::calculateRefundsPrice(land->mOriginalBuyPrice, Config::cfg.land.refundRate);
+void LandManagerGUI::_implRemoveWithOrdinaryOrSubLandGUI(Player& player, SharedLand const& ptr) {
+    int price = static_cast<int>(Land::calculatePriceRecursively(ptr, [](SharedLand const& land, llong& price) {
+        price += PriceCalculate::calculateRefundsPrice(land->getOriginalBuyPrice(), Config::cfg.land.refundRate);
         return true;
     }));
 
@@ -167,7 +169,7 @@ void LandManagerGUI::_implRemoveWithOrdinaryOrSubLandGUI(Player& player, Land_sp
         PLUGIN_NAME + " | 确认删除?"_trf(player),
         "您确定要删除领地 {} 吗?\n删除领地后，您将获得 {} 金币的退款。\n此操作不可逆,请谨慎操作!"_trf(
             player,
-            ptr->getLandName(),
+            ptr->getName(),
             price
         ),
         "确认"_trf(player),
@@ -182,7 +184,7 @@ void LandManagerGUI::_implRemoveWithOrdinaryOrSubLandGUI(Player& player, Land_sp
                 return;
             }
 
-            PlayerDeleteLandBeforeEvent ev(pl, ptr->getLandID(), price);
+            PlayerDeleteLandBeforeEvent ev(pl, ptr->getId(), price);
             ll::event::EventBus::getInstance().publish(ev);
             if (ev.isCancelled()) {
                 return;
@@ -201,13 +203,13 @@ void LandManagerGUI::_implRemoveWithOrdinaryOrSubLandGUI(Player& player, Land_sp
             }
 
             auto handle = DrawHandleManager::getInstance().getOrCreateHandle(pl);
-            handle->remove(ptr->getLandID());
+            handle->remove(ptr->getId());
 
-            ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, ptr->getLandID()});
+            ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, ptr->getId()});
         });
 }
 
-void LandManagerGUI::_implRemoveParentLandGUI(Player& player, Land_sptr const& ptr) {
+void LandManagerGUI::_implRemoveParentLandGUI(Player& player, SharedLand const& ptr) {
     auto fm = BackSimpleForm<>::make<LandManagerGUI::sendMainMenu>(ptr);
     fm.setTitle(PLUGIN_NAME + "| 删除领地 & 父领地"_trf(player));
     fm.setContent(
@@ -215,12 +217,12 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, Land_sptr const& p
     );
 
     fm.appendButton("删除当前领地和子领地"_trf(player), [ptr](Player& pl) {
-        int price = static_cast<int>(Land::calculatePriceRecursively(ptr, [](Land_sptr const& land, llong& price) {
-            price += PriceCalculate::calculateRefundsPrice(land->mOriginalBuyPrice, Config::cfg.land.refundRate);
+        int price = static_cast<int>(Land::calculatePriceRecursively(ptr, [](SharedLand const& land, llong& price) {
+            price += PriceCalculate::calculateRefundsPrice(land->getOriginalBuyPrice(), Config::cfg.land.refundRate);
             return true;
         }));
 
-        auto mainLandId = ptr->getLandID();
+        auto mainLandId = ptr->getId();
 
         PlayerDeleteLandBeforeEvent ev(pl, mainLandId, price);
         ll::event::EventBus::getInstance().publish(ev);
@@ -235,13 +237,13 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, Land_sptr const& p
 
         std::vector<LandID> drawId;
         {
-            std::stack<Land_sptr> stack;
+            std::stack<SharedLand> stack;
             stack.push(ptr);
             while (!stack.empty()) {
-                Land_sptr current = stack.top();
+                SharedLand current = stack.top();
                 stack.pop();
 
-                drawId.push_back(current->getLandID());
+                drawId.push_back(current->getId());
                 if (current->hasSubLand()) {
                     for (auto& subLand : current->getSubLands()) {
                         if (subLand) stack.push(subLand);
@@ -264,9 +266,10 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, Land_sptr const& p
         ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, mainLandId});
     });
     fm.appendButton("删除当前领地并提升子领地为父领地"_trf(player), [ptr](Player& pl) {
-        int refundPrice = PriceCalculate::calculateRefundsPrice(ptr->mOriginalBuyPrice, Config::cfg.land.refundRate);
+        int refundPrice =
+            PriceCalculate::calculateRefundsPrice(ptr->getOriginalBuyPrice(), Config::cfg.land.refundRate);
 
-        PlayerDeleteLandBeforeEvent ev(pl, ptr->getLandID(), refundPrice);
+        PlayerDeleteLandBeforeEvent ev(pl, ptr->getId(), refundPrice);
         ll::event::EventBus::getInstance().publish(ev);
         if (ev.isCancelled()) {
             return;
@@ -283,14 +286,14 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, Land_sptr const& p
             return;
         }
 
-        auto landId = ptr->getLandID();
+        auto landId = ptr->getId();
         DrawHandleManager::getInstance().getOrCreateHandle(pl)->remove(landId);
         ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, landId});
     });
 
     fm.sendTo(player);
 }
-void LandManagerGUI::_implRemoveMixLandGUI(Player& player, Land_sptr const& ptr) {
+void LandManagerGUI::_implRemoveMixLandGUI(Player& player, SharedLand const& ptr) {
     auto fm = BackSimpleForm<>::make<LandManagerGUI::sendMainMenu>(ptr);
     fm.setTitle(PLUGIN_NAME + "| 删除领地 & 混合领地"_trf(player));
     fm.setContent(
@@ -298,12 +301,12 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, Land_sptr const& ptr)
     );
 
     fm.appendButton("删除当前领地和子领地"_trf(player), [ptr](Player& pl) {
-        int price = static_cast<int>(Land::calculatePriceRecursively(ptr, [](Land_sptr const& land, llong& price) {
-            price += PriceCalculate::calculateRefundsPrice(land->mOriginalBuyPrice, Config::cfg.land.refundRate);
+        int price = static_cast<int>(Land::calculatePriceRecursively(ptr, [](SharedLand const& land, llong& price) {
+            price += PriceCalculate::calculateRefundsPrice(land->getOriginalBuyPrice(), Config::cfg.land.refundRate);
             return true;
         }));
 
-        auto mainLandId = ptr->getLandID();
+        auto mainLandId = ptr->getId();
 
         PlayerDeleteLandBeforeEvent ev(pl, mainLandId, price);
         ll::event::EventBus::getInstance().publish(ev);
@@ -318,13 +321,13 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, Land_sptr const& ptr)
 
         std::vector<LandID> drawId;
         {
-            std::stack<Land_sptr> stack;
+            std::stack<SharedLand> stack;
             stack.push(ptr);
             while (!stack.empty()) {
-                Land_sptr current = stack.top();
+                SharedLand current = stack.top();
                 stack.pop();
 
-                drawId.push_back(current->getLandID());
+                drawId.push_back(current->getId());
                 if (current->hasSubLand()) {
                     for (auto& subLand : current->getSubLands()) {
                         if (subLand) stack.push(subLand);
@@ -347,9 +350,10 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, Land_sptr const& ptr)
         ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, mainLandId});
     });
     fm.appendButton("删除当前领地并移交子领地给父领地"_trf(player), [ptr](Player& pl) {
-        int refundPrice = PriceCalculate::calculateRefundsPrice(ptr->mOriginalBuyPrice, Config::cfg.land.refundRate);
+        int refundPrice =
+            PriceCalculate::calculateRefundsPrice(ptr->getOriginalBuyPrice(), Config::cfg.land.refundRate);
 
-        PlayerDeleteLandBeforeEvent ev(pl, ptr->getLandID(), refundPrice);
+        PlayerDeleteLandBeforeEvent ev(pl, ptr->getId(), refundPrice);
         ll::event::EventBus::getInstance().publish(ev);
         if (ev.isCancelled()) {
             return;
@@ -366,7 +370,7 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, Land_sptr const& ptr)
             return;
         }
 
-        auto landId = ptr->getLandID();
+        auto landId = ptr->getId();
         DrawHandleManager::getInstance().getOrCreateHandle(pl)->remove(landId);
         ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, landId});
     });
@@ -374,38 +378,38 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, Land_sptr const& ptr)
     fm.sendTo(player);
 }
 
-void LandManagerGUI::sendEditLandNameGUI(Player& player, Land_sptr const& ptr) {
+void LandManagerGUI::sendEditLandNameGUI(Player& player, SharedLand const& ptr) {
     EditStringUtilGUI::sendTo(
         player,
         "修改领地名称"_trf(player),
         "请输入新的领地名称"_trf(player),
-        ptr->getLandName(),
+        ptr->getName(),
         [ptr](Player& pl, string result) {
-            ptr->setLandName(result);
+            ptr->setName(result);
             mc_utils::sendText(pl, "领地名称已更新!"_trf(pl));
         }
     );
 }
-void LandManagerGUI::sendEditLandDescGUI(Player& player, Land_sptr const& ptr) {
+void LandManagerGUI::sendEditLandDescGUI(Player& player, SharedLand const& ptr) {
     EditStringUtilGUI::sendTo(
         player,
         "修改领地描述"_trf(player),
         "请输入新的领地描述"_trf(player),
-        ptr->getLandDescribe(),
+        ptr->getDescribe(),
         [ptr](Player& pl, string result) {
-            ptr->setLandDescribe(result);
+            ptr->setDescribe(result);
             mc_utils::sendText(pl, "领地描述已更新!"_trf(pl));
         }
     );
 }
-void LandManagerGUI::sendTransferLandGUI(Player& player, Land_sptr const& ptr) {
+void LandManagerGUI::sendTransferLandGUI(Player& player, SharedLand const& ptr) {
     ChooseOnlinePlayerUtilGUI::sendTo(player, [ptr](Player& self, Player& target) {
         if (self.getUuid() == target.getUuid()) {
             mc_utils::sendText(self, "不能将领地转让给自己, 左手倒右手哦!"_trf(self));
             return;
         }
 
-        LandOwnerChangeBeforeEvent ev(self, target, ptr->getLandID());
+        LandOwnerChangeBeforeEvent ev(self, target, ptr->getId());
         ll::event::EventBus::getInstance().publish(ev);
         if (ev.isCancelled()) {
             return;
@@ -437,23 +441,21 @@ void LandManagerGUI::sendTransferLandGUI(Player& player, Land_sptr const& ptr) {
                     return;
                 }
 
-                if (ptr->setLandOwner(target->getUuid().asString())) {
-                    mc_utils::sendText(self, "领地已转让给 {}"_trf(self, target->getRealName()));
-                    mc_utils::sendText(
-                        target,
-                        "您已成功接手来自 \"{}\" 的领地 \"{}\""_trf(self, self.getRealName(), ptr->getLandName())
-                    );
+                ptr->setOwner(target->getUuid().asString());
 
-                    LandOwnerChangeAfterEvent ev(self, *target, ptr->getLandID());
-                    ll::event::EventBus::getInstance().publish(ev);
-                } else {
-                    mc_utils::sendText<mc_utils::LogLevel::Error>(self, "领地转让失败!"_trf(self));
-                }
+                mc_utils::sendText(self, "领地已转让给 {}"_trf(self, target->getRealName()));
+                mc_utils::sendText(
+                    target,
+                    "您已成功接手来自 \"{}\" 的领地 \"{}\""_trf(self, self.getRealName(), ptr->getName())
+                );
+
+                LandOwnerChangeAfterEvent ev(self, *target, ptr->getId());
+                ll::event::EventBus::getInstance().publish(ev);
             }
         );
     });
 }
-void LandManagerGUI::sendChangLandRangeGUI(Player& player, Land_sptr const& ptr) {
+void LandManagerGUI::sendChangLandRangeGUI(Player& player, SharedLand const& ptr) {
     ModalForm fm(
         PLUGIN_NAME + " | 重新选区"_trf(player),
         "重新选区为完全重新选择领地的范围，非直接扩充/缩小现有领地范围。\n重新选择的价格计算方式为\"新范围价格 — 旧范围价值\"，是否继续？"_trf(
@@ -480,7 +482,7 @@ void LandManagerGUI::sendChangLandRangeGUI(Player& player, Land_sptr const& ptr)
 }
 
 
-void LandManagerGUI::sendChangeMemberGUI(Player& player, Land_sptr ptr) {
+void LandManagerGUI::sendChangeMemberGUI(Player& player, SharedLand ptr) {
     auto fm = BackSimpleForm<>::make<LandManagerGUI::sendMainMenu>(ptr);
 
     fm.appendButton("添加成员"_trf(player), "textures/ui/color_plus", "path", [ptr](Player& self) {
@@ -488,7 +490,7 @@ void LandManagerGUI::sendChangeMemberGUI(Player& player, Land_sptr ptr) {
     });
 
     auto& infos = ll::service::PlayerInfo::getInstance();
-    for (auto& member : ptr->getLandMembers()) {
+    for (auto& member : ptr->getMembers()) {
         auto i = infos.fromUuid(UUIDm::fromString(member));
         if (!i) {
             mod::ModEntry::getInstance().getSelf().getLogger().warn("Failed to get player info of {}", member);
@@ -501,7 +503,7 @@ void LandManagerGUI::sendChangeMemberGUI(Player& player, Land_sptr ptr) {
 
     fm.sendTo(player);
 }
-void LandManagerGUI::_sendAddMemberGUI(Player& player, Land_sptr ptr) {
+void LandManagerGUI::_sendAddMemberGUI(Player& player, SharedLand ptr) {
     ChooseOnlinePlayerUtilGUI::sendTo(
         player,
         [ptr](Player& self, Player& target) {
@@ -511,7 +513,7 @@ void LandManagerGUI::_sendAddMemberGUI(Player& player, Land_sptr ptr) {
                 return;
             }
 
-            LandMemberChangeBeforeEvent ev(self, target.getUuid().asString(), ptr->getLandID(), true);
+            LandMemberChangeBeforeEvent ev(self, target.getUuid().asString(), ptr->getId(), true);
             ll::event::EventBus::getInstance().publish(ev);
             if (ev.isCancelled()) {
                 return;
@@ -540,27 +542,24 @@ void LandManagerGUI::_sendAddMemberGUI(Player& player, Land_sptr ptr) {
                         return;
                     }
 
-                    if (ptr->isLandMember(target->getUuid().asString())) {
+                    if (ptr->isMember(target->getUuid().asString())) {
                         mc_utils::sendText(self, "该玩家已经是领地成员, 请不要重复添加哦!"_trf(self));
                         return;
                     }
 
-                    if (ptr->addLandMember(target->getUuid().asString())) {
-                        mc_utils::sendText(self, "添加成功!"_trf(self));
+                    ptr->addLandMember(target->getUuid().asString());
+                    mc_utils::sendText(self, "添加成功!"_trf(self));
 
-                        LandMemberChangeAfterEvent ev(self, target->getUuid().asString(), ptr->getLandID(), true);
-                        ll::event::EventBus::getInstance().publish(ev);
-                    } else {
-                        mc_utils::sendText(self, "添加失败!"_trf(self));
-                    }
+                    LandMemberChangeAfterEvent ev(self, target->getUuid().asString(), ptr->getId(), true);
+                    ll::event::EventBus::getInstance().publish(ev);
                 }
             );
         },
         BackSimpleForm<>::makeCallback<sendChangeMemberGUI>(ptr)
     );
 }
-void LandManagerGUI::_sendRemoveMemberGUI(Player& player, Land_sptr ptr, UUIDs member) {
-    LandMemberChangeBeforeEvent ev(player, member, ptr->getLandID(), false);
+void LandManagerGUI::_sendRemoveMemberGUI(Player& player, SharedLand ptr, UUIDs member) {
+    LandMemberChangeBeforeEvent ev(player, member, ptr->getId(), false);
     ll::event::EventBus::getInstance().publish(ev);
     if (ev.isCancelled()) {
         return;
@@ -587,14 +586,11 @@ void LandManagerGUI::_sendRemoveMemberGUI(Player& player, Land_sptr ptr, UUIDs m
             return;
         }
 
-        if (ptr->removeLandMember(member)) {
-            mc_utils::sendText(self, "移除成功!"_trf(self));
+        ptr->removeLandMember(member);
+        mc_utils::sendText(self, "移除成功!"_trf(self));
 
-            LandMemberChangeAfterEvent ev(self, member, ptr->getLandID(), false);
-            ll::event::EventBus::getInstance().publish(ev);
-        } else {
-            mc_utils::sendText(self, "移除失败!"_trf(self));
-        }
+        LandMemberChangeAfterEvent ev(self, member, ptr->getId(), false);
+        ll::event::EventBus::getInstance().publish(ev);
     });
 }
 

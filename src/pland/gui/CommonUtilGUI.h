@@ -12,7 +12,7 @@ class ChooseLandUtilGUI {
 public:
     ChooseLandUtilGUI() = delete;
 
-    using ChooseCallback = std::function<void(Player&, Land_sptr choosedLand)>;
+    using ChooseCallback = std::function<void(Player&, SharedLand choosedLand)>;
     LDAPI static void sendTo(
         Player&                          player,
         ChooseCallback const&            callback,
@@ -51,8 +51,8 @@ class FuzzySerarchUtilGUI {
 public:
     FuzzySerarchUtilGUI() = delete;
 
-    using CallBack = std::function<void(Player& slef, std::vector<Land_sptr> result)>;
-    LDAPI static void sendTo(Player& player, std::vector<Land_sptr> list, CallBack callback);
+    using CallBack = std::function<void(Player& slef, std::vector<SharedLand> result)>;
+    LDAPI static void sendTo(Player& player, std::vector<SharedLand> list, CallBack callback);
 };
 
 

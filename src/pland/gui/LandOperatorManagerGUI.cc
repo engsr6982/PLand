@@ -53,14 +53,14 @@ void LandOperatorManagerGUI::sendChoosePlayerFromDb(Player& player, ChoosePlayer
 
     std::unordered_set<UUIDs> filtered; // 防止重复
     for (auto const& ptr : lands) {
-        if (filtered.contains(ptr->getLandOwner())) {
+        if (filtered.contains(ptr->getOwner())) {
             continue;
         }
-        filtered.insert(ptr->getLandOwner());
-        auto info = infos.fromUuid(UUIDm::fromString(ptr->getLandOwner()));
+        filtered.insert(ptr->getOwner());
+        auto info = infos.fromUuid(UUIDm::fromString(ptr->getOwner()));
 
-        fm.appendButton(info.has_value() ? info->name : ptr->getLandOwner(), [ptr, callback](Player& self) {
-            callback(self, ptr->getLandOwner());
+        fm.appendButton(info.has_value() ? info->name : ptr->getOwner(), [ptr, callback](Player& self) {
+            callback(self, ptr->getOwner());
         });
     }
 
@@ -72,7 +72,7 @@ void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, UUIDs const& targ
     sendChooseLandGUI(player, LandRegistry::getInstance().getLands(targetPlayer));
 }
 
-void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, std::vector<Land_sptr> lands) {
+void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, std::vector<SharedLand> lands) {
     // auto fm = BackSimpleForm<>::make<LandOperatorManagerGUI::sendMainMenu>();
     auto fm = BackSimpleForm<BackPaginatedSimpleForm>::make<LandOperatorManagerGUI::sendMainMenu>();
     fm.setTitle(PLUGIN_NAME + " | 领地列表"_trf(player));
@@ -88,13 +88,13 @@ void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, std::vector<Land_
 
     auto const& infos = ll::service::PlayerInfo::getInstance();
     for (auto const& ptr : lands) {
-        auto info = infos.fromUuid(UUIDm::fromString(ptr->getLandOwner()));
+        auto info = infos.fromUuid(UUIDm::fromString(ptr->getOwner()));
         fm.appendButton(
             "{}\nID: {}  玩家: {}"_trf(
                 player,
-                ptr->getLandName(),
-                ptr->getLandID(),
-                info.has_value() ? info->name : ptr->getLandOwner()
+                ptr->getName(),
+                ptr->getId(),
+                info.has_value() ? info->name : ptr->getOwner()
             ),
             [ptr](Player& self) { LandManagerGUI::sendMainMenu(self, ptr); }
         );

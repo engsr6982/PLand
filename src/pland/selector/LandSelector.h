@@ -73,7 +73,7 @@ public:
     LDAPI void fixAABBMinMax();
 
     /* 从选区数据创建领地 */
-    LDNDAPI Land_sptr newLand() const;
+    LDNDAPI SharedLand newLand() const;
 
     /* 获取选择器类别 */
     LDNDAPI Type getType() const;
@@ -114,28 +114,28 @@ public:
 
 
 class LandReSelector final : public Selector {
-    Land_wptr mLand;
+    WeakLand mLand;
 
     DrawHandle::UniqueDrawId mOldBoxGeoId;
 
 public:
-    LDNDAPI explicit LandReSelector(Player& player, Land_sptr const& data);
+    LDNDAPI explicit LandReSelector(Player& player, SharedLand const& data);
 
     LDAPI ~LandReSelector() override;
 
-    LDNDAPI Land_sptr getLand() const;
+    LDNDAPI SharedLand getLand() const;
 };
 
 class SubLandSelector final : public Selector {
-    Land_wptr                mParentLand;
+    WeakLand                 mParentLand;
     DrawHandle::UniqueDrawId mParentRangeBoxGeoId;
 
 public:
-    LDNDAPI explicit SubLandSelector(Player& player, Land_sptr const& data);
+    LDNDAPI explicit SubLandSelector(Player& player, SharedLand const& data);
 
     LDAPI ~SubLandSelector() override;
 
-    LDNDAPI Land_sptr getParentLand() const;
+    LDNDAPI SharedLand getParentLand() const;
 
     LDAPI void onABSelected() override;
 };
