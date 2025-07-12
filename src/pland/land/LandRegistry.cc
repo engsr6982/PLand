@@ -55,7 +55,7 @@ void LandRegistry::_loadPlayerSettings() {
     }
 }
 
-void LandRegistry::_openDBAndCheckVersion() {
+void LandRegistry::_connectDatabaseAndCheckVersion() {
     auto&       self    = mod::ModEntry::getInstance().getSelf();
     auto&       logger  = self.getLogger();
     auto const& dataDir = self.getDataDir();
@@ -115,12 +115,12 @@ void LandRegistry::_openDBAndCheckVersion() {
             backup();
             mDB = std::make_unique<ll::data::KeyValueDB>(dbDir);
             mDB->set(dbVersionKey, std::to_string(LandContextVersion)); // 更新版本号
-            // 这里只需要修改版本号以及备份，其它兼容转换操作将在 _checkAndAdaptBreakingChanges 中进行
+            // 这里只需要修改版本号以及备份，其它兼容转换操作将在 _checkVersionAndTryAdaptBreakingChanges 中进行
         }
     }
 }
 
-void LandRegistry::_checkAndAdaptBreakingChanges(nlohmann::json& landData) {
+void LandRegistry::_checkVersionAndTryAdaptBreakingChanges(nlohmann::json& landData) {
     constexpr int LANDDATA_NEW_POS_KEY_VERSION = 15; // 在此版本后，LandAABB 使用了新的键名
 
     if (landData["version"].get<int>() < LANDDATA_NEW_POS_KEY_VERSION) {
@@ -158,7 +158,7 @@ void LandRegistry::_loadLands() {
         auto json = JSON::parse(value);
         auto ctx  = LandContext{};
 
-        _checkAndAdaptBreakingChanges(json);
+        _checkVersionAndTryAdaptBreakingChanges(json);
         JSON::jsonToStruct(json, ctx);
         auto land = Land::make(std::move(ctx));
 
@@ -171,55 +171,26 @@ void LandRegistry::_loadLands() {
     }
 
     mLandIdAllocator = std::make_unique<LandIdAllocator>(safeId); // 初始化ID分配器
-
-    auto& logger = mod::ModEntry::getInstance().getSelf().getLogger();
-    logger.info("已加载 {} 位操作员", mLandOperators.size());
-    logger.info("已加载 {} 块领地数据", mLandCache.size());
 }
 
-void LandRegistry::_initLandMap() {
+void LandRegistry::_buildDimensionChunkMap() {
     for (auto& [id, land] : mLandCache) {
-        auto& chunkMap = mLandMap[LandDimid(land->getDimensionId())]; // 区块表
-
-        auto chs = land->getAABB().getChunks();
-        for (auto& ch : chs) {
-            auto  chunkID      = LandRegistry::EncodeChunkID(ch.x, ch.z);
-            auto& chunkLandVec = chunkMap[chunkID]; // 区块领地数组
-
-            chunkLandVec.insert(land->getId());
-        }
-    }
-    mod::ModEntry::getInstance().getSelf().getLogger().info("初始化领地缓存系统完成");
-}
-
-void LandRegistry::_updateLandMap(SharedLand const& ptr, bool add) {
-    auto chunks = ptr->getAABB().getChunks();
-    for (auto& ch : chunks) {
-        auto& chunkLands = mLandMap[ptr->getDimensionId()][EncodeChunkID(ch.x, ch.z)];
-
-        if (add) {
-            chunkLands.insert(ptr->getId());
-        } else {
-            chunkLands.erase(ptr->getId());
-        }
+        mDimensionChunkMap.addLand(land);
     }
 }
-void LandRegistry::_refreshLandRange(SharedLand const& ptr) {
-    _updateLandMap(ptr, false);
-    _updateLandMap(ptr, true);
-}
 
-LandID LandRegistry::getNextLandID() { return mLandIdAllocator->nextId(); }
+LandID LandRegistry::getNextLandID() const { return mLandIdAllocator->nextId(); }
 
 Result<void, StorageLayerError::Error> LandRegistry::_removeLand(SharedLand const& ptr) {
-    _updateLandMap(ptr, false); // 擦除映射表
+    mDimensionChunkMap.removeLand(ptr);
     if (!mLandCache.erase(ptr->getId())) {
+        mDimensionChunkMap.addLand(ptr);
         return std::unexpected(StorageLayerError::Error::STLMapError);
     }
 
     if (!this->mDB->del(std::to_string(ptr->getId()))) {
         mLandCache.emplace(ptr->getId(), ptr); // rollback
-        _updateLandMap(ptr, true);
+        mDimensionChunkMap.addLand(ptr);
         return std::unexpected(StorageLayerError::Error::DBError);
     }
     return {};
@@ -231,17 +202,27 @@ Result<void, StorageLayerError::Error> LandRegistry::_removeLand(SharedLand cons
 namespace land {
 
 void LandRegistry::init() {
-    _openDBAndCheckVersion();
+    auto& logger = mod::ModEntry::getInstance().getSelf().getLogger();
 
-    std::unique_lock<std::shared_mutex> lock(mMutex); // 获取锁
+    logger.trace("打开数据库...");
+    _connectDatabaseAndCheckVersion();
 
+    auto lock = std::unique_lock<std::shared_mutex>(mMutex);
+    logger.trace("加载操作员...");
     _loadOperators();
+    logger.info("已加载 {} 位操作员", mLandOperators.size());
 
+    logger.trace("加载玩家设置...");
     _loadPlayerSettings();
+    logger.info("已加载 {} 位玩家的设置", mPlayerSettings.size());
 
+    logger.trace("加载领地数据...");
     _loadLands();
+    logger.info("已加载 {} 块领地数据", mLandCache.size());
 
-    _initLandMap();
+    logger.trace("构建维度区块映射...");
+    _buildDimensionChunkMap();
+    logger.info("初始化维度区块映射完成");
 
     lock.unlock();
     mThread = std::thread([this]() {
@@ -279,7 +260,6 @@ LandRegistry& LandRegistry::getInstance() {
     static LandRegistry instance;
     return instance;
 }
-
 
 bool LandRegistry::isOperator(UUIDs const& uuid) const {
     if (uuid.empty()) return false;
@@ -361,13 +341,13 @@ Result<void, StorageLayerError::Error> LandRegistry::addLand(SharedLand land) {
         return std::unexpected(StorageLayerError::Error::STLMapError);
     }
 
-    _updateLandMap(land, true);
+    mDimensionChunkMap.addLand(land);
 
     return {};
 }
 void LandRegistry::refreshLandRange(SharedLand const& ptr) {
     std::unique_lock<std::shared_mutex> lock(mMutex);
-    _refreshLandRange(ptr);
+    mDimensionChunkMap.refreshRange(ptr);
 }
 
 
@@ -454,7 +434,7 @@ Result<void, StorageLayerError::Error> LandRegistry::removeLandAndSubLands(Share
             // rollback
             for (auto land : removedLands) {
                 mLandCache.emplace(land->getId(), land);
-                _updateLandMap(land, true);
+                mDimensionChunkMap.addLand(land);
             }
             if (parent) {
                 parent->mContext.mSubLandIDs.push_back(currentId); // 恢复父领地的子领地列表
@@ -638,20 +618,13 @@ LandPermType LandRegistry::getPermType(UUIDs const& uuid, LandID id, bool ignore
 
 SharedLand LandRegistry::getLandAt(BlockPos const& pos, LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
+    std::unordered_set<SharedLand>      result;
 
-    std::unordered_set<SharedLand> result;
-
-    ChunkID chunkId = EncodeChunkID(pos.x >> 4, pos.z >> 4);
-    auto    dimIt   = mLandMap.find(dimid); // 查找维度
-    if (dimIt != mLandMap.end()) {
-        auto chunkIt = dimIt->second.find(chunkId); // 查找区块
-        if (chunkIt != dimIt->second.end()) {
-            for (const auto& landId : chunkIt->second) {
-                auto landIt = mLandCache.find(landId); // 查找领地
-                if (landIt != mLandCache.end() && landIt->second->getAABB().hasPos(pos, !landIt->second->is3D())) {
-                    // return landIt->second;
-                    result.insert(landIt->second);
-                }
+    auto const& landsIds = mDimensionChunkMap.queryLand(dimid, EncodeChunkID(pos.x >> 4, pos.z >> 4));
+    for (auto const& id : landsIds) {
+        if (auto iter = mLandCache.find(id); iter != mLandCache.end()) {
+            if (auto const& land = iter->second; land->getAABB().hasPos(pos, !land->is3D())) {
+                result.insert(land);
             }
         }
     }
@@ -679,12 +652,10 @@ SharedLand LandRegistry::getLandAt(BlockPos const& pos, LandDimid dimid) const {
 std::unordered_set<SharedLand> LandRegistry::getLandAt(BlockPos const& center, int radius, LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    auto dimIter = mLandMap.find(dimid); // 查找维度
-    if (dimIter == mLandMap.end()) {
+    if (!mDimensionChunkMap.hasDimension(dimid)) {
         return {};
     }
 
-    auto&                          dim = dimIter->second;
     std::unordered_set<ChunkID>    visitedChunks; // 记录已访问的区块
     std::unordered_set<SharedLand> lands;
 
@@ -701,12 +672,11 @@ std::unordered_set<SharedLand> LandRegistry::getLandAt(BlockPos const& center, i
             }
             visitedChunks.insert(chunkId);
 
-            auto chunkIt = dim.find(chunkId); // 查找区块
-            if (chunkIt != dim.end()) {
-                for (const auto& landId : chunkIt->second) {
-                    auto landIt = mLandCache.find(landId); // 查找领地
-                    if (landIt != mLandCache.end() && landIt->second->isCollision(center, radius)) {
-                        lands.insert(landIt->second);
+            auto const& landsIds = mDimensionChunkMap.queryLand(dimid, chunkId);
+            for (auto const& id : landsIds) {
+                if (auto iter = mLandCache.find(id); iter != mLandCache.end()) {
+                    if (auto const& land = iter->second; land->isCollision(center, radius)) {
+                        lands.insert(land);
                     }
                 }
             }
@@ -718,12 +688,10 @@ std::unordered_set<SharedLand>
 LandRegistry::getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    auto dimIter = mLandMap.find(dimid); // 查找维度
-    if (dimIter == mLandMap.end()) {
+    if (!mDimensionChunkMap.hasDimension(dimid)) {
         return {};
     }
 
-    auto&                          dim = dimIter->second;
     std::unordered_set<ChunkID>    visitedChunks;
     std::unordered_set<SharedLand> lands;
 
@@ -740,12 +708,11 @@ LandRegistry::getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid di
             }
             visitedChunks.insert(chunkId);
 
-            auto chunkIt = dim.find(chunkId); // 查找区块
-            if (chunkIt != dim.end()) {
-                for (const auto& landId : chunkIt->second) {
-                    auto landIt = mLandCache.find(landId); // 查找领地
-                    if (landIt != mLandCache.end() && landIt->second->isCollision(pos1, pos2)) {
-                        lands.insert(landIt->second);
+            auto const& landsIds = mDimensionChunkMap.queryLand(dimid, chunkId);
+            for (auto const& id : landsIds) {
+                if (auto iter = mLandCache.find(id); iter != mLandCache.end()) {
+                    if (auto const& land = iter->second; land->isCollision(pos1, pos2)) {
+                        lands.insert(land);
                     }
                 }
             }

@@ -33,9 +33,9 @@ LandAABB LandAABB::make(BlockPos const& min, BlockPos const& max) {
     inst.fix();
     return inst;
 }
-std::string           LandAABB::toString() const { return fmt::format("{} => {}", min.toString(), max.toString()); }
-std::vector<ChunkPos> LandAABB::getChunks() const {
-    std::vector<ChunkPos> chunks;
+std::string LandAABB::toString() const { return fmt::format("{} => {}", min.toString(), max.toString()); }
+std::unordered_set<ChunkPos> LandAABB::getChunks() const {
+    std::unordered_set<ChunkPos> chunks;
 
     int minChunkX = min.x >> 4;
     int minChunkZ = min.z >> 4;
@@ -44,7 +44,7 @@ std::vector<ChunkPos> LandAABB::getChunks() const {
 
     for (int x = minChunkX; x <= maxChunkX; ++x) {
         for (int z = minChunkZ; z <= maxChunkZ; ++z) {
-            chunks.emplace_back(x, z);
+            chunks.insert(ChunkPos{x, z});
         }
     }
     return chunks;

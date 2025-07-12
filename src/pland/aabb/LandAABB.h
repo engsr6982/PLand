@@ -27,7 +27,7 @@ public:
 
     LDNDAPI std::string toString() const;
 
-    LDNDAPI std::vector<ChunkPos> getChunks() const;
+    LDNDAPI std::unordered_set<ChunkPos> getChunks() const;
     LDNDAPI std::vector<BlockPos> getBorder() const;
     LDNDAPI std::vector<BlockPos> getRange() const;
 

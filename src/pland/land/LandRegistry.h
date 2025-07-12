@@ -1,4 +1,5 @@
 #pragma once
+#include "LandDimensionChunkMap.h"
 #include "LandIdAllocator.h"
 #include "StorageLayerError.h"
 #include "ll/api/data/KeyValueDB.h"
@@ -12,7 +13,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-
 
 class Player;
 class BlockPos;
@@ -30,14 +30,8 @@ struct PlayerSettings {
 
 
 class LandRegistry final {
-public:
-    LandRegistry()                               = default;
-    LandRegistry(const LandRegistry&)            = delete;
-    LandRegistry& operator=(const LandRegistry&) = delete;
-    LandRegistry(LandRegistry&&)                 = delete;
-    LandRegistry& operator=(LandRegistry&&)      = delete;
+    LandRegistry() = default;
 
-private:
     std::unique_ptr<ll::data::KeyValueDB>     mDB;                       // 领地数据库
     std::vector<UUIDs>                        mLandOperators;            // 领地操作员
     std::unordered_map<UUIDs, PlayerSettings> mPlayerSettings;           // 玩家设置
@@ -46,33 +40,29 @@ private:
     std::thread                               mThread;                   // 线程
     std::atomic<bool>                         mThreadStopFlag{false};    // 线程停止标志
     std::unique_ptr<LandIdAllocator>          mLandIdAllocator{nullptr}; // 领地ID分配器
-
-    // 维度 -> 区块 -> [领地] (快速查询领地)
-    std::unordered_map<LandDimid, std::unordered_map<ChunkID, std::unordered_set<LandID>>> mLandMap;
+    LandDimensionChunkMap                     mDimensionChunkMap;        // 维度区块映射
 
     friend class DataConverter;
-
 
 private: //! private 方法非线程安全
     void _loadOperators();
     void _loadPlayerSettings();
     void _loadLands();
 
-    void _openDBAndCheckVersion();
-    void _checkAndAdaptBreakingChanges(nlohmann::json& landData); // 检查数据并尝试适配版本不兼容的变更
+    void _connectDatabaseAndCheckVersion();
+    void _checkVersionAndTryAdaptBreakingChanges(nlohmann::json& landData);
 
-    void _initLandMap();
+    void _buildDimensionChunkMap();
 
-    void _updateLandMap(SharedLand const& ptr, bool add);
-    void _refreshLandRange(SharedLand const& ptr);
-
-    LandID getNextLandID();
+    LandID getNextLandID() const;
 
     Result<void, StorageLayerError::Error> _removeLand(SharedLand const& ptr);
 
     Result<void, StorageLayerError::Error> addLand(SharedLand land);
 
 public:
+    LD_DISALLOW_COPY_AND_MOVE(LandRegistry);
+
     LDNDAPI static LandRegistry& getInstance();
 
     LDAPI void init();

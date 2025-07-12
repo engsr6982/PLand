@@ -6,7 +6,6 @@
 #include <stack>
 #include <vector>
 
-
 namespace land {
 
 
@@ -21,6 +20,9 @@ Land::Land(LandAABB const& pos, LandDimid dimid, bool is3D, UUIDs const& owner) 
 
 LandAABB const& Land::getAABB() const { return mContext.mPos; }
 void            Land::setAABB(LandAABB const& pos) {
+    if (!isOrdinaryLand()) {
+        return;
+    }
     mContext.mPos = pos;
     mDirtyCounter.increment();
 }
@@ -178,6 +180,9 @@ void Land::updateXUIDToUUID(UUIDs const& ownerUUID) {
         mDirtyCounter.increment();
     }
 }
+
+void           Land::load(nlohmann::json& json) { JSON::jsonToStruct(json, mContext); }
+nlohmann::json Land::save() const { return JSON::structTojson(mContext); }
 
 
 bool Land::operator==(SharedLand const& other) const { return mContext.mLandID == other->mContext.mLandID; }

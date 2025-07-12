@@ -34,7 +34,7 @@ public:
     LDNDAPI LandAABB const& getAABB() const;
 
     /**
-     * @brief 修改领地范围
+     * @brief 修改领地范围(仅限普通领地)
      * @param pos 领地对角坐标
      * @warning 修改后务必在 LandRegistry 中刷新领地范围，否则范围不会更新
      */
@@ -140,6 +140,9 @@ public:
     LDNDAPI LandPermType getPermType(UUIDs const& uuid) const;
 
     LDAPI void updateXUIDToUUID(UUIDs const& ownerUUID); // xuid -> uuid
+
+    LDAPI void load(nlohmann::json& json);
+    LDAPI nlohmann::json save() const;
 
     LDAPI bool operator==(SharedLand const& other) const;
 
