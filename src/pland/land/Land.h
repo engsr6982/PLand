@@ -18,6 +18,15 @@ using SharedLand = std::shared_ptr<Land>; // 共享指针
 using WeakLand   = std::weak_ptr<Land>;   // 弱指针
 
 class Land final {
+public:
+    enum class Type {
+        Normal = 0, // 普通领地(无父、无子)
+        Parent = 1, // 父领地(无父、有子)
+        Mix    = 2, // 混合领地(有父、有子)
+        Sub    = 3, // 子领地(有父、无子)
+    };
+
+private:
     LandContext  mContext;
     DirtyCounter mDirtyCounter;
 
@@ -88,6 +97,10 @@ public:
 
     LDNDAPI bool isDirty() const; // 是否需要保存(数据有变动)
 
+    /**
+     * @brief 获取领地类型
+     */
+    LDNDAPI Type getType() const;
 
     LDNDAPI bool hasParentLand() const; // 是否有父领地
     LDNDAPI bool hasSubLand() const;    // 是否有子领地

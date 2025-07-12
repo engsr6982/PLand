@@ -85,7 +85,18 @@ bool Land::isConvertedLand() const { return mContext.mIsConvertedLand; }
 bool Land::isOwnerDataIsXUID() const { return mContext.mOwnerDataIsXUID; }
 bool Land::isDirty() const { return mDirtyCounter.isDirty(); }
 
-
+Land::Type Land::getType() const {
+    if (isOrdinaryLand()) [[likely]] {
+        return Type::Normal;
+    } else if (isParentLand()) {
+        return Type::Parent;
+    } else if (isMixLand()) {
+        return Type::Mix;
+    } else if (isSubLand()) {
+        return Type::Sub;
+    }
+    throw std::runtime_error("Unknown land type"); [[unlikely]];
+}
 bool Land::hasParentLand() const { return this->mContext.mParentLandID != static_cast<LandID>(-1); }
 bool Land::hasSubLand() const { return !this->mContext.mSubLandIDs.empty(); }
 bool Land::isSubLand() const {
