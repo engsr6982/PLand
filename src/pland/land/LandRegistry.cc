@@ -388,12 +388,14 @@ Result<void, StorageLayerError::Error> LandRegistry::removeSubLand(SharedLand co
 
     // 移除父领地中的记录
     std::erase_if(parent->mContext.mSubLandIDs, [&](LandID const& id) { return id == ptr->getId(); });
+    parent->mDirtyCounter.increment();
 
     auto result = _removeLand(ptr);
     if (!result.has_value()) {
         parent->mContext.mSubLandIDs.push_back(ptr->getId()); // 恢复父领地的子领地列表
+        parent->mDirtyCounter.decrement();
     }
-    parent->mDirtyCounter.increment();
+
     return result;
 }
 Result<void, StorageLayerError::Error> LandRegistry::removeLandAndSubLands(SharedLand const& ptr) {
@@ -405,6 +407,7 @@ Result<void, StorageLayerError::Error> LandRegistry::removeLandAndSubLands(Share
     auto parent    = ptr->getParentLand();
     if (parent) {
         std::erase_if(parent->mContext.mSubLandIDs, [&](LandID const& id) { return id == currentId; });
+        parent->mDirtyCounter.increment();
     }
 
     std::unique_lock<std::shared_mutex> lock(mMutex);
@@ -437,6 +440,7 @@ Result<void, StorageLayerError::Error> LandRegistry::removeLandAndSubLands(Share
             }
             if (parent) {
                 parent->mContext.mSubLandIDs.push_back(currentId); // 恢复父领地的子领地列表
+                parent->mDirtyCounter.decrement();
             }
             // return std::unexpected("remove land or sub land failed!");
             return result;
@@ -456,6 +460,7 @@ Result<void, StorageLayerError::Error> LandRegistry::removeLandAndPromoteSubLand
     for (auto& subLand : subLands) {
         static const auto invalidID     = LandID(-1); // 无效ID
         subLand->mContext.mParentLandID = invalidID;
+        subLand->mDirtyCounter.increment();
     }
 
     auto result = _removeLand(ptr);
@@ -464,6 +469,7 @@ Result<void, StorageLayerError::Error> LandRegistry::removeLandAndPromoteSubLand
         auto currentId = ptr->getId();
         for (auto& subLand : subLands) {
             subLand->mContext.mParentLandID = currentId;
+            subLand->mDirtyCounter.decrement();
         }
     }
     return result;
@@ -485,10 +491,13 @@ Result<void, StorageLayerError::Error> LandRegistry::removeLandAndTransferSubLan
     for (auto& subLand : subLands) {
         subLand->mContext.mParentLandID = parentID;               // 当前领地的子领地移交给父领地
         parent->mContext.mSubLandIDs.push_back(subLand->getId()); // 父领地记录中添加当前领地的子领地
+        subLand->mDirtyCounter.increment();
+        parent->mDirtyCounter.increment();
     }
 
     // 父领地记录中擦粗当前领地
     std::erase_if(parent->mContext.mSubLandIDs, [&](LandID const& id) { return id == ptr->getId(); });
+    parent->mDirtyCounter.increment();
 
     auto result = _removeLand(ptr);
     if (!result.has_value()) {
@@ -497,8 +506,11 @@ Result<void, StorageLayerError::Error> LandRegistry::removeLandAndTransferSubLan
         for (auto& subLand : subLands) {
             subLand->mContext.mParentLandID = currentId;
             std::erase_if(parent->mContext.mSubLandIDs, [&](LandID const& id) { return id == subLand->getId(); });
+            subLand->mDirtyCounter.decrement();
+            parent->mDirtyCounter.decrement();
         }
         parent->mContext.mSubLandIDs.push_back(currentId); // 恢复父领地的子领地列表
+        parent->mDirtyCounter.decrement();
     }
 
     return result;

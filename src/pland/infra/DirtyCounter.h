@@ -17,6 +17,8 @@ public:
 
     LDAPI void increment(); // 增加计数器
 
+    LDAPI void decrement(); // 减少计数器
+
     LDAPI void reset(); // 重置计数器
 };
 
