@@ -15,31 +15,31 @@ bool LandDimensionChunkMap::hasChunk(LandDimid dimid, ChunkID chunkid) const {
     return mMap.at(dimid).has_left(chunkid);
 }
 
-bool LandDimensionChunkMap::hasLand(LandDimid dimid, ChunkID chunkid, LandID landid) const {
+bool LandDimensionChunkMap::hasLand(LandDimid dimid, LandID landid) const {
     if (!mMap.contains(dimid)) {
         return false;
     }
     return mMap.at(dimid).has_right(landid);
 }
 
-std::unordered_set<LandID> const& LandDimensionChunkMap::queryLand(LandDimid dimId, ChunkID chunkId) const {
+std::unordered_set<LandID> const* LandDimensionChunkMap::queryLand(LandDimid dimId, ChunkID chunkId) const {
     if (!mMap.contains(dimId)) {
-        return {};
+        return nullptr;
     }
     if (!mMap.at(dimId).has_left(chunkId)) {
-        return {};
+        return nullptr;
     }
-    return mMap.at(dimId).at(chunkId);
+    return &mMap.at(dimId).at(chunkId);
 }
 
-std::unordered_set<ChunkID> const& LandDimensionChunkMap::queryChunk(LandDimid dimId, LandID landId) const {
+std::unordered_set<ChunkID> const* LandDimensionChunkMap::queryChunk(LandDimid dimId, LandID landId) const {
     if (!mMap.contains(dimId)) {
-        return {};
+        return nullptr;
     }
     if (!mMap.at(dimId).has_right(landId)) {
-        return {};
+        return nullptr;
     }
-    return mMap.at(dimId).at(landId);
+    return &mMap.at(dimId).at(landId);
 }
 
 void LandDimensionChunkMap::addLand(SharedLand const& land) {
@@ -64,7 +64,7 @@ void LandDimensionChunkMap::removeLand(SharedLand const& land) {
     }
 
     auto& dim = mMap.at(landDimId);
-    for (auto chunkId : queryChunk(landDimId, landId)) {
+    for (auto chunkId : *queryChunk(landDimId, landId)) {
         dim.erase_value(chunkId, landId);
     }
 }

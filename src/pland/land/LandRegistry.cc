@@ -150,8 +150,7 @@ void LandRegistry::_loadLands() {
     auto playerSettingKey = DB_KEY_PLAYER_SETTINGS();
     auto versionKey       = DB_KEY_VERSION();
 
-    LandID safeId;
-
+    LandID safeId{0};
     for (auto [key, value] : iter) {
         if (key == operatorKey || key == playerSettingKey || key == versionKey) continue;
 
@@ -620,7 +619,7 @@ SharedLand LandRegistry::getLandAt(BlockPos const& pos, LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
     std::unordered_set<SharedLand>      result;
 
-    auto const& landsIds = mDimensionChunkMap.queryLand(dimid, EncodeChunkID(pos.x >> 4, pos.z >> 4));
+    auto const& landsIds = *mDimensionChunkMap.queryLand(dimid, EncodeChunkID(pos.x >> 4, pos.z >> 4));
     for (auto const& id : landsIds) {
         if (auto iter = mLandCache.find(id); iter != mLandCache.end()) {
             if (auto const& land = iter->second; land->getAABB().hasPos(pos, !land->is3D())) {
@@ -672,7 +671,7 @@ std::unordered_set<SharedLand> LandRegistry::getLandAt(BlockPos const& center, i
             }
             visitedChunks.insert(chunkId);
 
-            auto const& landsIds = mDimensionChunkMap.queryLand(dimid, chunkId);
+            auto const& landsIds = *mDimensionChunkMap.queryLand(dimid, chunkId);
             for (auto const& id : landsIds) {
                 if (auto iter = mLandCache.find(id); iter != mLandCache.end()) {
                     if (auto const& land = iter->second; land->isCollision(center, radius)) {
@@ -708,7 +707,7 @@ LandRegistry::getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid di
             }
             visitedChunks.insert(chunkId);
 
-            auto const& landsIds = mDimensionChunkMap.queryLand(dimid, chunkId);
+            auto const& landsIds = *mDimensionChunkMap.queryLand(dimid, chunkId);
             for (auto const& id : landsIds) {
                 if (auto iter = mLandCache.find(id); iter != mLandCache.end()) {
                     if (auto const& land = iter->second; land->isCollision(pos1, pos2)) {

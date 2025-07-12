@@ -26,7 +26,7 @@ public:
     template <typename T>
         requires HasXYZ<T>
     static LandPos make(T const& t) {
-        return make(t.x, t.y, t.z);
+        return make(static_cast<int>(t.x), static_cast<int>(t.y), static_cast<int>(t.z));
     }
 
     template <typename T = BlockPos>

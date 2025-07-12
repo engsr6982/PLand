@@ -23,9 +23,9 @@ PriceCalculate::Variable PriceCalculate::Variable::make(LandAABB const& landPos,
     result["height"]      = landPos.getHeight();
     result["width"]       = landPos.getWidth();
     result["depth"]       = landPos.getDepth();
-    result["square"]      = landPos.getSquare();
-    result["volume"]      = landPos.getVolume();
-    result["dimensionId"] = (double)dimensionId; // 添加维度ID
+    result["square"]      = static_cast<double>(landPos.getSquare());
+    result["volume"]      = static_cast<double>(landPos.getVolume());
+    result["dimensionId"] = static_cast<double>(dimensionId);
     return result;
 }
 

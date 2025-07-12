@@ -35,17 +35,17 @@ public:
     /**
      * @brief 查询领地是否存在
      */
-    LDNDAPI bool hasLand(LandDimid dimId, ChunkID chunk, LandID landId) const;
+    LDNDAPI bool hasLand(LandDimid dimId, LandID landId) const;
 
     /**
      * @brief 查询某个区块下所有的领地
      */
-    LDNDAPI std::unordered_set<LandID> const& queryLand(LandDimid dimId, ChunkID chunkId) const;
+    LDNDAPI std::unordered_set<LandID> const* queryLand(LandDimid dimId, ChunkID chunkId) const;
 
     /**
      * @brief 查询某个领地下所有的区块
      */
-    LDNDAPI std::unordered_set<ChunkID> const& queryChunk(LandDimid dimId, LandID landId) const;
+    LDNDAPI std::unordered_set<ChunkID> const* queryChunk(LandDimid dimId, LandID landId) const;
 
     LDAPI void addLand(SharedLand const& land);
 
