@@ -20,10 +20,10 @@ using WeakLand   = std::weak_ptr<Land>;   // 弱指针
 class Land final {
 public:
     enum class Type {
-        Normal = 0, // 普通领地(无父、无子)
-        Parent = 1, // 父领地(无父、有子)
-        Mix    = 2, // 混合领地(有父、有子)
-        Sub    = 3, // 子领地(有父、无子)
+        Ordinary = 0, // 普通领地(无父、无子)
+        Parent   = 1, // 父领地(无父、有子)
+        Mix      = 2, // 混合领地(有父、有子)
+        Sub      = 3, // 子领地(有父、无子)
     };
 
 private:

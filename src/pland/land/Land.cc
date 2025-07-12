@@ -87,7 +87,7 @@ bool Land::isDirty() const { return mDirtyCounter.isDirty(); }
 
 Land::Type Land::getType() const {
     if (isOrdinaryLand()) [[likely]] {
-        return Type::Normal;
+        return Type::Ordinary;
     } else if (isParentLand()) {
         return Type::Parent;
     } else if (isMixLand()) {
