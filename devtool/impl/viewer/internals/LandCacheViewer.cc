@@ -49,7 +49,7 @@ void LandCacheViewerWindow::handleExportLand(land::SharedLand land) {
     }
     auto          file = dir / fmt::format("land_{}.json", land->getId());
     std::ofstream ofs(file);
-    // ofs << land->toJSON().dump(2); // TODO: fix
+    ofs << land->dump().dump(2);
     ofs.close();
 }
 
@@ -196,7 +196,7 @@ void LandCacheViewerWindow::renderCacheLand() {
             }
             ImGui::SameLine();
             if (ImGui::Button(fmt::format("复制##{}", ld->getId()).c_str())) {
-                // ImGui::SetClipboardText(ld->toJSON().dump().c_str());// TODO: fix
+                ImGui::SetClipboardText(ld->dump().dump().c_str());
             }
             ImGui::SameLine();
             if (ImGui::Button(fmt::format("导出##{}", ld->getId()).c_str())) {
@@ -231,8 +231,7 @@ void LandCacheViewerWindow::tick() {
 
 
 // LandEditor
-// LandEditor::LandEditor(land::SharedLand land) : CodeEditor(land->toJSON().dump(4)), land_(land) {}
-LandEditor::LandEditor(land::SharedLand land) : CodeEditor(""), land_(land) {} // TODO: fix
+LandEditor::LandEditor(land::SharedLand land) : CodeEditor(land->dump().dump(4)), land_(land) {}
 
 void LandEditor::renderMenuElement() {
     CodeEditor::renderMenuElement();
@@ -242,13 +241,12 @@ void LandEditor::renderMenuElement() {
             if (!land) {
                 return;
             }
-            // TODO: fix
-            // auto backup = land->toJSON();
+            auto backup = land->dump();
             try {
                 auto json = nlohmann::json::parse(editor_.GetText());
-                // land->load(json);
+                land->load(json);
             } catch (...) {
-                // land->load(backup);
+                land->load(backup);
                 mod::ModEntry::getInstance().getSelf().getLogger().error("Failed to parse json");
             }
         }
@@ -261,9 +259,8 @@ void LandEditor::renderMenuElement() {
             if (!land) {
                 return;
             }
-            // TODO: fix
-            // auto json = land->toJSON();
-            // this->editor_.SetText(json.dump(4));
+            auto json = land->dump();
+            this->editor_.SetText(json.dump(4));
         }
         if (ImGui::IsItemHovered()) {
             ImGui::SetItemTooltip("将当前领地数据刷新到编辑器中");
