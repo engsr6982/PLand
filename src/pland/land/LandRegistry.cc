@@ -155,11 +155,10 @@ void LandRegistry::_loadLands() {
         if (key == operatorKey || key == playerSettingKey || key == versionKey) continue;
 
         auto json = JSON::parse(value);
-        auto ctx  = LandContext{};
-
         _checkVersionAndTryAdaptBreakingChanges(json);
-        JSON::jsonToStruct(json, ctx);
-        auto land = Land::make(std::move(ctx));
+
+        auto land = Land::make();
+        land->load(json);
 
         // 保证landID唯一
         if (safeId <= land->getId()) {
@@ -245,10 +244,11 @@ void LandRegistry::save() {
 
     mDB->set(DB_KEY_PLAYER_SETTINGS(), JSON::stringify(JSON::structTojson(mPlayerSettings)));
 
-    for (auto& [id, land] : mLandCache) {
-        mDB->set(std::to_string(land->getId()), JSON::stringify(JSON::structTojson(land->mContext)));
+    for (auto const& land : mLandCache | std::views::values) {
+        land->save();
     }
 }
+bool LandRegistry::save(Land const& land) const { return mDB->set(std::to_string(land.getId()), land.dump().dump()); }
 void LandRegistry::stopThread() {
     mThreadStopFlag = true;
     if (mThread.joinable()) mThread.join();

@@ -69,6 +69,8 @@ public:
     LDAPI void save();
     LDAPI void stopThread();
 
+    LDAPI bool save(Land const& land) const;
+
 public:
     LDNDAPI bool isOperator(UUIDs const& uuid) const;
 

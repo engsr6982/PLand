@@ -83,6 +83,7 @@ bool Land::isMember(UUIDs const& uuid) const {
 }
 bool Land::isConvertedLand() const { return mContext.mIsConvertedLand; }
 bool Land::isOwnerDataIsXUID() const { return mContext.mOwnerDataIsXUID; }
+bool Land::isDirty() const { return mDirtyCounter.isDirty(); }
 
 
 bool Land::hasParentLand() const { return this->mContext.mParentLandID != static_cast<LandID>(-1); }
@@ -182,7 +183,14 @@ void Land::updateXUIDToUUID(UUIDs const& ownerUUID) {
 }
 
 void           Land::load(nlohmann::json& json) { JSON::jsonToStruct(json, mContext); }
-nlohmann::json Land::save() const { return JSON::structTojson(mContext); }
+nlohmann::json Land::dump() const { return JSON::structTojson(mContext); }
+void           Land::save(bool force) {
+    if (isDirty() || force) {
+        if (LandRegistry::getInstance().save(*this)) {
+            mDirtyCounter.reset();
+        }
+    }
+}
 
 
 bool Land::operator==(SharedLand const& other) const { return mContext.mLandID == other->mContext.mLandID; }

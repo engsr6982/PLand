@@ -86,6 +86,8 @@ public:
 
     LDNDAPI bool isCollision(BlockPos const& pos1, BlockPos const& pos2) const;
 
+    LDNDAPI bool isDirty() const; // 是否需要保存(数据有变动)
+
 
     LDNDAPI bool hasParentLand() const; // 是否有父领地
     LDNDAPI bool hasSubLand() const;    // 是否有子领地
@@ -141,8 +143,9 @@ public:
 
     LDAPI void updateXUIDToUUID(UUIDs const& ownerUUID); // xuid -> uuid
 
-    LDAPI void load(nlohmann::json& json);
-    LDAPI nlohmann::json save() const;
+    LDAPI void load(nlohmann::json& json);         // 加载数据
+    LDAPI nlohmann::json dump() const;             // 导出数据
+    LDAPI void           save(bool force = false); // 保存数据(保存到数据库)
 
     LDAPI bool operator==(SharedLand const& other) const;
 
