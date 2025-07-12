@@ -7,7 +7,6 @@
 #include <vector>
 
 
-
 namespace land {
 
 enum class EconomyKit : int { LegacyMoney, ScoreBoard };
@@ -117,39 +116,40 @@ struct Config {
     } listeners;
 
     struct {
-        std::unordered_set<std::string> hostileMobTypeNames{// 敌对生物
-                                                            "minecraft:zombie",
-                                                            "minecraft:skeleton",
-                                                            "minecraft:creeper",
-                                                            "minecraft:spider",
-                                                            "minecraft:enderman",
-                                                            "minecraft:witch",
-                                                            "minecraft:blaze",
-                                                            "minecraft:ghast",
-                                                            "minecraft:magma_cube",
-                                                            "minecraft:silverfish",
-                                                            "minecraft:slime",
-                                                            "minecraft:guardian",
-                                                            "minecraft:elder_guardian",
-                                                            "minecraft:wither_skeleton",
-                                                            "minecraft:stray",
-                                                            "minecraft:husk",
-                                                            "minecraft:zombie_villager",
-                                                            "minecraft:drowned",
-                                                            "minecraft:phantom",
-                                                            "minecraft:pillager",
-                                                            "minecraft:vindicator",
-                                                            "minecraft:ravager",
-                                                            "minecraft:evocation_illager",
-                                                            "minecraft:vex",
-                                                            "minecraft:shulker",
-                                                            "minecraft:endermite",
-                                                            "minecraft:cave_spider",
-                                                            "minecraft:zoglin",
-                                                            "minecraft:piglin_brute",
-                                                            "minecraft:hoglin",
-                                                            "minecraft:wither",
-                                                            "minecraft:ender_dragon"
+        std::unordered_set<std::string> hostileMobTypeNames{
+            // 敌对生物
+            "minecraft:zombie",
+            "minecraft:skeleton",
+            "minecraft:creeper",
+            "minecraft:spider",
+            "minecraft:enderman",
+            "minecraft:witch",
+            "minecraft:blaze",
+            "minecraft:ghast",
+            "minecraft:magma_cube",
+            "minecraft:silverfish",
+            "minecraft:slime",
+            "minecraft:guardian",
+            "minecraft:elder_guardian",
+            "minecraft:wither_skeleton",
+            "minecraft:stray",
+            "minecraft:husk",
+            "minecraft:zombie_villager",
+            "minecraft:drowned",
+            "minecraft:phantom",
+            "minecraft:pillager",
+            "minecraft:vindicator",
+            "minecraft:ravager",
+            "minecraft:evocation_illager",
+            "minecraft:vex",
+            "minecraft:shulker",
+            "minecraft:endermite",
+            "minecraft:cave_spider",
+            "minecraft:zoglin",
+            "minecraft:piglin_brute",
+            "minecraft:hoglin",
+            "minecraft:wither",
+            "minecraft:ender_dragon"
         };
         std::unordered_set<std::string> specialMobTypeNames{
             // 特殊生物
@@ -163,21 +163,22 @@ struct Config {
             "minecraft:boat",
             "minecraft:ender_crystal",
         };
-        std::unordered_set<std::string> passiveMobTypeNames{// 友好生物
-                                                            "minecraft:cow",
-                                                            "minecraft:pig",
-                                                            "minecraft:sheep",
-                                                            "minecraft:chicken",
-                                                            "minecraft:rabbit",
-                                                            "minecraft:mooshroom",
-                                                            "minecraft:horse",
-                                                            "minecraft:donkey",
-                                                            "minecraft:mule",
-                                                            "minecraft:ocelot",
-                                                            "minecraft:bat",
-                                                            "minecraft:sniffer",
-                                                            "minecraft:camel",
-                                                            "minecraft:armadillo"
+        std::unordered_set<std::string> passiveMobTypeNames{
+            // 友好生物
+            "minecraft:cow",
+            "minecraft:pig",
+            "minecraft:sheep",
+            "minecraft:chicken",
+            "minecraft:rabbit",
+            "minecraft:mooshroom",
+            "minecraft:horse",
+            "minecraft:donkey",
+            "minecraft:mule",
+            "minecraft:ocelot",
+            "minecraft:bat",
+            "minecraft:sniffer",
+            "minecraft:camel",
+            "minecraft:armadillo"
         };
         std::unordered_set<std::string> customSpecialMobTypeNames; // Addon生物类型名称
     } mob;

@@ -1,327 +1,307 @@
-#include "pland/infra/SafeTeleport.h"
-#include "ll/api/coro/CoroTask.h"
-#include "ll/api/event/EventBus.h"
-#include "ll/api/event/player/PlayerDisconnectEvent.h"
+#include "SafeTeleport.h"
+#include "ll/api/chrono/GameChrono.h"
 #include "ll/api/thread/ServerThreadExecutor.h"
-#include "mc/deps/core/math/Vec3.h"
+#include "mc/deps/ecs/WeakEntityRef.h"
 #include "mc/network/packet/SetTitlePacket.h"
 #include "mc/world/actor/player/Player.h"
-#include "mc/world/level/BlockPos.h"
-#include "mc/world/level/ChunkPos.h"
-#include "mc/world/level/block/Block.h"
 #include "pland/Global.h"
-#include "pland/infra/Config.h"
-#include "pland/land/LandRegistry.h"
 #include "pland/mod/ModEntry.h"
 #include "pland/utils/McUtils.h"
-#include <algorithm>
-#include <concurrentqueue.h>
 #include <cstdint>
-#include <deque>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
+#include <ll/api/coro/CoroTask.h>
+#include <ll/api/thread/ThreadPoolExecutor.h>
+#include <mc/deps/core/math/Vec3.h>
+#include <mc/deps/game_refs/WeakRef.h>
+#include <mc/world/level/BlockSource.h>
+#include <mc/world/level/block/Block.h>
+#include <mc/world/level/chunk/ChunkSource.h>
+#include <mc/world/level/chunk/ChunkState.h>
+#include <mc/world/level/chunk/LevelChunk.h>
+#include <mc/world/level/dimension/Dimension.h>
 
 namespace land {
 
 
-using DimensionPos = std::pair<Vec3, int>;
+bool SafeTeleport::Task::operator==(const Task& other) const { return mId == other.mId; }
 
-enum class TaskState {
-    WaitingProcess,              // 等待处理
-    WaitingChunkLoad,            // 等待区块加载
-    ChunkLoadedWaitingProcess,   // 区块加载完成，等待处理
-    FindingSafePos,              // 找安全位置
-    FindedSafePosWaitingProcess, // 找到安全位置，等待处理
-    TaskCompleted,               // 任务完成
-    WaitChunkLoadTimeout,        // 等待区块加载超时
-    NoSafePos,                   // 没有安全位置
-    PlayerDisconnected,          // 玩家断开连接
-};
+inline SafeTeleport::TaskId NextTaskId = 0;
+SafeTeleport::Task::Task(Player& player, DimensionPos targetPos)
+: mId(NextTaskId++),
+  mWeakPlayer(player.getWeakEntity()),
+  mTargetDimension(player.getLevel().getDimension(targetPos.second)),
+  mTargetChunkPos(ChunkPos(targetPos.first)),
+  mSourcePos({player.getPosition(), player.getDimensionId()}),
+  mTargetPos(targetPos) {
+    mTargetPos.first.x += 0.5; // 方块中心
+    mTargetPos.first.z += 0.5;
+    mTargetPos.first.y  = 3389;
+}
 
-struct Task {
-    uint64_t       id_{};                                         // 任务ID
-    Player*        player_{nullptr};                              // 玩家
-    UUIDm          uuid_;                                         // 玩家UUID
-    DimensionPos   targetPos_;                                    // 目标位置
-    DimensionPos   sourcePos_;                                    // 原始位置
-    short          scheduleCounter_ = 0;                          // 调度计数器
-    TaskState      state_           = TaskState::WaitingProcess;  // 任务状态
-    SetTitlePacket action_{SetTitlePacket::TitleType::Actionbar}; // 设置标题包
 
-public:
-    Task(Task&)                      = delete;
-    Task& operator=(Task&)           = delete;
-    Task(Task&&) noexcept            = default;
-    Task& operator=(Task&&) noexcept = default;
+bool SafeTeleport::Task::isPending() const { return mState == TaskState::Pending; }
+bool SafeTeleport::Task::isWaitingChunkLoad() const { return mState == TaskState::WaitingChunkLoad; }
+bool SafeTeleport::Task::isChunkLoadTimeout() const { return mState == TaskState::ChunkLoadTimeout; }
+bool SafeTeleport::Task::isChunkLoaded() const { return mState == TaskState::ChunkLoaded; }
+bool SafeTeleport::Task::isFindingSafePos() const { return mState == TaskState::FindingSafePos; }
+bool SafeTeleport::Task::isFoundSafePos() const { return mState == TaskState::FoundSafePos; }
+bool SafeTeleport::Task::isNoSafePos() const { return mState == TaskState::NoSafePos; }
+bool SafeTeleport::Task::isTaskCompleted() const { return mState == TaskState::TaskCompleted; }
+bool SafeTeleport::Task::isTaskFailed() const { return mState == TaskState::TaskFailed; }
+bool SafeTeleport::Task::isAborted() const { return mAbortFlag.load(); }
 
-    explicit Task(uint64_t id, Player* player, DimensionPos targetPos, DimensionPos sourcePos)
-    : id_(id),
-      player_(player),
-      uuid_(player->getUuid()),
-      targetPos_(targetPos),
-      sourcePos_(sourcePos) {}
+SafeTeleport::TaskState SafeTeleport::Task::getState() const { return mState; }
 
-    void updateState(TaskState state) { state_ = state; }
+Player* SafeTeleport::Task::getPlayer() const { return mWeakPlayer.tryUnwrap<Player>().as_ptr(); }
 
-    bool operator==(const Task& other) const { return id_ == other.id_; }
+void SafeTeleport::Task::updateState(TaskState state) { mState = state; }
 
-    [[nodiscard]] std::string toDebugString() const {
-        return fmt::format(
-            "Task(id={}, uuid={}, targetPos=[{}, {}], sourcePos=[{}, {}], state={})",
-            id_,
-            uuid_.asString(),
-            targetPos_.first.toString(),
-            targetPos_.second,
-            sourcePos_.first.toString(),
-            sourcePos_.second,
-            static_cast<int>(state_)
-        );
+void SafeTeleport::Task::updateCounter() { mCounter++; }
+
+void SafeTeleport::Task::sendWaitChunkLoadTip() {
+    if (auto player = getPlayer()) {
+        mTipPacket.mTitleText = "等待区块加载... ({}/{})"_trf(*player, mCounter, MaxCounter);
+        mTipPacket.sendTo(*player);
     }
-};
+}
 
-using TaskPtr = std::shared_ptr<Task>;
+void SafeTeleport::Task::abort() {
+    mAbortFlag.store(true);
+    updateState(TaskState::TaskFailed);
+}
 
-constexpr short SCHEDULE_COUNTER_MAX = 64; // 调度计数器最大值
-
-
-class SafeTeleport::SafeTeleportImpl {
-    std::unordered_map<uint64_t, TaskPtr> queue_; // 任务队列
-    std::unordered_map<UUIDm, TaskPtr>    queueMap_;
-    uint64_t                              idCounter_ = 0; // 唯一ID计数器
-    ll::event::ListenerPtr                listener_;      // 玩家退出事件监听器
-
-private:
-    inline void findPosImpl(TaskPtr& task) {
-        static const std::vector<string> dangerousBlocks = {"minecraft:lava", "minecraft:flowing_lava"};
-
-        auto& logger      = mod::ModEntry::getInstance().getSelf().getLogger();
-        auto& targetPos   = task->targetPos_;
-        auto& dimension   = task->player_->getDimension();
-        auto& blockSource = task->player_->getDimensionBlockSource();
-
-        short const startY = mc_utils::GetDimensionMaxHeight(dimension); // 维度最大高度
-        short const endY   = mc_utils::GetDimensionMinHeight(dimension); // 维度最小高度
-
-        Block* headBlock = nullptr; // 头部方块
-        Block* legBlock  = nullptr; // 腿部方块
-
-        BlockPos currentPos{targetPos.first};
-        auto&    currentY = currentPos.y;
-        currentY          = startY;
-
-        while (currentY > endY) {
-            auto& bl = const_cast<Block&>(blockSource.getBlock(currentPos));
-
-            logger.debug(
-                "currentY: {}, bl: {}, headBlock: {}, legBlock: {}",
-                currentY,
-                bl.getTypeName(),
-                headBlock ? headBlock->getTypeName() : "nullptr",
-                legBlock ? legBlock->getTypeName() : "nullptr"
-            );
-
-            if (std::find(dangerousBlocks.begin(), dangerousBlocks.end(), bl.getTypeName()) == dangerousBlocks.end()
-                && !bl.isAir() && headBlock->isAir() && legBlock->isAir()) {
-                task->targetPos_.first.y = static_cast<float>(currentY) + 1;
-                task->updateState(TaskState::FindedSafePosWaitingProcess);
-                return;
-            }
-
-            if (!headBlock && !legBlock) {
-                headBlock = &bl;
-                legBlock  = &bl;
-            }
-
-            // 交换
-            headBlock = legBlock;
-            legBlock  = &bl;
-            currentY--;
-        }
-
-        task->updateState(TaskState::NoSafePos);
+void SafeTeleport::Task::rollback() const {
+    if (auto player = getPlayer()) {
+        player->teleport(mSourcePos.first, mSourcePos.second);
     }
+}
 
-    inline void handleWaitingProcess(TaskPtr& task) {
-        mc_utils::sendText(*task->player_, "任务已加入队列，请稍后..."_trf(*task->player_));
-        if (mc_utils::IsChunkFullLyoaded(task->targetPos_.first, task->player_->getDimensionBlockSource())) {
-            task->updateState(TaskState::ChunkLoadedWaitingProcess);
-            mc_utils::sendText(*task->player_, "等待区块加载..."_trf(*task->player_));
+void SafeTeleport::Task::commit() const {
+    if (auto player = getPlayer()) {
+        player->teleport(mTargetPos.first, mTargetPos.second);
+    }
+}
+
+bool SafeTeleport::Task::isTargetChunkFullyLoaded() const {
+    auto& chunkSource = *mTargetDimension.lock()->mChunkSource.get();
+    if (!chunkSource.isWithinWorldLimit(mTargetChunkPos)) return true;
+    auto chunk = chunkSource.getOrLoadChunk(mTargetChunkPos, ::ChunkSource::LoadMode::None, true);
+    return chunk && static_cast<int>(chunk->mLoadState->load()) >= static_cast<int>(ChunkState::Loaded)
+        && !chunk->mIsEmptyClientChunk && chunk->mIsRedstoneLoaded;
+}
+
+void SafeTeleport::Task::checkChunkStatus() {
+    if (isWaitingChunkLoad()) {
+        if (isTargetChunkFullyLoaded()) {
+            updateState(TaskState::ChunkLoaded);
+        } else if (mCounter > MaxCounter) {
+            updateState(TaskState::ChunkLoadTimeout);
         } else {
-            task->updateState(TaskState::WaitingChunkLoad);
+            updateCounter();
+            sendWaitChunkLoadTip();
+            teleportToTargetPosAndTryLoadChunk();
         }
     }
+}
+void SafeTeleport::Task::teleportToTargetPosAndTryLoadChunk() {
+    if (auto player = getPlayer()) {
+        player->teleport(mTargetPos.first, mTargetPos.second);
+    }
+}
 
-    inline void handleWaitingChunkLoad(TaskPtr& task) {
-        auto& target = task->targetPos_;
+void SafeTeleport::Task::checkPlayerStatus() {
+    if (!getPlayer()) {
+        updateState(TaskState::TaskFailed);
+    }
+}
 
-        Vec3 tmp{target.first};
-        tmp.y = 320;
-        task->player_->teleport(tmp, target.second); // 防止摔死
+void SafeTeleport::Task::_tryApplyDimensionFixPatch(DimensionHeightRange const& range) {
+    switch (mTargetPos.second) {
+    case 1:
+        _applyNetherFixPatch(range);
+        break;
+    default:
+        break;
+    }
+}
+void SafeTeleport::Task::_applyNetherFixPatch(DimensionHeightRange const& range) {
+    mTargetPos.first.y = range.mMax - 5; // 向下偏移 5 格，避免基岩顶部
+}
+void SafeTeleport::Task::_findSafePos() {
+    static auto const dangerousBlocks =
+        std::unordered_set<std::string>{"minecraft:water", "minecraft:lava", "minecraft:fire"};
 
-        task->action_.mTitleText =
-            "等待区块加载... 计数: {}/{}"_trf(*task->player_, task->scheduleCounter_, SCHEDULE_COUNTER_MAX);
-        task->action_.sendTo(*task->player_);
+    auto& targetPos   = mTargetPos.first;
+    auto* player      = getPlayer();
+    auto& blockSource = *mTargetDimension.lock()->mBlockSource.get();
 
-        if (task->scheduleCounter_ > SCHEDULE_COUNTER_MAX) {
-            task->updateState(TaskState::WaitChunkLoadTimeout);
+    auto const& heightRange = player->getDimension().mHeightRange.get();
+    auto const  start       = heightRange.mMax;
+    auto const  end         = heightRange.mMin;
+
+    Block* headBlock = nullptr; // 头部方块
+    Block* legBlock  = nullptr; // 腿部方块
+
+    auto& y = targetPos.y;
+    y       = start; // 从最高点开始寻找
+
+    _tryApplyDimensionFixPatch(heightRange); // 尝试应用维度修复补丁
+
+#ifdef DEBUG
+    auto& logger = mod::ModEntry::getInstance().getSelf().getLogger();
+#endif
+
+    while (y > end && !mAbortFlag.load()) {
+        auto block = &const_cast<Block&>(blockSource.getBlock(targetPos));
+
+        if (!headBlock && !legBlock) { // 第一次循环, 初始化
+            headBlock = block;
+            legBlock  = block;
+        }
+
+#ifdef DEBUG
+        logger.debug("[TPR] Y: {}  Block: {}", y, block->getTypeName());
+#endif
+
+        if (!block->isAir() &&                                 // 落脚点不是空气
+            !dangerousBlocks.contains(block->getTypeName()) && // 落脚点不是危险方块
+            headBlock->isAir() &&                              // 头部方块是空气
+            legBlock->isAir()                                  // 腿部方块是空气
+        ) {
+            y++; // 往上一格，当前格为落脚点方块
+
+            updateState(TaskState::FoundSafePos); // 找到安全位置
             return;
         }
 
-        if (mc_utils::IsChunkFullLyoaded(target.first, task->player_->getDimensionBlockSource())) {
-            task->updateState(TaskState::ChunkLoadedWaitingProcess);
-        } else {
-            task->scheduleCounter_++;
-        }
+        headBlock = legBlock;
+        legBlock  = block;
+        y--;
     }
+    updateState(TaskState::NoSafePos); // 没有找到安全位置
+}
 
-    inline void handleChunkLoadedWaitingProcess(TaskPtr& task) {
-        mc_utils::sendText(*task->player_, "区块已加载，正在寻找安全位置..."_trf(*task->player_));
-        task->updateState(TaskState::FindingSafePos);
-        findPosImpl(task);
-    }
+void SafeTeleport::Task::launchFindPosTask() {
+    ll::coro::keepThis([this]() -> ll::coro::CoroTask<> {
+        co_await ll::chrono::ticks(1); // 等待 1_tick 再开始寻找安全位置
+        _findSafePos();
+        co_return;
+    }).launch(ll::thread::ServerThreadExecutor::getDefault());
+}
 
-    inline void handleFindedSafePosWaitingProcess(TaskPtr& task) {
-        mc_utils::sendText(*task->player_, "安全位置已找到，正在传送..."_trf(*task->player_));
-        task->player_->teleport(task->targetPos_.first, task->targetPos_.second);
-        task->updateState(TaskState::TaskCompleted);
-    }
 
-    inline void handleFailed(TaskPtr& task, std::string const& reason) {
-        mc_utils::sendText<mc_utils::LogLevel::Error>(*task->player_, reason);
-        auto& sou = task->sourcePos_;
-        task->player_->teleport(sou.first, sou.second);
-    }
+SafeTeleport::SafeTeleport() {
+    mInterruptableSleep = std::make_shared<ll::coro::InterruptableSleep>();
+    mPollingAbortFlag   = std::make_shared<std::atomic_bool>(false);
 
-    inline void processTasks() {
-        for (auto iter = queue_.begin(); iter != queue_.end();) {
-            auto& task = iter->second;
+    ll::coro::keepThis([this, sleep = mInterruptableSleep, abortFlag = mPollingAbortFlag]() -> ll::coro::CoroTask<> {
+        while (!abortFlag->load()) {
+            co_await sleep->sleepFor(ll::chrono::ticks{10});
+            if (abortFlag->load()) break;
             try {
-                switch (task->state_) {
-                case TaskState::WaitingProcess: {
-                    handleWaitingProcess(task);
-                    break;
-                }
-                case TaskState::WaitingChunkLoad: {
-                    handleWaitingChunkLoad(task);
-                    break;
-                }
-                case TaskState::ChunkLoadedWaitingProcess: {
-                    handleChunkLoadedWaitingProcess(task);
-                    break;
-                }
-                case TaskState::FindingSafePos: {
-                    break;
-                }
-                case TaskState::FindedSafePosWaitingProcess: {
-                    handleFindedSafePosWaitingProcess(task);
-                    break;
-                }
-                case TaskState::PlayerDisconnected: {
-                    iter = queue_.erase(iter);
-                    break;
-                }
-                case TaskState::TaskCompleted: {
-                    mc_utils::sendText(*task->player_, "传送成功!"_trf(*task->player_));
-                    queueMap_.erase(task->uuid_);
-                    iter = queue_.erase(iter);
-                    break;
-                }
-                case TaskState::NoSafePos: {
-                    handleFailed(task, "任务失败，未找到安全坐标"_trf(*task->player_));
-                    queueMap_.erase(task->uuid_);
-                    iter = queue_.erase(iter);
-                    break;
-                }
-                case TaskState::WaitChunkLoadTimeout: {
-                    handleFailed(task, "区块加载超时"_trf(*task->player_));
-                    queueMap_.erase(task->uuid_);
-                    iter = queue_.erase(iter);
-                    break;
-                }
-                }
-                ++iter;
-            } catch (const std::exception& e) {
-                mod::ModEntry::getInstance().getSelf().getLogger().error(
-                    "Exception during teleportation task: {}\nTask info: {}",
-                    e.what(),
-                    task->toDebugString()
-                );
-                queueMap_.erase(task->uuid_);
-                iter = queue_.erase(iter);
+                polling();
             } catch (...) {
                 mod::ModEntry::getInstance().getSelf().getLogger().error(
-                    "Unknown exception during teleportation task\nTask info: {}",
-                    task->toDebugString()
+                    "An exception occurred while polling SafeTeleport tasks"
                 );
-                queueMap_.erase(task->uuid_);
-                iter = queue_.erase(iter);
             }
         }
-    }
-
-    inline void init() {
-        ll::coro::keepThis([this]() -> ll::coro::CoroTask<> {
-            while (GlobalRepeatCoroTaskRunning.load()) {
-                co_await 10_tick;
-                if (queue_.empty()) continue;
-                processTasks();
-            }
-            co_return;
-        }).launch(ll::thread::ServerThreadExecutor::getDefault());
-
-        listener_ = ll::event::EventBus::getInstance().emplaceListener<ll::event::PlayerDisconnectEvent>(
-            [this](ll::event::PlayerDisconnectEvent& ev) {
-                auto iter = queueMap_.find(ev.self().getUuid());
-                if (iter != queueMap_.end()) {
-                    iter->second->updateState(TaskState::PlayerDisconnected);
-                    queueMap_.erase(iter); // 删除映射
-                }
-            }
-        );
-    }
-
-public:
-    SafeTeleportImpl(const SafeTeleportImpl&)            = delete;
-    SafeTeleportImpl& operator=(const SafeTeleportImpl&) = delete;
-    SafeTeleportImpl(SafeTeleportImpl&&)                 = delete;
-    SafeTeleportImpl& operator=(SafeTeleportImpl&&)      = delete;
-
-    explicit SafeTeleportImpl() { init(); }
-
-    virtual ~SafeTeleportImpl() {
-        if (listener_) ll::event::EventBus::getInstance().removeListener(listener_);
-        queue_.clear();    // 清空任务队列
-        queueMap_.clear(); // 清空任务映射
-    }
-
-    [[nodiscard]] static SafeTeleportImpl& getInstance() {
-        static SafeTeleportImpl instance;
-        return instance;
-    }
-
-    uint64_t createTask(Player* player, DimensionPos targetPos, DimensionPos sourcePos) {
-        if (queueMap_.find(player->getRealName()) != queueMap_.end()) {
-            mc_utils::sendText<mc_utils::LogLevel::Error>(*player, "传送任务已存在，请等待当前任务完成"_trf(*player));
-            return -1;
-        }
-        auto id   = idCounter_++;
-        auto task = std::make_shared<Task>(id, player, targetPos, sourcePos);
-        queue_.emplace(id, task);                   // 创建任务
-        queueMap_.emplace(player->getUuid(), task); // 创建映射
-        return id;
-    }
-};
-
-
-void SafeTeleport::teleportTo(Player& player, Vec3 const& pos, int dimid) {
-    SafeTeleportImpl::getInstance()
-        .createTask(&player, {pos, dimid}, {player.getPosition(), player.getDimensionId().id});
+        co_return;
+    }).launch(ll::thread::ServerThreadExecutor::getDefault());
 }
-SafeTeleport& SafeTeleport::getInstance() {
-    static SafeTeleport instance;
-    return instance;
+
+SafeTeleport::~SafeTeleport() {
+    mPollingAbortFlag->store(true);
+    mInterruptableSleep->interrupt(true);
+    for (auto& task : mTasks | std::views::values) {
+        task->abort();
+    }
+    mTasks.clear();
+}
+SafeTeleport* SafeTeleport::getInstance() { return mod::ModEntry::getInstance().getSafeTeleport(); }
+
+
+void SafeTeleport::launchTask(Player& player, DimensionPos targetPos) {
+    auto task = std::make_shared<Task>(player, targetPos);
+    mTasks.emplace(task->mId, task);
+}
+
+void SafeTeleport::polling() {
+    auto iter = mTasks.begin();
+
+    while (iter != mTasks.end()) {
+        auto& task = iter->second;
+
+        if (!task->isTaskFailed() && !task->isTaskCompleted()) {
+            task->checkPlayerStatus(); // 检查玩家是否在线
+        }
+
+        switch (task->getState()) {
+        case TaskState::Pending:
+            handlePending(task);
+            break;
+        case TaskState::WaitingChunkLoad:
+            handleWaitingChunkLoad(task);
+            break;
+        case TaskState::ChunkLoadTimeout:
+            handleChunkLoadTimeout(task);
+            break;
+        case TaskState::ChunkLoaded:
+            handleChunkLoaded(task);
+            break;
+        case TaskState::FindingSafePos:
+            break;
+        case TaskState::FoundSafePos:
+            handleFoundSafePos(task);
+            break;
+        case TaskState::NoSafePos:
+            handleNoSafePos(task);
+            break;
+        case TaskState::TaskCompleted:
+        case TaskState::TaskFailed:
+            iter = mTasks.erase(iter); // 任务完成或失败, 移除任务
+            break;
+        }
+
+        ++iter;
+    }
+}
+
+void SafeTeleport::handlePending(SharedTask& task) {
+    auto& player = *task->getPlayer();
+    mc_utils::sendText(player, "[1/4] 任务已创建"_trf(player));
+
+    if (task->isTargetChunkFullyLoaded()) {
+        task->updateState(TaskState::ChunkLoaded);
+    } else {
+        task->updateState(TaskState::WaitingChunkLoad);
+        mc_utils::sendText(player, "[2/4] 目标区块未加载，等待目标区块加载..."_trf(player));
+    }
+}
+void SafeTeleport::handleWaitingChunkLoad(SharedTask& task) { task->checkChunkStatus(); }
+void SafeTeleport::handleChunkLoadTimeout(SharedTask& task) {
+    auto& player = *task->getPlayer();
+    mc_utils::sendText(player, "[2/4] 目标区块加载超时，正在返回原位置..."_trf(player));
+    task->rollback();
+    task->updateState(TaskState::TaskFailed);
+}
+void SafeTeleport::handleChunkLoaded(SharedTask& task) {
+    auto& player = *task->getPlayer();
+    mc_utils::sendText(player, "[3/4] 区块已加载，正在寻找安全位置..."_trf(player));
+    task->launchFindPosTask();
+    task->updateState(TaskState::FindingSafePos);
+}
+
+void SafeTeleport::handleFoundSafePos(SharedTask& task) {
+    auto& player = *task->getPlayer();
+    mc_utils::sendText(player, "[4/4] 安全位置已找到，正在传送..."_trf(player));
+    task->commit();
+    task->updateState(TaskState::TaskCompleted);
+}
+void SafeTeleport::handleNoSafePos(SharedTask& task) {
+    auto& player = *task->getPlayer();
+    mc_utils::sendText(player, "[3/4] 未找到安全位置，正在返回原位置..."_trf(player));
+    task->rollback();
+    task->updateState(TaskState::TaskFailed);
 }
 
 

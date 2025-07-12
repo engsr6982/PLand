@@ -2,6 +2,7 @@
 
 #include "ll/api/mod/NativeMod.h"
 #include "pland/hooks/EventListener.h"
+#include "pland/infra/SafeTeleport.h"
 #include "pland/land/LandScheduler.h"
 #include <memory>
 
@@ -30,11 +31,14 @@ public:
 
     void onConfigReload();
 
+    [[nodiscard]] land::SafeTeleport* getSafeTeleport() const { return mSafeTeleport.get(); }
+
 private:
     ll::mod::NativeMod& mSelf;
 
     std::unique_ptr<land::EventListener> mEventListener;
     std::unique_ptr<land::LandScheduler> mLandScheduler;
+    std::unique_ptr<land::SafeTeleport>  mSafeTeleport;
 
     friend class land::Require<land::LandScheduler>;
 };

@@ -17,7 +17,7 @@ void LandTeleportGUI::sendTo(Player& player) {
 
 void LandTeleportGUI::impl(Player& player, SharedLand land) {
     if (land->getTeleportPos().isZero()) {
-        SafeTeleport::getInstance().teleportTo(player, land->getAABB().getMin().as(), land->getDimensionId());
+        SafeTeleport::getInstance()->launchTask(player, {land->getAABB().getMin().as(), land->getDimensionId()});
         return;
     }
     player.teleport(land->getTeleportPos().as(), land->getDimensionId());
