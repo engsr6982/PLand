@@ -7,11 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.10.1]
+## [0.11.0]
 
 ### 🐛 问题修复
 
 - 修复领地重新选区购买表单价格显示错误 @engsr6982
+
+### ✨ 新增功能
+
+- 管理GUI支持分页 #107 @engsr6982
+
+### 🧹 其他改动
+
+- 调整工程结构并重构代码 #111 @engsr6982
+- 调整默认配置文件 #104 @yangyangzhong82
 
 ## [0.10.0] - 2025-6-18
 
@@ -239,7 +248,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- 修复 `ActorHurtEvent` `ActorRideEvent` `FarmDecayEvent` `MobHurtEffectEvent` `PressurePlateTriggerEvent` `ProjectileSpawnEvent` `RedstoneUpdateEvent` 事件意外拦截领地外事件。
+- 修复 `ActorHurtEvent` `ActorRideEvent` `FarmDecayEvent` `MobHurtEffectEvent` `PressurePlateTriggerEvent`
+  `ProjectileSpawnEvent` `RedstoneUpdateEvent` 事件意外拦截领地外事件。
 
 ## [0.3.0] - 2024-12-15
 
