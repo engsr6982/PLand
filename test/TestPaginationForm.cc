@@ -25,7 +25,8 @@ void TestMain::_setupPaginationFormTest() {
             auto fm = land::PaginatedSimpleFormFactory{"测试表单", ""};
 
             for (int i = 0; i < 16; i++) {
-                fm.appendButton("按钮 #" + i, [i](Player& self) { self.sendMessage("你点击了按钮 #" + i); });
+                auto stri = std::to_string(i);
+                fm.appendButton("按钮 #" + stri, [stri](Player& self) { self.sendMessage("你点击了按钮 #" + stri); });
             }
 
             fm.buildAndSendTo(player);

@@ -77,8 +77,18 @@ void PaginatedSimpleFormFactory::buildAndSendTo(Player& player) {
 
         // 创建页
         for (int i = 1; i <= pageCount; i++) {
+            std::unique_ptr<SimpleForm> _fm;
+
+            if (!title.empty() && !content.empty()) {
+                _fm = std::make_unique<SimpleForm>(title, content);
+            } else if (!title.empty()) {
+                _fm = std::make_unique<SimpleForm>(title);
+            } else {
+                _fm = std::make_unique<SimpleForm>();
+            }
+
             auto page = std::make_pair<std::unique_ptr<SimpleForm>, std::vector<ButtonData>>(
-                std::make_unique<SimpleForm>(title, content),
+                std::move(_fm),
                 std::vector<ButtonData>()
             );
             pages.push_back(std::move(page));
@@ -96,7 +106,13 @@ void PaginatedSimpleFormFactory::buildAndSendTo(Player& player) {
 
             // 转移按钮到页
             auto& page = paginatedForm->getPage(pageNumber);
-            page.first->appendButton(button.mText, button.mImageData, button.mImageType, std::move(button.mCallback));
+
+            if (button.mImageData.empty() && button.mImageType.empty()) {
+                page.first->appendButton(button.mText, std::move(button.mCallback));
+            } else {
+                page.first
+                    ->appendButton(button.mText, button.mImageData, button.mImageType, std::move(button.mCallback));
+            }
             page.second.push_back(std::move(button));
             counter++;
 
@@ -125,8 +141,8 @@ void PaginatedSimpleFormFactory::beginBuildPage(
     int                                  pageNumber,
     int                                  pageSize
 ) {
-    if (pageNumber == 1) {
-        return; // 第一页不需要添加上一页按钮
+    if (pageNumber == 1 || pageSize == 1) {
+        return; // 第一页不需要添加上一页按钮 或者 只有一页
     }
     auto data = ButtonData{
         .mText      = "上一页\n页码: {}/{}"_trf(player, pageNumber, pageSize),
