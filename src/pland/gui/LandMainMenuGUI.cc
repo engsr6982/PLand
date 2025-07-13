@@ -34,7 +34,7 @@ void LandMainMenuGUI::sendTo(Player& player) {
         });
     }
 
-    fm.appendButton("个人设置"_trf(player), "textures/ui/icon_recipe_nature", "path", [](Player& pl) {
+    fm.appendButton("个人设置"_trf(player), "textures/ui/icon_setting", "path", [](Player& pl) {
         PlayerSettingGUI::sendTo(pl);
     });
 
