@@ -126,7 +126,8 @@ void DevToolApp::initImGuiAndOpenGlWithGLFW() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     // 设置窗口默认是否可见
 #ifdef DEBUG
-    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+    // glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 #else
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 #endif
