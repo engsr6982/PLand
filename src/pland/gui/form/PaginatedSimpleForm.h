@@ -1,4 +1,5 @@
 #pragma once
+#include "ll/api/form/CustomForm.h"
 #include "ll/api/form/SimpleForm.h"
 #include "pland/Global.h"
 #include <memory>
@@ -12,9 +13,7 @@ namespace land {
 using SimpleForm = ll::form::SimpleForm;
 
 class PaginatedSimpleFormFactory {
-    friend class PaginatedSimpleForm;
-    friend class BackPaginatedSimpleForm;
-
+public:
     // 由于分页表单上下文停留时间较长
     // 栈上的字符串如果进行 const& 引用
     // 可能会悬空引用，所以拷贝存储
@@ -34,18 +33,28 @@ class PaginatedSimpleFormFactory {
         Pages       mPages;
     };
 
+    struct Options {
+        int  pageButtons           = 32;   // 每页按钮数量
+        bool enableJumpFirstOrLast = true; // 是否启用跳转到第一页和最后一页按钮
+        bool enableJumpSpecial     = true; // 是否启用跳转到指定页按钮
+    };
+
+private:
+    friend class PaginatedSimpleForm;
+    friend class BackPaginatedSimpleForm;
+
     std::string             mTitle;
     std::string             mContent;
     std::vector<ButtonData> mButtons;
-    int                     mPageButtons{32}; // 每页按钮数量
+    Options                 mOptions{};
 
     void beginBuildPage(std::shared_ptr<PaginatedSimpleForm> fm, Player& player, int pageNumber, int pageSize);
     void endBuildPage(std::shared_ptr<PaginatedSimpleForm> fm, Player& player, int pageNumber, int pageSize);
 
 public:
-    LDAPI PaginatedSimpleFormFactory(int pageButtons = 32);
-    LDAPI explicit PaginatedSimpleFormFactory(std::string title, int pageButtons = 32);
-    LDAPI explicit PaginatedSimpleFormFactory(std::string title, std::string content = {}, int pageButtons = 32);
+    LDAPI explicit PaginatedSimpleFormFactory(Options options);
+    LDAPI explicit PaginatedSimpleFormFactory(std::string title, Options options);
+    LDAPI explicit PaginatedSimpleFormFactory(std::string title, std::string content, Options options);
 
     LDAPI PaginatedSimpleFormFactory& setTitle(std::string title);
 
@@ -84,6 +93,8 @@ class PaginatedSimpleForm final : public std::enable_shared_from_this<PaginatedS
     void sendNextPage(Player& player);  // 发送下一页
     void sendFirstPage(Player& player); // 发送第一页
     void sendLastPage(Player& player);  // 发送最后一页
+
+    void sendChoosePageForm(Player& player); // 发送跳转到指定页表单
 
     void sendPage(Player& player, SimpleForm* page); // 发送指定页
     void sendTo(Player& player);

@@ -1,4 +1,6 @@
 #include "pland/gui/form/PaginatedSimpleForm.h"
+#include "ll/api/form/CustomForm.h"
+#include "mc/world/actor/player/Player.h"
 #include <cstddef>
 #include <memory>
 #include <utility>
@@ -8,16 +10,16 @@ namespace land {
 
 
 // Factory
-PaginatedSimpleFormFactory::PaginatedSimpleFormFactory(int pageButtons) : mPageButtons(pageButtons) {}
+PaginatedSimpleFormFactory::PaginatedSimpleFormFactory(Options options) : mOptions(options) {}
 
-PaginatedSimpleFormFactory::PaginatedSimpleFormFactory(std::string title, int pageButtons)
+PaginatedSimpleFormFactory::PaginatedSimpleFormFactory(std::string title, Options options)
 : mTitle(std::move(title)),
-  mPageButtons(pageButtons) {}
+  mOptions(options) {}
 
-PaginatedSimpleFormFactory::PaginatedSimpleFormFactory(std::string title, std::string content, int pageButtons)
+PaginatedSimpleFormFactory::PaginatedSimpleFormFactory(std::string title, std::string content, Options options)
 : mTitle(std::move(title)),
   mContent(std::move(content)),
-  mPageButtons(pageButtons) {}
+  mOptions(options) {}
 
 PaginatedSimpleFormFactory& PaginatedSimpleFormFactory::setTitle(std::string title) {
     mTitle = std::move(title);
@@ -54,8 +56,8 @@ PaginatedSimpleFormFactory::appendButton(std::string text, SimpleForm::ButtonCal
 
 void PaginatedSimpleFormFactory::buildAndSendTo(Player& player) {
     // 计算总页数，向上取整
-    int pageCount = static_cast<int>(mButtons.size()) / mPageButtons;
-    if (mButtons.size() % mPageButtons != 0) {
+    int pageCount = static_cast<int>(mButtons.size()) / mOptions.pageButtons;
+    if (mButtons.size() % mOptions.pageButtons != 0) {
         pageCount++;
     }
 
@@ -114,14 +116,14 @@ void PaginatedSimpleFormFactory::buildAndSendTo(Player& player) {
         page.second.push_back(std::move(button));
 
         ++counter;
-        if (counter > mPageButtons) {
+        if (counter > mOptions.pageButtons) {
             endBuildPage(paginatedForm, player, pageNumber, pageCount);
             pageNumber++;
             counter = 1;
         }
     }
 
-    if (counter > 1 && counter < mPageButtons) {
+    if (counter > 1 && counter < mOptions.pageButtons) {
         endBuildPage(paginatedForm, player, pageNumber, pageCount); // 最后一页按钮数量不足，补齐
     }
 
@@ -179,32 +181,48 @@ void PaginatedSimpleFormFactory::endBuildPage(
         page.second.push_back(std::move(data));
     }
 
-    if (pageNumber != 1) {
-        auto first = ButtonData{
-            .mText      = "跳转到第一页"_trf(player),
-            .mImageData = "textures/ui/book_shiftleft_hover",
-            .mImageType = "path"
-        };
-        page.first->appendButton(first.mText, first.mImageData, first.mImageType, [thiz = fm](Player& self) {
-            if (thiz) {
-                thiz->sendFirstPage(self);
-            }
-        });
-        page.second.push_back(std::move(first));
-    }
+    if (mOptions.enableJumpFirstOrLast) {
+        if (pageNumber != 1) {
+            auto first = ButtonData{
+                .mText      = "跳转到第一页"_trf(player),
+                .mImageData = "textures/ui/book_shiftleft_hover",
+                .mImageType = "path"
+            };
+            page.first->appendButton(first.mText, first.mImageData, first.mImageType, [thiz = fm](Player& self) {
+                if (thiz) {
+                    thiz->sendFirstPage(self);
+                }
+            });
+            page.second.push_back(std::move(first));
+        }
 
-    if (pageNumber != pageSize) {
-        auto last = ButtonData{
-            .mText      = "跳转到最后一页"_trf(player),
-            .mImageData = "textures/ui/book_shiftright_hover",
-            .mImageType = "path"
-        };
-        page.first->appendButton(last.mText, last.mImageData, last.mImageType, [thiz = fm](Player& self) {
-            if (thiz) {
-                thiz->sendLastPage(self);
-            }
-        });
-        page.second.push_back(std::move(last));
+        if (mOptions.enableJumpSpecial) {
+            auto jump = ButtonData{
+                .mText      = "跳转到指定页码"_trf(player),
+                .mImageData = "textures/ui/mashup_PaintBrush",
+                .mImageType = "path"
+            };
+            page.first->appendButton(jump.mText, jump.mImageData, jump.mImageType, [thiz = fm](Player& self) {
+                if (thiz) {
+                    thiz->sendChoosePageForm(self);
+                }
+            });
+            page.second.push_back(std::move(jump));
+        }
+
+        if (pageNumber != pageSize) {
+            auto last = ButtonData{
+                .mText      = "跳转到最后一页"_trf(player),
+                .mImageData = "textures/ui/book_shiftright_hover",
+                .mImageType = "path"
+            };
+            page.first->appendButton(last.mText, last.mImageData, last.mImageType, [thiz = fm](Player& self) {
+                if (thiz) {
+                    thiz->sendLastPage(self);
+                }
+            });
+            page.second.push_back(std::move(last));
+        }
     }
 }
 
@@ -266,7 +284,20 @@ void PaginatedSimpleForm::sendLastPage(Player& player) {
         mPageNumber = static_cast<int>(mPaginatedData->mPages.size());
     }
 }
-
+void PaginatedSimpleForm::sendChoosePageForm(Player& player) {
+    auto f = std::make_unique<ll::form::CustomForm>();
+    f->setTitle("跳转到指定页码"_trf(player));
+    f->appendSlider("page", "页码", 1, static_cast<double>(mPaginatedData->mPages.size()), 1.0, mPageNumber);
+    f->setSubmitButton("跳转"_trf(player));
+    f->sendTo(player, [thiz = shared_from_this()](Player& self, ll::form::CustomFormResult const& res, auto) {
+        if (!res) {
+            return;
+        }
+        auto page = static_cast<int>(std::get<double>(res->at("page")));
+        thiz->sendPage(self, thiz->getPage(page).first.get());
+        thiz->mPageNumber = page;
+    });
+}
 
 void PaginatedSimpleForm::sendPage(Player& player, SimpleForm* page) {
     if (!page) {

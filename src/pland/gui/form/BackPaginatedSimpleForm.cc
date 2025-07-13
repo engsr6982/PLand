@@ -1,9 +1,11 @@
 #include "BackPaginatedSimpleForm.h"
+#include "pland/gui/form/PaginatedSimpleForm.h"
 
 namespace land {
 
 
-BackPaginatedSimpleForm::BackPaginatedSimpleForm() : mFactory(std::make_unique<PaginatedSimpleFormFactory>()) {}
+BackPaginatedSimpleForm::BackPaginatedSimpleForm()
+: mFactory(std::make_unique<PaginatedSimpleFormFactory>(PaginatedSimpleFormFactory::Options{})) {}
 
 BackPaginatedSimpleForm& BackPaginatedSimpleForm::setTitle(std::string title) {
     mFactory->setTitle(std::move(title));
