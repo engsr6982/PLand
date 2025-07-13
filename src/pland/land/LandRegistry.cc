@@ -631,8 +631,12 @@ SharedLand LandRegistry::getLandAt(BlockPos const& pos, LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
     std::unordered_set<SharedLand>      result;
 
-    auto const& landsIds = *mDimensionChunkMap.queryLand(dimid, EncodeChunkID(pos.x >> 4, pos.z >> 4));
-    for (auto const& id : landsIds) {
+    auto landsIds = mDimensionChunkMap.queryLand(dimid, EncodeChunkID(pos.x >> 4, pos.z >> 4));
+    if (!landsIds) {
+        return nullptr;
+    }
+
+    for (auto const& id : *landsIds) {
         if (auto iter = mLandCache.find(id); iter != mLandCache.end()) {
             if (auto const& land = iter->second; land->getAABB().hasPos(pos, !land->is3D())) {
                 result.insert(land);
@@ -683,8 +687,12 @@ std::unordered_set<SharedLand> LandRegistry::getLandAt(BlockPos const& center, i
             }
             visitedChunks.insert(chunkId);
 
-            auto const& landsIds = *mDimensionChunkMap.queryLand(dimid, chunkId);
-            for (auto const& id : landsIds) {
+            auto landsIds = mDimensionChunkMap.queryLand(dimid, chunkId);
+            if (!landsIds) {
+                continue;
+            }
+
+            for (auto const& id : *landsIds) {
                 if (auto iter = mLandCache.find(id); iter != mLandCache.end()) {
                     if (auto const& land = iter->second; land->isCollision(center, radius)) {
                         lands.insert(land);
@@ -719,8 +727,12 @@ LandRegistry::getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid di
             }
             visitedChunks.insert(chunkId);
 
-            auto const& landsIds = *mDimensionChunkMap.queryLand(dimid, chunkId);
-            for (auto const& id : landsIds) {
+            auto landsIds = mDimensionChunkMap.queryLand(dimid, chunkId);
+            if (!landsIds) {
+                continue;
+            }
+
+            for (auto const& id : *landsIds) {
                 if (auto iter = mLandCache.find(id); iter != mLandCache.end()) {
                     if (auto const& land = iter->second; land->isCollision(pos1, pos2)) {
                         lands.insert(land);
