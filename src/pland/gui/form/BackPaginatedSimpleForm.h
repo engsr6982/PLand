@@ -1,38 +1,51 @@
 #pragma once
 #include "PaginatedSimpleForm.h"
+#include "pland/gui/form/BackSimpleForm.h"
 
 
 namespace land {
 
 
 class BackPaginatedSimpleForm {
-public:
-    using ButtonCallback = ll::form::SimpleForm::ButtonCallback;
 
-private:
-    std::unique_ptr<PaginatedSimpleFormFactory> mFactory;
-    ButtonCallback                              mBackCallback{};
-    bool                                        mIsAddedBackButton = false;
+    std::shared_ptr<PaginatedSimpleForm> impl;
 
 public:
-    LDAPI BackPaginatedSimpleForm();
+    BackPaginatedSimpleForm() : impl(PaginatedSimpleForm::make()) {}
 
-    LDAPI BackPaginatedSimpleForm& setTitle(std::string title);
+    BackPaginatedSimpleForm& setTitle(std::string title) {
+        impl->setTitle(std::move(title));
+        return *this;
+    }
 
-    LDAPI BackPaginatedSimpleForm& setContent(std::string content);
+    BackPaginatedSimpleForm& setContent(std::string content) {
+        impl->setContent(std::move(content));
+        return *this;
+    }
 
     // concept: HasAppendButtonMethods
-    LDAPI BackPaginatedSimpleForm& appendButton(std::string text, ButtonCallback callback = {});
-
-    LDAPI BackPaginatedSimpleForm&
-    appendButton(std::string text, std::string imageData, std::string imageType, ButtonCallback callback = {});
+    template <typename... Args>
+    BackPaginatedSimpleForm& appendButton(Args&&... args) {
+        impl->appendButton(std::forward<Args>(args)...);
+        return *this;
+    }
 
     // concept: HasSendToMethod
-    LDAPI BackPaginatedSimpleForm& sendTo(Player& player);
-
-private:
-    void injectBackButton(Player& player);
+    template <typename... Args>
+    LDAPI void sendTo(Args&&... args) {
+        impl->sendTo(std::forward<Args>(args)...);
+    }
 };
+
+static_assert(HasSendToMethod<BackPaginatedSimpleForm>, "BackPaginatedSimpleForm must satisfy HasSendToMethod");
+static_assert(
+    HasAppendButtonMethods<BackPaginatedSimpleForm>,
+    "BackPaginatedSimpleForm must satisfy HasAppendButtonMethods"
+);
+static_assert(
+    DisallowEnableSharedFromThis<BackPaginatedSimpleForm>,
+    "BackPaginatedSimpleForm must not satisfy std::enable_shared_from_this<T>"
+);
 
 
 } // namespace land

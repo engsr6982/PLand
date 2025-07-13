@@ -26,14 +26,14 @@ void TestMain::_setupPaginationFormTest() {
             }
             auto& player = *static_cast<Player*>(origin.getEntity());
 
-            auto fm = land::PaginatedSimpleFormFactory{"测试表单", {}};
+            auto fm = land::PaginatedSimpleForm::make("测试表单", land::PaginatedSimpleForm::Options{});
 
             for (int i = 1; i <= value.value; i++) {
                 auto stri = std::to_string(i);
-                fm.appendButton("按钮 #" + stri, [stri](Player& self) { self.sendMessage("你点击了按钮 #" + stri); });
+                fm->appendButton("按钮 #" + stri, [stri](Player& self) { self.sendMessage("你点击了按钮 #" + stri); });
             }
 
-            fm.buildAndSendTo(player);
+            fm->sendTo(player);
         });
 }
 
