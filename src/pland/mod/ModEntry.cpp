@@ -18,7 +18,7 @@
 
 
 #ifdef LD_TEST
-#include "LandEventTest.h"
+#include "TestMain.h"
 #endif
 
 #ifdef LD_DEVTOOL
@@ -81,7 +81,7 @@ bool ModEntry::enable() {
 
 
 #ifdef LD_TEST
-    test::SetupEventListener();
+    test::RunTestMain();
 #endif
 
 #ifdef LD_DEVTOOL

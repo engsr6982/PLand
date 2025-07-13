@@ -3,8 +3,6 @@
 #include "ll/api/event/ListenerBase.h"
 #include "pland/mod/ModEntry.h"
 
-#include "LandEventTest.h"
-
 namespace test {
 
 std::vector<ll::event::ListenerPtr> mLandEventListeners;
@@ -35,7 +33,7 @@ void SetupEventListener() {
             logger->debug(
                 "[Test] PlayerBuyLandAfterEvent - Player: {}, LandID: {}",
                 ev.getPlayer().getRealName(),
-                ev.getLand()->getLandID()
+                ev.getLand()->getId()
             );
         }),
         bus.emplaceListener<land::PlayerEnterLandEvent>([logger](land::PlayerEnterLandEvent& ev) {
@@ -103,7 +101,7 @@ void SetupEventListener() {
             logger->debug(
                 "[Test] LandRangeChangeBeforeEvent - Player: {}, LandID: {}, NeedPay: {}, RefundPrice: {}",
                 ev.getPlayer().getRealName(),
-                ev.getLand()->getLandID(),
+                ev.getLand()->getId(),
                 ev.getNeedPay(),
                 ev.getRefundPrice()
             );
@@ -112,7 +110,7 @@ void SetupEventListener() {
             logger->debug(
                 "[Test] LandRangeChangeAfterEvent - Player: {}, LandID: {}, NeedPay: {}, RefundPrice: {}",
                 ev.getPlayer().getRealName(),
-                ev.getLand()->getLandID(),
+                ev.getLand()->getId(),
                 ev.getNeedPay(),
                 ev.getRefundPrice()
             );

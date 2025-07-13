@@ -1,10 +1,9 @@
 #pragma once
 
-
 namespace test {
 
 
-void SetupEventListener();
+void RunTestMain();
 
 
 }
