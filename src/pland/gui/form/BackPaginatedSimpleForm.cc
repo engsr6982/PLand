@@ -35,19 +35,19 @@ BackPaginatedSimpleForm& BackPaginatedSimpleForm::appendButton(
 
 
 BackPaginatedSimpleForm& BackPaginatedSimpleForm::sendTo(Player& player) {
-    injectBackButton();
+    injectBackButton(player);
     mFactory->buildAndSendTo(player);
     return *this;
 }
 
-void BackPaginatedSimpleForm::injectBackButton() {
+void BackPaginatedSimpleForm::injectBackButton(Player& player) {
     if (mBackCallback && !mIsAddedBackButton) {
         mIsAddedBackButton = true;
 
         mFactory->mButtons.insert(
             mFactory->mButtons.begin(),
             PaginatedSimpleFormFactory::ButtonData{
-                .mText      = "Back",
+                .mText      = "返回"_trf(player),
                 .mImageData = "textures/ui/icon_import",
                 .mImageType = "path",
                 .mCallback  = std::move(mBackCallback)

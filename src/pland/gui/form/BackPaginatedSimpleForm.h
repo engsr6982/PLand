@@ -31,7 +31,7 @@ public:
     LDAPI BackPaginatedSimpleForm& sendTo(Player& player);
 
 private:
-    void injectBackButton();
+    void injectBackButton(Player& player);
 };
 
 
