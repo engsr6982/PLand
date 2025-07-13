@@ -52,24 +52,22 @@ void LandManagerGUI::sendMainMenu(Player& player, SharedLand land) {
     } else {
         subContent = "父领地ID: {}\n父领地名称: {}"_trf(
             player,
-            land->getParentLand()->getId(),
-            land->getParentLand() ? land->getParentLand()->getName() : "nullptr"
+            land->hasParentLand() ? (std::to_string(land->getParentLand()->getId())) : "nullptr",
+            land->hasParentLand() ? land->getParentLand()->getName() : "nullptr"
         );
     }
 
-    fm.setContent(
-        "领地: {}\n类型: {}\n大小: {}x{}x{} = {}\n范围: {}\n\n{}"_trf(
-            player,
-            land->getName(),
-            land->is3D() ? "3D" : "2D",
-            land->getAABB().getDepth(),
-            land->getAABB().getWidth(),
-            land->getAABB().getHeight(),
-            land->getAABB().getVolume(),
-            land->getAABB().toString(),
-            subContent
-        )
-    );
+    fm.setContent("领地: {}\n类型: {}\n大小: {}x{}x{} = {}\n范围: {}\n\n{}"_trf(
+        player,
+        land->getName(),
+        land->is3D() ? "3D" : "2D",
+        land->getAABB().getDepth(),
+        land->getAABB().getWidth(),
+        land->getAABB().getHeight(),
+        land->getAABB().getVolume(),
+        land->getAABB().toString(),
+        subContent
+    ));
 
 
     fm.appendButton("编辑权限"_trf(player), "textures/ui/sidebar_icons/promotag", "path", [land](Player& pl) {
