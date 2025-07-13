@@ -1,4 +1,5 @@
 #include "pland/land/LandEvent.h"
+#include "TestMain.h"
 #include "ll/api/event/EventBus.h"
 #include "ll/api/event/ListenerBase.h"
 #include "pland/mod/ModEntry.h"
@@ -7,7 +8,7 @@ namespace test {
 
 std::vector<ll::event::ListenerPtr> mLandEventListeners;
 
-void SetupEventListener() {
+void TestMain::_setupLandEventTest() {
     auto& bus    = ll::event::EventBus::getInstance();
     auto  logger = &mod::ModEntry::getInstance().getSelf().getLogger();
 

@@ -1,3 +1,4 @@
+#include "TestMain.h"
 #include "mc/world/actor/player/Player.h"
 #include "pland/gui/form/PaginatedSimpleForm.h"
 #include <ll/api/command/Command.h>
@@ -9,9 +10,9 @@
 namespace test {
 
 
-void TestPaginationForm() {
+void TestMain::_setupPaginationFormTest() {
     ll::command::CommandRegistrar::getInstance()
-        .getOrCreateCommand("test")
+        .getOrCreateCommand("testl")
         .overload()
         .text("pagination")
         .execute([](CommandOrigin const& origin, CommandOutput& output) {
