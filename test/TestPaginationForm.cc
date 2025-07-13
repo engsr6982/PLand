@@ -9,13 +9,17 @@
 
 namespace test {
 
+struct Number {
+    int value = 16;
+};
 
 void TestMain::_setupPaginationFormTest() {
     ll::command::CommandRegistrar::getInstance()
         .getOrCreateCommand("testl")
-        .overload()
+        .overload<Number>()
         .text("pagination")
-        .execute([](CommandOrigin const& origin, CommandOutput& output) {
+        .optional("value")
+        .execute([](CommandOrigin const& origin, CommandOutput& output, Number const& value) {
             if (origin.getOriginType() != CommandOriginType::Player) {
                 output.error("This command can only be run by a player");
                 return;
@@ -24,7 +28,7 @@ void TestMain::_setupPaginationFormTest() {
 
             auto fm = land::PaginatedSimpleFormFactory{"测试表单", ""};
 
-            for (int i = 0; i < 16; i++) {
+            for (int i = 1; i <= value.value; i++) {
                 auto stri = std::to_string(i);
                 fm.appendButton("按钮 #" + stri, [stri](Player& self) { self.sendMessage("你点击了按钮 #" + stri); });
             }

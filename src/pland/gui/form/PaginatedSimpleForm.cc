@@ -99,24 +99,22 @@ void PaginatedSimpleFormFactory::buildAndSendTo(Player& player) {
     int counter    = 1;
     int pageNumber = 1;
     for (auto& button : mButtons) {
-        if (counter <= mPageButtons) {
-            if (counter == 1) {
-                beginBuildPage(paginatedForm, player, pageNumber, pageCount);
-            }
+        if (counter == 1) {
+            beginBuildPage(paginatedForm, player, pageNumber, pageCount);
+        }
 
-            // 转移按钮到页
-            auto& page = paginatedForm->getPage(pageNumber);
+        // 转移按钮到页
+        auto& page = paginatedForm->getPage(pageNumber);
 
-            if (button.mImageData.empty() && button.mImageType.empty()) {
-                page.first->appendButton(button.mText, std::move(button.mCallback));
-            } else {
-                page.first
-                    ->appendButton(button.mText, button.mImageData, button.mImageType, std::move(button.mCallback));
-            }
-            page.second.push_back(std::move(button));
-            counter++;
-
+        if (button.mImageData.empty() && button.mImageType.empty()) {
+            page.first->appendButton(button.mText, std::move(button.mCallback));
         } else {
+            page.first->appendButton(button.mText, button.mImageData, button.mImageType, std::move(button.mCallback));
+        }
+        page.second.push_back(std::move(button));
+
+        ++counter;
+        if (counter > mPageButtons) {
             endBuildPage(paginatedForm, player, pageNumber, pageCount);
             pageNumber++;
             counter = 1;
