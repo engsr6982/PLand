@@ -51,13 +51,16 @@ concept HasSendTo2Arg = requires(T t, Player& p, SimpleForm::Callback cb) {
 template <typename T>
 concept HasSendToMethod = HasSendTo1Arg<T> || HasSendTo2Arg<T>;
 
+template <typename T>
+concept DisallowEnableSharedFromThis = !std::is_base_of_v<std::enable_shared_from_this<T>, T>;
 
 template <typename T = SimpleForm>
-    requires HasAppendButtonMethods<T> && HasSendToMethod<T>
+    requires HasAppendButtonMethods<T> && HasSendToMethod<T> && DisallowEnableSharedFromThis<T>
 class BackSimpleForm : public T {
 public:
     static_assert(HasAppendButtonMethods<T>, "T must satisfy HasAppendButtonMethods");
     static_assert(HasSendToMethod<T>, "T must satisfy HasSendToMethod");
+    static_assert(DisallowEnableSharedFromThis<T>, "T must not satisfy std::enable_shared_from_this<T>");
 
     enum class ButtonPos { Upper, Lower };
 
