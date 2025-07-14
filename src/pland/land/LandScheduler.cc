@@ -12,23 +12,13 @@
 #include "mc/world/level/Level.h"
 #include "pland/Global.h"
 #include "pland/infra/Config.h"
-#include "pland/infra/Require.h"
 #include "pland/land/LandEvent.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/mod/ModEntry.h"
-#include <cstdio>
-#include <stdexcept>
 
 
 namespace land {
 
-LandScheduler* Require<LandScheduler>::operator->() {
-    auto res = mod::ModEntry::getInstance().mLandScheduler.get();
-    if (!res) [[unlikely]] {
-        throw std::runtime_error(LD_ERR_RAII_RESOURCE_EMPTY(LandScheduler));
-    }
-    return res;
-}
 
 LandScheduler::LandScheduler() {
     auto* bus = &ll::event::EventBus::getInstance();
