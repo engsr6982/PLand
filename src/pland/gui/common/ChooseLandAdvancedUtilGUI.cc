@@ -159,20 +159,27 @@ public:
 
             auto wLand = std::weak_ptr(land);
 
-            mViews.at(View::All).appendButton(land->getName(), makeCallback(wLand));
+            std::string text =
+                "{}\n维度: {} | ID: {}"_trf(player, land->getName(), land->getDimensionId(), land->getId());
+
+            mViews.at(View::All).appendButton(text, "textures/ui/icon_recipe_nature", "path", makeCallback(wLand));
 
             switch (land->getType()) {
             case Land::Type::Ordinary:
-                mViews.at(View::OnlyOrdinary).appendButton(land->getName(), makeCallback(wLand));
+                mViews.at(View::OnlyOrdinary)
+                    .appendButton(text, "textures/ui/icon_recipe_nature", "path", makeCallback(wLand));
                 break;
             case Land::Type::Parent:
-                mViews.at(View::OnlyParent).appendButton(land->getName(), makeCallback(wLand));
+                mViews.at(View::OnlyParent)
+                    .appendButton(text, "textures/ui/icon_recipe_nature", "path", makeCallback(wLand));
                 break;
             case Land::Type::Mix:
-                mViews.at(View::OnlyMix).appendButton(land->getName(), makeCallback(wLand));
+                mViews.at(View::OnlyMix)
+                    .appendButton(text, "textures/ui/icon_recipe_nature", "path", makeCallback(wLand));
                 break;
             case Land::Type::Sub:
-                mViews.at(View::OnlySub).appendButton(land->getName(), makeCallback(wLand));
+                mViews.at(View::OnlySub)
+                    .appendButton(text, "textures/ui/icon_recipe_nature", "path", makeCallback(wLand));
                 break;
             }
         }
