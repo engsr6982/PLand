@@ -13,7 +13,7 @@ public:
     ChooseLandUtilGUI() = delete;
 
     using ChooseCallback = std::function<void(Player&, SharedLand choosedLand)>;
-    LDAPI static void sendTo(
+    [[deprecated]] LDAPI static void sendTo(
         Player&                          player,
         ChooseCallback const&            callback,
         bool                             showShredLand = false,
