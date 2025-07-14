@@ -87,7 +87,12 @@ void PaginatedSimpleForm::Page::sendTo(Player& player, SimpleForm::Callback cb) 
     mForm->sendTo(player, std::move(cb));
 }
 void PaginatedSimpleForm::Page::inovkeCallback(Player& player, int index) const {
-    mIndexMap.at(index).mCallback(player);
+    auto& res = mIndexMap.at(index);
+    if (res.mCallback) {
+        res.mCallback(player);
+    } else {
+        throw std::runtime_error("no callback for button: " + res.mText);
+    }
 }
 
 void PaginatedSimpleForm::buildSpecialButtons(Player& player) {
@@ -96,23 +101,68 @@ void PaginatedSimpleForm::buildSpecialButtons(Player& player) {
     }
     mSpecialButtons.emplace(
         SpecialButton::PrevPage,
-        ButtonData{"上一页"_trf(player), "textures/ui/book_pageleft_default", "path"}
+        ButtonData{
+            "上一页"_trf(player),
+            "textures/ui/book_pageleft_default",
+            "path",
+            [weak = std::weak_ptr(shared_from_this())](Player& self) {
+                if (auto thiz = weak.lock()) {
+                    thiz->sendPrevPage(self);
+                }
+            }
+        }
     );
     mSpecialButtons.emplace(
         SpecialButton::NextPage,
-        ButtonData{"下一页"_trf(player), "textures/ui/book_pageright_default", "path"}
+        ButtonData{
+            "下一页"_trf(player),
+            "textures/ui/book_pageright_default",
+            "path",
+            [weak = std::weak_ptr(shared_from_this())](Player& self) {
+                if (auto thiz = weak.lock()) {
+                    thiz->sendNextPage(self);
+                }
+            }
+        }
     );
     mSpecialButtons.emplace(
         SpecialButton::Special,
-        ButtonData{"跳转到指定页码"_trf(player), "textures/ui/mashup_PaintBrush", "path"}
+        ButtonData{
+            "跳转到指定页码"_trf(player),
+            "textures/ui/mashup_PaintBrush",
+            "path",
+            [weak = std::weak_ptr(shared_from_this())](Player& self) {
+                if (auto thiz = weak.lock()) {
+                    thiz->sendChoosePageForm(self);
+                }
+            }
+        }
     );
     mSpecialButtons.emplace(
         SpecialButton::JumpToFirstPage,
-        ButtonData{"跳转到第一页"_trf(player), "textures/ui/book_shiftleft_hover", "path"}
+        ButtonData{
+            "跳转到第一页"_trf(player),
+            "textures/ui/book_shiftleft_hover",
+            "path",
+            [weak = std::weak_ptr(shared_from_this())](Player& self) {
+                if (auto thiz = weak.lock()) {
+                    thiz->sendFirstPage(self);
+                }
+            }
+        }
     );
     mSpecialButtons.emplace(
         SpecialButton::JumpToLastPage,
-        ButtonData{"跳转到最后一页"_trf(player), "textures/ui/book_shiftright_hover", "path"}
+        ButtonData{
+            "跳转到最后一页"_trf(player),
+            "textures/ui/book_shiftright_hover",
+            "path",
+            [weak = std::weak_ptr(shared_from_this())](Player& self) {
+                if (auto thiz = weak.lock()) {
+                    thiz->sendLastPage(self);
+                }
+            }
+        }
     );
 }
 PaginatedSimpleForm::ButtonData const& PaginatedSimpleForm::getSpecialButton(SpecialButton specialButton) {
