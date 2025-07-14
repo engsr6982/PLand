@@ -9,10 +9,12 @@ struct TestMain {
     static void setup() {
         _setupLandEventTest();
         _setupPaginationFormTest();
+        _setupChooseLandAdvancedUtilGUITest();
     }
 
     static void _setupLandEventTest();
     static void _setupPaginationFormTest();
+    static void _setupChooseLandAdvancedUtilGUITest();
 };
 
 
