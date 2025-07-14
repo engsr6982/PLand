@@ -22,6 +22,7 @@ public:
         bool enableJumpSpecial     = true; // 是否启用跳转到指定页按钮
     };
 
+    using FormCanceledCallback = std::function<void(Player& player)>;
 
 public:
     template <typename... Args>
@@ -46,6 +47,11 @@ public:
     LDAPI PaginatedSimpleForm& appendButton(std::string text, SimpleForm::ButtonCallback callback = {});
 
     LDAPI void sendTo(Player& player);
+
+    /**
+     * @brief 表单被取消时的回调函数
+     */
+    LDAPI PaginatedSimpleForm& onFormCanceled(FormCanceledCallback cb = {});
 
 private:
     LDAPI explicit PaginatedSimpleForm();
@@ -116,14 +122,17 @@ private:
 
     void sendChoosePageForm(Player& player); // 发送跳转到指定页表单
 
+    void invokeCancelCallback(Player& player);
+
 
     // 表单数据(原始)
-    Options                             mOptions{};      // 表单选项
-    std::string                         mTitle;          // 表单标题
-    std::string                         mContent;        // 表单内容
-    std::vector<ButtonData>             mButtons;        // 按钮数据
-    std::map<SpecialButton, ButtonData> mSpecialButtons; // 特殊按钮数据
-    bool                                mIsDirty{true};  // 是否需要重新生成表单
+    Options                             mOptions{};        // 表单选项
+    std::string                         mTitle;            // 表单标题
+    std::string                         mContent;          // 表单内容
+    std::vector<ButtonData>             mButtons;          // 按钮数据
+    std::map<SpecialButton, ButtonData> mSpecialButtons;   // 特殊按钮数据
+    bool                                mIsDirty{true};    // 是否需要重新生成表单
+    FormCanceledCallback                mFormCanceledCb{}; // 表单取消回调函数
 
     // 表单数据(分页)
     std::vector<Page> mPages;                // 分页表单数据

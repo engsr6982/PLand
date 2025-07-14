@@ -78,6 +78,11 @@ void PaginatedSimpleForm::sendTo(Player& player) {
     sendFirstPage(player);
 }
 
+PaginatedSimpleForm& PaginatedSimpleForm::onFormCanceled(FormCanceledCallback cb) {
+    mFormCanceledCb = std::move(cb);
+    return *this;
+}
+
 
 // impl
 PaginatedSimpleForm::Page::Page(std::unique_ptr<SimpleForm> form, std::map<int, ButtonData const&> indexMap)
@@ -275,6 +280,7 @@ SimpleForm::Callback PaginatedSimpleForm::makeCallback() {
             std::cout << "PaginatedSimpleForm::makeCallback: form canceled, ref count = " << thiz.use_count()
                       << std::endl;
 #endif
+            thiz->invokeCancelCallback(self);
             return;
         }
         thiz->getPage(thiz->mCurrentPageNumber).inovkeCallback(self, index);
@@ -325,11 +331,18 @@ void PaginatedSimpleForm::sendChoosePageForm(Player& player) {
             std::cout << "PaginatedSimpleForm::sendChoosePageForm: form canceled, ref count = " << thiz.use_count()
                       << std::endl;
 #endif
+            thiz->invokeCancelCallback(self);
             return; // 表单取消后，不在有地方持有 thiz 的引用，这里的 thiz 会自动释放
         }
         auto page = static_cast<int>(std::get<double>(res->at("page")));
         thiz->sendSpecialPage(self, page);
     });
+}
+
+void PaginatedSimpleForm::invokeCancelCallback(Player& player) {
+    if (mFormCanceledCb) {
+        mFormCanceledCb(player);
+    }
 }
 
 
