@@ -39,6 +39,11 @@ public:
     LDAPI explicit Land(LandContext ctx);
     LDAPI explicit Land(LandAABB const& pos, LandDimid dimid, bool is3D, UUIDs const& owner);
 
+    template <typename... Args>
+    static SharedLand make(Args&&... args) {
+        return std::make_shared<Land>(std::forward<Args>(args)...);
+    }
+
 
     LDNDAPI LandAABB const& getAABB() const;
 
@@ -163,11 +168,6 @@ public:
     LDAPI bool operator==(SharedLand const& other) const;
 
 public:
-    LDNDAPI static SharedLand make();
-    LDNDAPI static SharedLand make(LandContext ctx);
-    LDNDAPI static SharedLand make(LandAABB const& pos, LandDimid dimid, bool is3D, UUIDs const& owner); // 新建领地数据
-
-
     using RecursionCalculationPriceHandle = std::function<bool(SharedLand const& land, llong& price)>;
 
     /**

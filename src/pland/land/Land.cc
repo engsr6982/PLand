@@ -95,7 +95,8 @@ Land::Type Land::getType() const {
     } else if (isSubLand()) {
         return Type::Sub;
     }
-    throw std::runtime_error("Unknown land type"); [[unlikely]];
+    throw std::runtime_error("Unknown land type");
+    [[unlikely]];
 }
 bool Land::hasParentLand() const { return this->mContext.mParentLandID != static_cast<LandID>(-1); }
 bool Land::hasSubLand() const { return !this->mContext.mSubLandIDs.empty(); }
@@ -208,12 +209,6 @@ bool Land::operator==(SharedLand const& other) const { return mContext.mLandID =
 
 
 // static
-SharedLand Land::make() { return std::make_shared<Land>(); }
-SharedLand Land::make(LandContext ctx) { return std::make_shared<Land>(std::move(ctx)); }
-SharedLand Land::make(LandAABB const& pos, LandDimid dimid, bool is3D, UUIDs const& owner) {
-    return std::make_shared<Land>(pos, dimid, is3D, owner);
-}
-
 llong Land::calculatePriceRecursively(SharedLand const& land, RecursionCalculationPriceHandle const& handle) {
     std::stack<SharedLand> stack;
     stack.push(land);
