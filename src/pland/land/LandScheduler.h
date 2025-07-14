@@ -1,6 +1,7 @@
 #pragma once
 #include "ll/api/event/ListenerBase.h"
 #include "pland/Global.h"
+#include "pland/infra/Require.h"
 #include <unordered_map>
 
 
@@ -23,6 +24,9 @@ public:
     LDAPI explicit LandScheduler();
     LDAPI ~LandScheduler();
 };
+
+
+LD_DECLARE_REQUIRE(LandScheduler);
 
 
 } // namespace land
