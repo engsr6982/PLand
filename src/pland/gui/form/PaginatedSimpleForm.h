@@ -7,6 +7,10 @@
 #include <utility>
 #include <vector>
 
+#ifdef DEBUG
+#include "pland/debug/FuckSharedResourceMemoryLeak.h"
+#endif
+
 
 namespace land {
 
@@ -27,8 +31,14 @@ public:
 public:
     template <typename... Args>
     static std::shared_ptr<PaginatedSimpleForm> make(Args&&... args) {
-        // return std::make_shared<PaginatedSimpleForm>(std::forward<Args>(args)...);
+// return std::make_shared<PaginatedSimpleForm>(std::forward<Args>(args)...);
+#ifdef DEBUG
+        auto p = std::shared_ptr<PaginatedSimpleForm>(new PaginatedSimpleForm(std::forward<Args>(args)...));
+        GlobalFuckSharedResourceMemoryLeak<PaginatedSimpleForm>.add(p);
+        return p;
+#else
         return std::shared_ptr<PaginatedSimpleForm>(new PaginatedSimpleForm(std::forward<Args>(args)...));
+#endif
     }
 
     LDAPI virtual ~PaginatedSimpleForm();

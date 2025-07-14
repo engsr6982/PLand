@@ -564,3 +564,4 @@ vsxmake2022
 doxygen/
 
 src/pland/Version.h
+!src/pland/debug/

@@ -39,6 +39,7 @@ public:
     template <typename... Args>
     BackPaginatedSimpleForm& onFormCanceled(Args&&... args) {
         impl->onFormCanceled(std::forward<Args>(args)...);
+        return *this;
     }
 };
 

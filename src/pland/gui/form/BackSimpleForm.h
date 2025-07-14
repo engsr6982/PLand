@@ -86,6 +86,8 @@ public:
 
     BackSimpleForm(const BackSimpleForm&)            = delete;
     BackSimpleForm& operator=(const BackSimpleForm&) = delete;
+    BackSimpleForm(BackSimpleForm&&)                 = default;
+    BackSimpleForm& operator=(BackSimpleForm&&)      = default;
 
     BackSimpleForm& sendTo(Player& player) {
         if (mBackCallback && !mIsAddedBackButton) {
