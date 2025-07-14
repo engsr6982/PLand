@@ -268,23 +268,6 @@ void PaginatedSimpleForm::_endBuild(Page& page, int pageNumber, int& buttonIndex
     }
 }
 
-
-PaginatedSimpleForm::Page const& PaginatedSimpleForm::getPrevPage() {
-    if (mCurrentPageNumber <= 1) {
-        return getPage(mCurrentPageNumber);
-    }
-    return getPage(mCurrentPageNumber - 1);
-}
-PaginatedSimpleForm::Page const& PaginatedSimpleForm::getNextPage() {
-    if (mCurrentPageNumber >= static_cast<int>(mPages.size())) {
-        return getPage(mCurrentPageNumber);
-    }
-    return getPage(mCurrentPageNumber + 1);
-}
-PaginatedSimpleForm::Page const& PaginatedSimpleForm::getCurrentPage() { return getPage(mCurrentPageNumber); }
-PaginatedSimpleForm::Page const& PaginatedSimpleForm::getFirstPage() { return *mPages.begin(); }
-PaginatedSimpleForm::Page const& PaginatedSimpleForm::getLastPage() { return *mPages.rbegin(); }
-
 SimpleForm::Callback PaginatedSimpleForm::makeCallback() {
     return [thiz = shared_from_this()](Player& self, int index, auto) {
         if (index == -1) {
@@ -298,20 +281,26 @@ SimpleForm::Callback PaginatedSimpleForm::makeCallback() {
     };
 }
 void PaginatedSimpleForm::sendPrevPage(Player& player) {
-    getPrevPage().sendTo(player, makeCallback());
-    mCurrentPageNumber--;
+    if (mCurrentPageNumber <= 1) {
+        getPage(mCurrentPageNumber).sendTo(player, makeCallback()); // 当前页是第一页，直接发送当前页
+    } else {
+        getPage(mCurrentPageNumber--).sendTo(player, makeCallback()); // 发送上一页
+    }
 }
 void PaginatedSimpleForm::sendNextPage(Player& player) {
-    getNextPage().sendTo(player, makeCallback());
-    mCurrentPageNumber++;
+    if (mCurrentPageNumber >= static_cast<int>(mPages.size())) {
+        getPage(mCurrentPageNumber).sendTo(player, makeCallback());
+    } else {
+        getPage(mCurrentPageNumber++).sendTo(player, makeCallback());
+    }
 }
 void PaginatedSimpleForm::sendFirstPage(Player& player) {
-    getFirstPage().sendTo(player, makeCallback());
+    getPage(1).sendTo(player, makeCallback());
     mCurrentPageNumber = 1;
 }
 void PaginatedSimpleForm::sendLastPage(Player& player) {
-    getLastPage().sendTo(player, makeCallback());
-    mCurrentPageNumber = static_cast<int>(mPages.size());
+    getPage(mTotalPages).sendTo(player, makeCallback());
+    mCurrentPageNumber = mTotalPages;
 }
 void PaginatedSimpleForm::sendSpecialPage(Player& player, int pageNumber) {
     getPage(pageNumber).sendTo(player, makeCallback());

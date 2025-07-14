@@ -106,12 +106,6 @@ private:
     void _beginBuild(Page& page, int pageNumber, int& buttonIndex);
     void _endBuild(Page& page, int pageNumber, int& buttonIndex);
 
-    Page const& getPrevPage();    // 获取上一页
-    Page const& getNextPage();    // 获取下一页
-    Page const& getCurrentPage(); // 获取当前页
-    Page const& getFirstPage();   // 获取第一页
-    Page const& getLastPage();    // 获取最后一页
-
     SimpleForm::Callback makeCallback(); // 创建回调函数
 
     void sendPrevPage(Player& player);                    // 发送上一页
