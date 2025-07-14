@@ -32,8 +32,13 @@ public:
 
     // concept: HasSendToMethod
     template <typename... Args>
-    LDAPI void sendTo(Args&&... args) {
+    void sendTo(Args&&... args) {
         impl->sendTo(std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    BackPaginatedSimpleForm& onFormCanceled(Args&&... args) {
+        impl->onFormCanceled(std::forward<Args>(args)...);
     }
 };
 
