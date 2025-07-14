@@ -1,6 +1,7 @@
 #include "LandTeleportGUI.h"
 #include "CommonUtilGUI.h"
 #include "pland/gui/LandMainMenuGUI.h"
+#include "pland/gui/common/ChooseLandAdvancedUtilGUI.h"
 #include "pland/gui/form/BackSimpleForm.h"
 #include "pland/infra/SafeTeleport.h"
 #include "pland/land/Land.h"
@@ -12,7 +13,13 @@ namespace land {
 
 
 void LandTeleportGUI::sendTo(Player& player) {
-    ChooseLandUtilGUI::sendTo(player, impl, true, BackSimpleForm<>::makeCallback<LandMainMenuGUI::sendTo>());
+    // ChooseLandUtilGUI::sendTo(player, impl, true, BackSimpleForm<>::makeCallback<LandMainMenuGUI::sendTo>());
+    ChooseLandAdvancedUtilGUI::sendTo(
+        player,
+        LandRegistry::getInstance().getLands(player.getUuid().asString(), true),
+        impl,
+        BackSimpleForm<>::makeCallback<sendTo>()
+    );
 }
 
 void LandTeleportGUI::impl(Player& player, SharedLand land) {

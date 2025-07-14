@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 管理 GUI 支持分页 #107 @engsr6982
 - 实现脏数据计数 #95 @engsr6982
 - 重构经济系统，LegacyMoney 更改为可选依赖 @engsr6982
+- 选择领地表单支持**分页、搜索、过滤** #107 #101 @engsr6982
 
 ### 🧹 其他改动
 

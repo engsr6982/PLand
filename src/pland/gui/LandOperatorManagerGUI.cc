@@ -2,6 +2,7 @@
 #include "CommonUtilGUI.h"
 #include "LandManagerGUI.h"
 #include "ll/api/service/PlayerInfo.h"
+#include "pland/gui/common/ChooseLandAdvancedUtilGUI.h"
 #include "pland/gui/form/BackPaginatedSimpleForm.h"
 #include "pland/gui/form/BackSimpleForm.h"
 #include "pland/land/LandRegistry.h"
@@ -35,7 +36,8 @@ void LandOperatorManagerGUI::sendMainMenu(Player& player) {
         sendChoosePlayerFromDb(self, static_cast<void (*)(Player&, UUIDs const&)>(sendChooseLandGUI));
     });
     fm.appendButton("管理指定领地"_trf(player), "textures/ui/magnifyingGlass", "path", [](Player& self) {
-        sendChooseLandGUI(self, LandRegistry::getInstance().getLands());
+        // sendChooseLandGUI(self, LandRegistry::getInstance().getLands());
+        sendChooseLandAdvancedGUI(self, LandRegistry::getInstance().getLands());
     });
 
     fm.sendTo(player);
@@ -69,7 +71,17 @@ void LandOperatorManagerGUI::sendChoosePlayerFromDb(Player& player, ChoosePlayer
 
 
 void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, UUIDs const& targetPlayer) {
-    sendChooseLandGUI(player, LandRegistry::getInstance().getLands(targetPlayer));
+    // sendChooseLandGUI(player, LandRegistry::getInstance().getLands(targetPlayer));
+    sendChooseLandAdvancedGUI(player, LandRegistry::getInstance().getLands(targetPlayer));
+}
+
+void LandOperatorManagerGUI::sendChooseLandAdvancedGUI(Player& player, std::vector<SharedLand> lands) {
+    ChooseLandAdvancedUtilGUI::sendTo(
+        player,
+        lands,
+        [](Player& self, SharedLand ptr) { LandManagerGUI::sendMainMenu(self, ptr); },
+        BackSimpleForm<>::makeCallback<sendMainMenu>()
+    );
 }
 
 void LandOperatorManagerGUI::sendChooseLandGUI(Player& player, std::vector<SharedLand> lands) {
