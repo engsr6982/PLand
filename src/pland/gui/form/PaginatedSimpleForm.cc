@@ -284,14 +284,14 @@ void PaginatedSimpleForm::sendPrevPage(Player& player) {
     if (mCurrentPageNumber <= 1) {
         getPage(mCurrentPageNumber).sendTo(player, makeCallback()); // 当前页是第一页，直接发送当前页
     } else {
-        getPage(mCurrentPageNumber--).sendTo(player, makeCallback()); // 发送上一页
+        getPage(--mCurrentPageNumber).sendTo(player, makeCallback()); // 发送上一页
     }
 }
 void PaginatedSimpleForm::sendNextPage(Player& player) {
     if (mCurrentPageNumber >= static_cast<int>(mPages.size())) {
         getPage(mCurrentPageNumber).sendTo(player, makeCallback());
     } else {
-        getPage(mCurrentPageNumber++).sendTo(player, makeCallback());
+        getPage(++mCurrentPageNumber).sendTo(player, makeCallback());
     }
 }
 void PaginatedSimpleForm::sendFirstPage(Player& player) {
