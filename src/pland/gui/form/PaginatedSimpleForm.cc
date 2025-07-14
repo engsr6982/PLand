@@ -307,11 +307,19 @@ void PaginatedSimpleForm::sendSpecialPage(Player& player, int pageNumber) {
     mCurrentPageNumber = pageNumber;
 }
 void PaginatedSimpleForm::sendChoosePageForm(Player& player) {
-    auto f = std::make_unique<ll::form::CustomForm>();
-    f->setTitle("跳转到指定页码"_trf(player));
-    f->appendSlider("page", "页码", 1, static_cast<double>(mPages.size()), 1.0, mCurrentPageNumber);
-    f->setSubmitButton("跳转"_trf(player));
-    f->sendTo(player, [thiz = shared_from_this()](Player& self, ll::form::CustomFormResult const& res, auto) {
+    auto fm = std::make_unique<ll::form::CustomForm>();
+    fm->setTitle("跳转到指定页码"_trf(player));
+    fm->appendSlider(
+        "page",
+        "共 {} 页，请选择页码："_trf(player, mTotalPages),
+        1,
+        mTotalPages,
+        1.0,
+        mCurrentPageNumber
+    );
+    fm->setSubmitButton("跳转"_trf(player));
+
+    fm->sendTo(player, [thiz = shared_from_this()](Player& self, ll::form::CustomFormResult const& res, auto) {
         if (!res) {
 #ifdef DEBUG
             std::cout << "PaginatedSimpleForm::sendChoosePageForm: form canceled, ref count = " << thiz.use_count()
