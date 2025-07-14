@@ -233,7 +233,7 @@ void PaginatedSimpleForm::buildPages() {
     }
 }
 void PaginatedSimpleForm::_beginBuild(Page& page, int pageNumber, int& buttonIndex) {
-    if (pageNumber == 1 || mTotalPages == 1) {
+    if (pageNumber != 1 && mTotalPages != 1) { // 非第一页 && 总页数大于1
         auto& prev = getSpecialButton(SpecialButton::PrevPage);
         page.mForm->appendButton(prev.mText, prev.mImageData, prev.mImageType);
         page.mIndexMap.emplace(buttonIndex++, prev); // 记录按钮索引
