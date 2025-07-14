@@ -124,7 +124,7 @@ bool LegacyMoneyInterface::transfer(Player& from, Player& to, long long amount) 
     if (!func) {
         throw std::runtime_error("Dynamic call to LLMoney_Trans failed.");
     }
-    return func(from.getXuid(), to.getXuid(), amount, "TeleportSystem Transfer");
+    return func(from.getXuid(), to.getXuid(), amount, "PLand internal transfer");
 }
 bool LegacyMoneyInterface::transfer(mce::UUID const& from, mce::UUID const& to, long long amount) const {
     if (!isLegacyMoneyLoaded()) {
