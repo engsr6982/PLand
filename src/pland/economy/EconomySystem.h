@@ -1,33 +1,43 @@
 #pragma once
-#include "mc/world/actor/player/Player.h"
+#include "EconomyConfig.h"
 #include "pland/Global.h"
-#include "pland/utils/Utils.h"
+#include "pland/economy/impl/IEconomyInterface.h"
+#include <memory>
+#include <mutex>
+#include <string>
 
 
+class Player;
+namespace mce {
+class UUID;
+}
 
 namespace land {
 
-class EconomySystem {
+
+class EconomySystem final {
+    std::shared_ptr<internals::IEconomyInterface> mEconomySystem;
+    mutable std::mutex                            mInstanceMutex;
+
+    explicit EconomySystem();
+
+    void initEconomySystem();   // 初始化经济系统
+    void reloadEconomySystem(); // 重载经济系统（当 kit 改变时）
+
+
 public:
-    EconomySystem()                                = default;
-    EconomySystem(const EconomySystem&)            = delete;
-    EconomySystem& operator=(const EconomySystem&) = delete;
-    EconomySystem(EconomySystem&&)                 = delete;
-    EconomySystem& operator=(EconomySystem&&)      = delete;
+    LD_DISALLOW_COPY_AND_MOVE(EconomySystem);
 
     LDNDAPI static EconomySystem& getInstance();
 
-    LDNDAPI long long get(Player& player);
+    LDNDAPI EconomyConfig& getConfig() const;
 
-    LDAPI bool set(Player& player, long long money);
+    LDNDAPI std::shared_ptr<internals::IEconomyInterface> getEconomyInterface() const;
 
-    LDAPI bool add(Player& player, long long money);
+    LDNDAPI std::shared_ptr<internals::IEconomyInterface> operator->() const;
 
-    LDAPI bool reduce(Player& player, long long money);
-
-    LDNDAPI string getSpendTip(Player& player, long long money);
-
-    LDAPI void sendLackMoneyTip(Player& player, long long money); // 发送经济不足提示
+private:
+    std::shared_ptr<internals::IEconomyInterface> createEconomySystem() const;
 };
 
 

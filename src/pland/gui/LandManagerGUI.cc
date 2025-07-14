@@ -189,14 +189,14 @@ void LandManagerGUI::_implRemoveWithOrdinaryOrSubLandGUI(Player& player, SharedL
             }
 
             auto& economy = EconomySystem::getInstance();
-            if (!economy.add(pl, price)) {
+            if (!economy->add(pl, price)) {
                 return;
             }
 
             auto result = ptr->isSubLand() ? LandRegistry::getInstance().removeSubLand(ptr)
                                            : LandRegistry::getInstance().removeOrdinaryLand(ptr);
             if (!result) {
-                economy.reduce(pl, price);
+                economy->reduce(pl, price);
                 return;
             }
 
@@ -229,7 +229,7 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, SharedLand const& 
         }
 
         auto& economy = EconomySystem::getInstance();
-        if (!economy.add(pl, price)) {
+        if (!economy->add(pl, price)) {
             return;
         }
 
@@ -252,7 +252,7 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, SharedLand const& 
 
         auto result = LandRegistry::getInstance().removeLandAndSubLands(ptr);
         if (!result) {
-            economy.reduce(pl, price);
+            economy->reduce(pl, price);
             return;
         }
 
@@ -274,13 +274,13 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, SharedLand const& 
         }
 
         auto& economy = EconomySystem::getInstance();
-        if (!economy.add(pl, refundPrice)) {
+        if (!economy->add(pl, refundPrice)) {
             return;
         }
 
         auto result = LandRegistry::getInstance().removeLandAndPromoteSubLands(ptr);
         if (!result) {
-            economy.reduce(pl, refundPrice);
+            economy->reduce(pl, refundPrice);
             return;
         }
 
@@ -313,7 +313,7 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, SharedLand const& ptr
         }
 
         auto& economy = EconomySystem::getInstance();
-        if (!economy.add(pl, price)) {
+        if (!economy->add(pl, price)) {
             return;
         }
 
@@ -336,7 +336,7 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, SharedLand const& ptr
 
         auto result = LandRegistry::getInstance().removeLandAndSubLands(ptr);
         if (!result) {
-            economy.reduce(pl, price);
+            economy->reduce(pl, price);
             return;
         }
 
@@ -358,13 +358,13 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, SharedLand const& ptr
         }
 
         auto& economy = EconomySystem::getInstance();
-        if (!economy.add(pl, refundPrice)) {
+        if (!economy->add(pl, refundPrice)) {
             return;
         }
 
         auto result = LandRegistry::getInstance().removeLandAndTransferSubLands(ptr);
         if (!result) {
-            economy.reduce(pl, refundPrice);
+            economy->reduce(pl, refundPrice);
             return;
         }
 

@@ -94,20 +94,18 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
 
     auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 购买领地"_trf(player)));
-    fm.setContent(
-        "领地类型: {}\n体积: {}x{}x{} = {}\n范围: {}\n原价: {}\n折扣价: {}\n{}"_trf(
-            player,
-            is3D ? "3D" : "2D",
-            length,
-            width,
-            height,
-            volume,
-            aabb->toString(),
-            originalPrice,
-            discountedPrice,
-            EconomySystem::getInstance().getSpendTip(player, discountedPrice)
-        )
-    );
+    fm.setContent("领地类型: {}\n体积: {}x{}x{} = {}\n范围: {}\n原价: {}\n折扣价: {}\n{}"_trf(
+        player,
+        is3D ? "3D" : "2D",
+        length,
+        width,
+        height,
+        volume,
+        aabb->toString(),
+        originalPrice,
+        discountedPrice,
+        EconomySystem::getInstance()->getCostMessage(player, discountedPrice)
+    ));
 
     fm.appendButton(
         "确认购买"_trf(player),
@@ -115,7 +113,7 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
         "path",
         [discountedPrice, aabb, length, width, height, is3D, selector](Player& pl) {
             auto& economy = EconomySystem::getInstance();
-            if (economy.get(pl) < discountedPrice && Config::cfg.economy.enabled) {
+            if (economy->get(pl) < discountedPrice && Config::cfg.economy.enabled) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您的余额不足，无法购买"_trf(pl));
                 return; // 预检查经济
             }
@@ -179,7 +177,7 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
             }
 
             // 扣除经济
-            if (!economy.reduce(pl, discountedPrice)) {
+            if (!economy->reduce(pl, discountedPrice)) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您的余额不足，无法购买"_trf(pl));
                 return;
             }
@@ -255,20 +253,18 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
 
     auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 购买领地 & 重新选区"_trf(player)));
-    fm.setContent(
-        "体积: {0}x{1}x{2} = {3}\n范围: {4}\n原购买价格: {5}\n需补差价: {6}\n需退差价: {7}\n{8}"_trf(
-            player,
-            length,                    // 1
-            width,                     // 2
-            height,                    // 3
-            volume,                    // 4
-            aabb->toString(),          // 5
-            originalPrice,             // 6
-            needPay < 0 ? 0 : needPay, // 7
-            refund < 0 ? 0 : refund,   // 8
-            needPay > 0 ? EconomySystem::getInstance().getSpendTip(player, needPay) : ""
-        )
-    );
+    fm.setContent("体积: {0}x{1}x{2} = {3}\n范围: {4}\n原购买价格: {5}\n需补差价: {6}\n需退差价: {7}\n{8}"_trf(
+        player,
+        length,                    // 1
+        width,                     // 2
+        height,                    // 3
+        volume,                    // 4
+        aabb->toString(),          // 5
+        originalPrice,             // 6
+        needPay < 0 ? 0 : needPay, // 7
+        refund < 0 ? 0 : refund,   // 8
+        needPay > 0 ? EconomySystem::getInstance()->getCostMessage(player, needPay) : ""
+    ));
 
     fm.appendButton(
         "确认购买"_trf(player),
@@ -276,7 +272,7 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
         "path",
         [needPay, refund, discountedPrice, aabb, length, width, height, is3D, reSelector, landPtr](Player& pl) {
             auto& eco = EconomySystem::getInstance();
-            if ((needPay > 0 && eco.get(pl) < needPay) && Config::cfg.economy.enabled) {
+            if ((needPay > 0 && eco->get(pl) < needPay) && Config::cfg.economy.enabled) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您的余额不足，无法购买"_trf(pl));
                 return; // 预检查经济
             }
@@ -335,12 +331,12 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
 
             // 补差价 & 退还差价
             if (needPay > 0) {
-                if (!eco.reduce(pl, needPay)) {
+                if (!eco->reduce(pl, needPay)) {
                     mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您的余额不足，无法购买"_trf(pl));
                     return;
                 }
             } else if (refund > 0) {
-                if (!eco.add(pl, refund)) {
+                if (!eco->add(pl, refund)) {
                     mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "经济系统异常,退还差价失败"_trf(pl));
                     return;
                 }
@@ -422,7 +418,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
             // 价格
             originalPrice,
             discountedPrice,
-            EconomySystem::getInstance().getSpendTip(player, discountedPrice)
+            EconomySystem::getInstance()->getCostMessage(player, discountedPrice)
         )
     );
 
@@ -432,7 +428,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
         "path",
         [discountedPrice, aabb, length, width, height, is3D, subSelector, &parentPos](Player& pl) {
             auto& economy = EconomySystem::getInstance();
-            if (economy.get(pl) < discountedPrice && Config::cfg.economy.enabled) {
+            if (economy->get(pl) < discountedPrice && Config::cfg.economy.enabled) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您的余额不足，无法购买"_trf(pl));
                 return; // 预检查经济
             }
@@ -544,7 +540,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
             }
 
             // 扣除经济
-            if (!economy.reduce(pl, discountedPrice)) {
+            if (!economy->reduce(pl, discountedPrice)) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您的余额不足，无法购买"_trf(pl));
                 return;
             }
