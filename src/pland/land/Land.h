@@ -33,6 +33,8 @@ private:
 
     friend LandRegistry;
 
+    SharedLand getSelfFromRegistry() const;
+
 public:
     LD_DISALLOW_COPY(Land);
 
@@ -53,7 +55,7 @@ public:
      * @param pos 领地对角坐标
      * @warning 修改后务必在 LandRegistry 中刷新领地范围，否则范围不会更新
      */
-    LDAPI void setAABB(LandAABB const& pos);
+    LDAPI bool setAABB(LandAABB const& newRange);
 
     LDNDAPI LandPos const& getTeleportPos() const;
 

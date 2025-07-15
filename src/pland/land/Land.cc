@@ -1,10 +1,12 @@
 #include "pland/land/Land.h"
+#include "LandCreateValidator.h"
 #include "pland/Global.h"
 #include "pland/infra/Config.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/utils/JSON.h"
 #include <stack>
 #include <vector>
+
 
 namespace land {
 
@@ -18,13 +20,25 @@ Land::Land(LandAABB const& pos, LandDimid dimid, bool is3D, UUIDs const& owner) 
     mContext.mLandOwner = owner;
 }
 
+SharedLand Land::getSelfFromRegistry() const { return LandRegistry::getInstance().getLand(mContext.mLandID); }
+
 LandAABB const& Land::getAABB() const { return mContext.mPos; }
-void            Land::setAABB(LandAABB const& pos) {
+bool            Land::setAABB(LandAABB const& newRange) {
     if (!isOrdinaryLand()) {
-        return;
+        return false;
     }
-    mContext.mPos = pos;
+    if (!LandCreateValidator::isLandRangeLegal(newRange, getDimensionId(), is3D())) {
+        return false; // 领地范围不合法
+    }
+    if (!LandCreateValidator::isLandInForbiddenRange(newRange, getDimensionId())) {
+        return false; // 领地范围在禁止领地范围内
+    }
+    if (!LandCreateValidator::isLandRangeWithOtherCollision(getSelfFromRegistry(), newRange)) {
+        return false; // 领地范围与其他领地重叠
+    }
+    mContext.mPos = newRange;
     mDirtyCounter.increment();
+    return true;
 }
 
 LandPos const& Land::getTeleportPos() const { return mContext.mTeleportPos; }
@@ -151,7 +165,7 @@ int Land::getNestedLevel() const {
 }
 SharedLand Land::getRootLand() const {
     if (!hasParentLand()) {
-        return LandRegistry::getInstance().getLand(this->mContext.mLandID); // 如果是父领地，直接返回自己
+        return getSelfFromRegistry(); // 如果是父领地，直接返回自己
     }
 
     SharedLand root = getParentLand();
@@ -185,7 +199,7 @@ std::unordered_set<SharedLand> Land::getFamilyTree() const {
 std::unordered_set<SharedLand> Land::getSelfAndAncestors() const {
     std::unordered_set<SharedLand> parentLands;
 
-    auto self = LandRegistry::getInstance().getLand(this->mContext.mLandID);
+    auto self = getSelfFromRegistry();
     if (!self) {
         return parentLands;
     }
