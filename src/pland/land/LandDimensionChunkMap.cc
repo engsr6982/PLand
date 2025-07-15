@@ -59,12 +59,14 @@ void LandDimensionChunkMap::removeLand(SharedLand const& land) {
     auto landDimId = land->getDimensionId();
     auto landId    = land->getId();
 
-    if (!mMap.contains(landDimId)) {
-        return;
-    }
+    if (!mMap.contains(landDimId)) return;
 
-    auto& dim = mMap.at(landDimId);
-    for (auto chunkId : *queryChunk(landDimId, landId)) {
+    auto& dim         = mMap.at(landDimId);
+    auto  chunkSetPtr = queryChunk(landDimId, landId);
+    if (!chunkSetPtr) return;
+
+    auto chunkSet = *chunkSetPtr;
+    for (auto chunkId : chunkSet) {
         dim.erase_value(chunkId, landId);
     }
 }
