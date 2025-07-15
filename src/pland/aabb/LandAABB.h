@@ -16,12 +16,23 @@ public:
 
     LDAPI void fix(); // fix min/max
 
-    LandPos const& getMin() const;
-    LandPos const& getMax() const;
+    LDNDAPI LandPos const& getMin() const;
+    LDNDAPI LandPos const& getMax() const;
 
-    LDNDAPI int   getDepth() const;  // (长) X
-    LDNDAPI int   getHeight() const; // (高) Y
-    LDNDAPI int   getWidth() const;  // (宽) Z
+    /**
+     * @brief 获取AABB体积深度(X轴)
+     */
+    LDNDAPI int getDepth() const;
+
+    /**
+     * @brief 获取AABB高度(Y轴)
+     */
+    LDNDAPI int getHeight() const;
+
+    /**
+     * @brief 获取AABB宽度(Z轴)
+     */
+    LDNDAPI int   getWidth() const;
     LDNDAPI llong getSquare() const; // (底面积) X * Z
     LDNDAPI llong getVolume() const; // (总体积) Z * X * Y
 
