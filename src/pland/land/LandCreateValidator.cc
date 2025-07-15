@@ -336,26 +336,21 @@ void LandCreateValidator::sendErrorMessage(Player& player, ErrorContext const& c
         break;
     }
     case ErrorCode::LandRangeWithOtherCollision: {
-        msg = "当前领地范围与领地 {0}({1}) 重叠，请调整领地范围\n当前范围: {2}, 领地 {0} 范围: {3}"_trf(
+        msg = "当前领地范围与领地 {0}({1}) 重叠，请调整领地范围!"_trf(
             player,
-            ctx.conflictLand->getName(),           // 0
-            ctx.conflictLand->getId(),             // 1
-            ctx.currentRange.toString(),           // 2
-            ctx.conflictLand->getAABB().toString() // 3
+            ctx.conflictLand->getName(), // 0
+            ctx.conflictLand->getId()    // 1
         );
         break;
     }
     case ErrorCode::LandSpacingTooSmall: {
-        msg =
-            "当前领地范围与领地 {0}({1}) 间距过小，请调整领地范围\n当前范围: {2}, 领地 {0} 范围: {3}, 间距: {4}, 最小间距: {5}"_trf(
-                player,
-                ctx.conflictLand->getName(),            // 0
-                ctx.conflictLand->getId(),              // 1
-                ctx.currentRange.toString(),            // 2
-                ctx.conflictLand->getAABB().toString(), // 3
-                ctx.spacing,                            // 4
-                ctx.minSpacing                          // 5
-            );
+        msg = "当前领地范围与领地 {0}({1}) 间距过小，请调整领地范围\n当前间距: {2}, 最小间距: {3}"_trf(
+            player,
+            ctx.conflictLand->getName(), // 0
+            ctx.conflictLand->getId(),   // 1
+            ctx.spacing,                 // 2
+            ctx.minSpacing               // 3
+        );
         break;
     }
     case ErrorCode::SubLandNotInParent: {
