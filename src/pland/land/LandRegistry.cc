@@ -1,4 +1,5 @@
 #include "LandRegistry.h"
+#include "LandCreateValidator.h"
 #include "fmt/core.h"
 #include "ll/api/data/KeyValueDB.h"
 #include "ll/api/i18n/I18n.h"
@@ -312,7 +313,7 @@ bool LandRegistry::hasLand(LandID id) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
     return mLandCache.find(id) != mLandCache.end();
 }
-Result<void, StorageLayerError::Error> LandRegistry::addLand(SharedLand land) {
+Result<void, StorageLayerError::Error> LandRegistry::_addLand(SharedLand land) {
     if (!land || land->getId() != LandID(-1)) {
         return std::unexpected(StorageLayerError::Error::InvalidLand);
     }
@@ -347,6 +348,36 @@ Result<void, StorageLayerError::Error> LandRegistry::addLand(SharedLand land) {
 void LandRegistry::refreshLandRange(SharedLand const& ptr) {
     std::unique_lock<std::shared_mutex> lock(mMutex);
     mDimensionChunkMap.refreshRange(ptr);
+}
+
+Result<void, StorageLayerError::Error> LandRegistry::addOrdinaryLand(SharedLand const& land) {
+    if (!land->isOrdinaryLand()) {
+        return std::unexpected(StorageLayerError::Error::LandTypeWithRequireTypeNotMatch);
+    }
+    if (!LandCreateValidator::isLandRangeLegal(land->getAABB(), land->getDimensionId(), land->is3D())
+        || !LandCreateValidator::isLandInForbiddenRange(land->getAABB(), land->getDimensionId())
+        || !LandCreateValidator::isLandRangeWithOtherCollision(this, land)) {
+        return std::unexpected(StorageLayerError::Error::LandRangeIllegal);
+    }
+    return _addLand(land);
+}
+
+Result<void, StorageLayerError::Error> LandRegistry::addSubLand(SharedLand const& parent, SharedLand const& sub) {
+    if (!LandCreateValidator::isLandRangeLegal(sub->getAABB(), parent->getDimensionId(), true)
+        || !LandCreateValidator::isSubLandPositionLegal(parent, sub->getAABB())
+        || parent->getDimensionId() != sub->getDimensionId()) {
+        return std::unexpected(StorageLayerError::Error::LandRangeIllegal);
+    }
+    auto res = _addLand(sub);
+    if (!res) {
+        return res;
+    }
+    std::unique_lock<std::shared_mutex> lock(mMutex);
+    parent->mContext.mSubLandIDs.push_back(sub->getId());
+    sub->mContext.mParentLandID = parent->getId();
+    parent->mDirtyCounter.increment();
+    sub->mDirtyCounter.increment();
+    return {};
 }
 
 

@@ -58,7 +58,7 @@ private: //! private 方法非线程安全
 
     Result<void, StorageLayerError::Error> _removeLand(SharedLand const& ptr);
 
-    Result<void, StorageLayerError::Error> addLand(SharedLand land);
+    Result<void, StorageLayerError::Error> _addLand(SharedLand land);
 
 public:
     LD_DISALLOW_COPY_AND_MOVE(LandRegistry);
@@ -88,7 +88,11 @@ public:
 
     LDNDAPI bool hasLand(LandID id) const;
 
-    LDAPI void refreshLandRange(SharedLand const& ptr); // 刷新领地范围 (_refreshLandRange)
+    LDAPI void refreshLandRange(SharedLand const& ptr); // 刷新领地范围
+
+    LDNDAPI Result<void, StorageLayerError::Error> addOrdinaryLand(SharedLand const& land);
+
+    LDNDAPI Result<void, StorageLayerError::Error> addSubLand(SharedLand const& parent, SharedLand const& sub);
 
     /**
      * @brief 移除领地

@@ -51,7 +51,7 @@ void DataConverter::writeToDb(SharedLand const& data) {
             db.removeLand(land->getId());
         }
     }
-    db.addLand(data);
+    db._addLand(data);
 }
 
 void DataConverter::writeToDb(std::vector<SharedLand> const& data) {

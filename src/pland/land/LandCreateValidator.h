@@ -8,6 +8,8 @@
 namespace land {
 
 
+class LandRegistry;
+
 /**
  * @brief 领地创建验证器
  */
@@ -92,6 +94,12 @@ public:
      */
     LDNDAPI static ValidateResult
     isLandRangeWithOtherCollision(SharedLand const& land, std::optional<LandAABB> newRange = std::nullopt);
+
+    LDNDAPI static ValidateResult isLandRangeWithOtherCollision(
+        LandRegistry*           registry,
+        SharedLand const&       land,
+        std::optional<LandAABB> newRange = std::nullopt
+    );
 
     /**
      * @brief 验证子领地位置是否合法(相对于父领地)

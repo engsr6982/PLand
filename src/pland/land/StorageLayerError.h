@@ -16,6 +16,7 @@ struct StorageLayerError {
         // addLand
         InvalidLand        = 100, // 无效的领地数据
         AssignLandIdFailed = 101, // 分配领地ID失败
+        LandRangeIllegal   = 102, // 领地范围不合法
 
         // removeLand
         LandTypeWithRequireTypeNotMatch = 200, // 领地类型与要求类型不匹配

@@ -8,8 +8,10 @@
 #include "pland/gui/form/BackSimpleForm.h"
 #include "pland/infra/Config.h"
 #include "pland/land/Land.h"
+#include "pland/land/LandCreateValidator.h"
 #include "pland/land/LandEvent.h"
 #include "pland/land/LandRegistry.h"
+#include "pland/land/StorageLayerError.h"
 #include "pland/selector/LandSelector.h"
 #include "pland/utils/McUtils.h"
 #include <climits>
@@ -111,69 +113,18 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
         "确认购买"_trf(player),
         "textures/ui/realms_green_check",
         "path",
-        [discountedPrice, aabb, length, width, height, is3D, selector](Player& pl) {
+        [discountedPrice, selector](Player& pl) {
             auto& economy = EconomySystem::getInstance();
             if (economy->get(pl) < discountedPrice && Config::cfg.economy.enabled) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您的余额不足，无法购买"_trf(pl));
                 return; // 预检查经济
             }
 
-            auto& db = LandRegistry::getInstance();
-            if (!db.isOperator(pl.getUuid().asString())) { // 领地管理员跳过检查
-                if ((int)db.getLands(pl.getUuid().asString()).size() >= Config::cfg.land.maxLand) {
-                    mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您已经达到最大领地数量"_trf(pl));
-                    return;
-                }
+            SharedLand landPtr = selector->newLand();
 
-                auto const& squareRange = Config::cfg.land.bought.squareRange;
-                if ((length < squareRange.min || width < squareRange.min) || // 长度和宽度必须大于最小值
-                    (length > squareRange.max || width > squareRange.max) || // 长度和宽度必须小于最大值
-                    (is3D
-                     && (height < squareRange.minHeight || height > mc_utils::GetDimensionMaxHeight(pl.getDimension()))
-                    ) // 高度必须大于最小值 && 小于世界高度 && 3D
-                ) {
-                    mc_utils::sendText<mc_utils::LogLevel::Error>(
-                        pl,
-                        "领地范围不合法, 可用范围: 长宽: {}~{} 最小高度: {}, 当前长宽高: {}x{}x{}"_trf(
-                            pl,
-                            squareRange.min,
-                            squareRange.max,
-                            squareRange.minHeight,
-                            length,
-                            width,
-                            height
-                        )
-                    );
-                    return;
-                }
-            }
-
-            // 检查是否在禁止区域内 (领地管理员跳过检查)
-            if (!db.isOperator(pl.getUuid().asString())) {
-                for (auto const& forbiddenRange : Config::cfg.land.bought.forbiddenRanges) {
-                    if (forbiddenRange.dimensionId == selector->getDimensionId()
-                        && LandAABB::isCollision(forbiddenRange.aabb, *aabb)) { // 将坐标换成AABB
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "此区域禁止创建领地，请重新选择"_trf(pl));
-                        return;
-                    }
-                }
-            }
-
-            auto lands = db.getLandAt(aabb->min.as<>(), aabb->max.as<>(), selector->getDimensionId());
-            if (!lands.empty()) {
-                for (auto& land : lands) {
-                    if (LandAABB::isCollision(land->getAABB(), *aabb)) {
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(
-                            pl,
-                            "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getName())
-                        );
-                        return;
-                    }
-                    if (!LandAABB::isComplisWithMinSpacing(land->getAABB(), *aabb, Config::cfg.land.minSpacing)) {
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地距离过近，请重新选择"_trf(pl));
-                        return;
-                    }
-                }
+            if (auto res = LandCreateValidator::validateCreateOrdinaryLand(pl, landPtr); !res) {
+                LandCreateValidator::sendErrorMessage(pl, res.error());
+                return;
             }
 
             // 扣除经济
@@ -182,22 +133,19 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
                 return;
             }
 
-            SharedLand landPtr = selector->newLand();
-            // TODO: fix
-            // auto          addLandResult = LandService::tryCreateLand(landPtr);
-            // if (addLandResult.has_value()) {
-            //     landPtr->getOriginalBuyPrice() = discountedPrice; // 保存购买价格
-            //     mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
+            landPtr->setOriginalBuyPrice(discountedPrice);
 
-            //     PlayerBuyLandAfterEvent ev(pl, landPtr);
-            //     ll::event::EventBus::getInstance().publish(ev);
+            if (auto res = LandRegistry::getInstance().addOrdinaryLand(landPtr); !res) {
+                mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "购买领地失败"_trf(pl));
+                StorageLayerError::sendErrorMessage(pl, res.error());
+                (void)economy->add(pl, discountedPrice); // 补回经济
+                return;
+            }
 
-            //     SelectorManager::getInstance().cancel(pl);
+            SelectorManager::getInstance().cancel(pl);
+            ll::event::EventBus::getInstance().publish(PlayerBuyLandAfterEvent{pl, landPtr});
 
-            // } else {
-            //     mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "购买领地失败"_trf(pl));
-            //     economy.add(pl, discountedPrice); // 补回经济
-            // }
+            mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
         }
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
@@ -277,56 +225,9 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
                 return; // 预检查经济
             }
 
-
-            if (!LandRegistry::getInstance().isOperator(pl.getUuid().asString())) { // 领地管理员跳过检查
-                auto const& squareRange = Config::cfg.land.bought.squareRange;
-                if ((length < squareRange.min || width < squareRange.min) || // 长度和宽度必须大于最小值
-                    (length > squareRange.max || width > squareRange.max) || // 长度和宽度必须小于最大值
-                    (is3D
-                     && (height < squareRange.minHeight || height > mc_utils::GetDimensionMaxHeight(pl.getDimension()))
-                    ) // 高度必须大于最小值 && 小于世界高度 && 3D
-                ) {
-                    mc_utils::sendText<mc_utils::LogLevel::Error>(
-                        pl,
-                        "领地范围不合法, 可用范围: 长宽: {}~{} 最小高度: {}"_trf(
-                            pl,
-                            squareRange.min,
-                            squareRange.max,
-                            squareRange.minHeight
-                        )
-                    );
-                    return;
-                }
-            }
-
-            // 检查是否在禁止区域内 (领地管理员跳过检查)
-            if (!LandRegistry::getInstance().isOperator(pl.getUuid().asString())) {
-                for (auto const& forbiddenRange : Config::cfg.land.bought.forbiddenRanges) {
-                    if (forbiddenRange.dimensionId == landPtr->getDimensionId()
-                        && LandAABB::isCollision(forbiddenRange.aabb, *aabb)) { // 将坐标换成AABB
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "此区域禁止修改领地范围，请重新选择"_trf(pl));
-                        return;
-                    }
-                }
-            }
-
-            auto& db    = LandRegistry::getInstance();
-            auto  lands = db.getLandAt(aabb->min.as<>(), aabb->max.as<>(), landPtr->getDimensionId());
-            if (!lands.empty()) {
-                for (auto& land : lands) {
-                    if (land->getId() == landPtr->getId()) continue; // 跳过自己
-                    if (LandAABB::isCollision(land->getAABB(), *aabb)) {
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(
-                            pl,
-                            "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getName())
-                        );
-                        return;
-                    }
-                    if (!LandAABB::isComplisWithMinSpacing(land->getAABB(), *aabb, Config::cfg.land.minSpacing)) {
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地距离过近，请重新选择"_trf(pl));
-                        return;
-                    }
-                }
+            if (auto res = LandCreateValidator::validateChangeLandRange(landPtr, *aabb); !res) {
+                LandCreateValidator::sendErrorMessage(pl, res.error());
+                return;
             }
 
             // 补差价 & 退还差价
@@ -342,17 +243,17 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
                 }
             }
 
-            landPtr->setAABB(*aabb);
+            if (!landPtr->setAABB(*aabb)) {
+                mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地范围修改失败"_trf(pl));
+                return;
+            }
+
             landPtr->setOriginalBuyPrice(discountedPrice);
-
-            db.refreshLandRange(landPtr); // 刷新领地范围
-
-            mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "领地范围修改成功"_trf(pl));
-
-            LandRangeChangeAfterEvent ev(pl, landPtr, *aabb, needPay, refund);
-            ll::event::EventBus::getInstance().publish(ev);
+            LandRegistry::getInstance().refreshLandRange(landPtr); // 刷新领地范围
 
             SelectorManager::getInstance().cancel(pl);
+            ll::event::EventBus::getInstance().publish(LandRangeChangeAfterEvent{pl, landPtr, *aabb, needPay, refund});
+            mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "领地范围修改成功"_trf(pl));
         }
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
@@ -433,110 +334,9 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
                 return; // 预检查经济
             }
 
-            auto& db = LandRegistry::getInstance();
-            if (!db.isOperator(pl.getUuid().asString())) { // 领地管理员跳过检查
-                if ((int)db.getLands(pl.getUuid().asString()).size() >= Config::cfg.land.maxLand) {
-                    mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您已经达到最大领地数量"_trf(pl));
-                    return;
-                }
-
-                auto const& squareRange = Config::cfg.land.bought.squareRange;
-                if ((length < squareRange.min || width < squareRange.min) || // 长度和宽度必须大于最小值
-                    (length > squareRange.max || width > squareRange.max) || // 长度和宽度必须小于最大值
-                    (is3D
-                     && (height < squareRange.minHeight || height > mc_utils::GetDimensionMaxHeight(pl.getDimension()))
-                    ) // 高度必须大于最小值 && 小于世界高度 && 3D
-                ) {
-                    mc_utils::sendText<mc_utils::LogLevel::Error>(
-                        pl,
-                        "领地范围不合法, 可用范围: 长宽: {}~{} 最小高度: {}, 当前长宽高: {}x{}x{}"_trf(
-                            pl,
-                            squareRange.min,
-                            squareRange.max,
-                            squareRange.minHeight,
-                            length,
-                            width,
-                            height
-                        )
-                    );
-                    return;
-                }
-            }
-
-            // 碰撞检查，防止领地重叠
-            // 首先，这个位置必须在父领地的完整范围内
-            // 如果是第一次创建子领地，isOrdinaryLand 是为 true 的，理论不用查询其它领地，因为父领地在购买时已经检查过了
-            // 然后这个aabb位置必须从根领地开始计算，整个父子领地都不能重叠，直系父领地除外
-
-
-            // 1. 要创建的子领地必须在父领地范围内，防止在子领地创建然后圈子领地外面的区域
-            // 2. 在碰撞检测时，当前领地如果在要创建子领地的父领地的范围内，则跳过
-            // 3. 碰撞检测时，要创建子领地的范围不能和任何当前父领地的子领地重叠
-            // 4. 因为第3点，会导致与父领地重叠，所以需要排除父领地
-
-            // 检查是否在禁止区域内 (领地管理员跳过检查)
-            if (!db.isOperator(pl.getUuid().asString())) {
-                for (auto const& forbiddenRange : Config::cfg.land.bought.forbiddenRanges) {
-                    if (forbiddenRange.dimensionId == subSelector->getDimensionId()
-                        && LandAABB::isCollision(forbiddenRange.aabb, *aabb)) { // 将坐标换成AABB
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "此区域禁止创建子领地，请重新选择"_trf(pl));
-                        return;
-                    }
-                }
-            }
-
-            if (!LandAABB::isContain(parentPos, *aabb)) {
-                mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "子领地不在父领地范围内"_trf(pl));
+            if (auto res = LandCreateValidator::validateCreateSubLand(pl, subSelector->getParentLand(), *aabb); !res) {
+                LandCreateValidator::sendErrorMessage(pl, res.error());
                 return;
-            }
-
-            auto parentLand = subSelector->getParentLand();
-            auto rootLand   = parentLand->getRootLand();
-            if (!rootLand) {
-                mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "父领地不存在"_trf(pl));
-                return;
-            }
-
-            std::unordered_set<SharedLand> lands;
-            std::stack<SharedLand>         stack;
-            stack.push(rootLand);
-            while (!stack.empty()) {
-                auto cur = stack.top();
-                stack.pop();
-
-                lands.insert(cur);
-                for (auto& lan : cur->getSubLands()) {
-                    stack.push(lan);
-                }
-            }
-
-            std::unordered_set<SharedLand> parentLands; // 要创建子领地的领地的父领地集合
-            stack.push(parentLand);
-            while (!stack.empty()) {
-                auto cur = stack.top();
-                stack.pop();
-
-                parentLands.insert(cur);
-                if (cur->getParentLand()) {
-                    stack.push(cur->getParentLand());
-                }
-            }
-
-            for (auto& land : lands) {
-                if (land == parentLand) continue;                          // 排除当前领地
-                if (parentLands.find(land) != parentLands.end()) continue; // 排除父领地
-
-                if (LandAABB::isCollision(land->getAABB(), *aabb)) {
-                    mc_utils::sendText<mc_utils::LogLevel::Error>(
-                        pl,
-                        "领地重叠，与领地 {} 冲突，请重新选择"_trf(pl, land->getName())
-                    );
-                    return;
-                }
-                if (!LandAABB::isComplisWithMinSpacing(land->getAABB(), *aabb, Config::cfg.land.subLand.minSpacing)) {
-                    mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地距离过近，请重新选择"_trf(pl));
-                    return;
-                }
             }
 
             // 扣除经济
@@ -547,24 +347,18 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
 
             // 创建领地
             SharedLand landPtr = subSelector->newLand();
-            // TODO: fix
-            // auto          addLandResult = LandService::tryCreateLand(landPtr);
-            // if (addLandResult.has_value()) {
-            //     SelectorManager::getInstance().cancel(pl);
 
-            //     landPtr->getOriginalBuyPrice() = discountedPrice;            // 保存购买价格
-            //     parentLand->mSubLandIDs.push_back(landPtr->getId()); // 添加子领地
-            //     landPtr->mParentLandID = parentLand->getId();        // 设置父领地
+            landPtr->setOriginalBuyPrice(discountedPrice); // 保存购买价格
 
-            //     PlayerBuyLandAfterEvent ev(pl, landPtr);
-            //     ll::event::EventBus::getInstance().publish(ev);
+            if (!LandRegistry::getInstance().addSubLand(subSelector->getParentLand(), landPtr)) {
+                mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地创建失败，请重试"_trf(pl));
+                (void)economy->add(pl, discountedPrice); // 补回经济
+                return;
+            }
 
-            //     mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
-
-            // } else {
-            //     mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "购买领地失败"_trf(pl));
-            //     economy.add(pl, discountedPrice); // 补回经济
-            // }
+            SelectorManager::getInstance().cancel(pl);
+            ll::event::EventBus::getInstance().publish(PlayerBuyLandAfterEvent{pl, landPtr});
+            mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
         }
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close

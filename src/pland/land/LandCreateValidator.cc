@@ -119,8 +119,16 @@ LandCreateValidator::isLandRangeLegal(LandAABB const& range, LandDimid dimid, bo
 
 LandCreateValidator::ValidateResult
 LandCreateValidator::isLandRangeWithOtherCollision(SharedLand const& land, std::optional<LandAABB> newRange) {
+    return isLandRangeWithOtherCollision(&LandRegistry::getInstance(), land, newRange);
+}
+
+LandCreateValidator::ValidateResult LandCreateValidator::isLandRangeWithOtherCollision(
+    LandRegistry*           registry,
+    SharedLand const&       land,
+    std::optional<LandAABB> newRange
+) {
     auto& aabb  = newRange ? *newRange : land->getAABB();
-    auto  lands = LandRegistry::getInstance().getLandAt(aabb.min.as(), aabb.max.as(), land->getDimensionId());
+    auto  lands = registry->getLandAt(aabb.min.as(), aabb.max.as(), land->getDimensionId());
     if (lands.empty()) {
         return {};
     }

@@ -55,7 +55,7 @@ public:
      * @param pos 领地对角坐标
      * @warning 修改后务必在 LandRegistry 中刷新领地范围，否则范围不会更新
      */
-    LDAPI bool setAABB(LandAABB const& newRange);
+    LDNDAPI bool setAABB(LandAABB const& newRange);
 
     LDNDAPI LandPos const& getTeleportPos() const;
 
