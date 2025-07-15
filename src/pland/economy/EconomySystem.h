@@ -21,14 +21,14 @@ class EconomySystem final {
 
     explicit EconomySystem();
 
-    void initEconomySystem();   // 初始化经济系统
-    void reloadEconomySystem(); // 重载经济系统（当 kit 改变时）
-
 
 public:
     LD_DISALLOW_COPY_AND_MOVE(EconomySystem);
 
     LDNDAPI static EconomySystem& getInstance();
+
+    LDAPI void initEconomySystem();   // 初始化经济系统
+    LDAPI void reloadEconomySystem(); // 重载经济系统（当 kit 改变时）
 
     LDNDAPI EconomyConfig& getConfig() const;
 

@@ -10,6 +10,7 @@
 #include "pland/Global.h"
 #include "pland/Version.h"
 #include "pland/command/Command.h"
+#include "pland/economy/EconomySystem.h"
 #include "pland/hooks/EventListener.h"
 #include "pland/infra/Config.h"
 #include "pland/land/LandRegistry.h"
@@ -61,6 +62,7 @@ bool ModEntry::load() {
     logger.setLevel(land::Config::cfg.logLevel);
 
     land::LandRegistry::getInstance().init();
+    land::EconomySystem::getInstance().initEconomySystem();
 
 #ifdef DEBUG
     logger.warn("Debug Mode");
@@ -124,6 +126,10 @@ void ModEntry::onConfigReload() {
         logger.trace("Event listener reset, creating new instance...");
         mEventListener = std::make_unique<land::EventListener>();
         logger.trace("Event listener reloaded successfully.");
+
+        logger.trace("Reloading economy system...");
+        land::EconomySystem::getInstance().reloadEconomySystem();
+        logger.trace("Economy system reloaded successfully.");
     } catch (std::exception const& e) {
         getSelf().getLogger().error("Failed to reload event listener: {}", e.what());
     } catch (...) {
