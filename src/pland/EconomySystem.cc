@@ -4,6 +4,7 @@
 #include "ll/api/service/Bedrock.h"
 #include "mc/world/level/Level.h"
 #include "mc/world/scores/PlayerScoreSetFunction.h"
+#include "mc/world/scores/ScoreboardOperationResult.h"
 #include "mc/world/scores/ScoreInfo.h"
 #include "pland/Config.h"
 #include "pland/utils/McUtils.h"
@@ -48,9 +49,9 @@ bool ScoreBoard_Set(Player& player, int score, string const& scoreName) {
     if (id.mRawID == ScoreboardId::INVALID().mRawID) {
         scoreboard.createScoreboardId(player);
     }
-    bool isSuccess = false;
-    scoreboard.modifyPlayerScore(isSuccess, id, *obj, score, PlayerScoreSetFunction::Set);
-    return isSuccess;
+    ScoreboardOperationResult result;
+    scoreboard.modifyPlayerScore(result, id, *obj, score, PlayerScoreSetFunction::Set);
+    return result == ScoreboardOperationResult::Success;
 }
 
 bool ScoreBoard_Add(Player& player, int score, string const& scoreName) {
@@ -67,9 +68,9 @@ bool ScoreBoard_Add(Player& player, int score, string const& scoreName) {
     if (id.mRawID == ScoreboardId::INVALID().mRawID) {
         scoreboard.createScoreboardId(player);
     }
-    bool isSuccess = false;
-    scoreboard.modifyPlayerScore(isSuccess, id, *obj, score, PlayerScoreSetFunction::Add);
-    return isSuccess;
+    ScoreboardOperationResult result;
+    scoreboard.modifyPlayerScore(result, id, *obj, score, PlayerScoreSetFunction::Add);
+    return result == ScoreboardOperationResult::Success;
 }
 
 bool ScoreBoard_Reduce(Player& player, int score, string const& scoreName) {
@@ -86,9 +87,9 @@ bool ScoreBoard_Reduce(Player& player, int score, string const& scoreName) {
     if (id.mRawID == ScoreboardId::INVALID().mRawID) {
         scoreboard.createScoreboardId(player);
     }
-    bool isSuccess = false;
-    scoreboard.modifyPlayerScore(isSuccess, id, *obj, score, PlayerScoreSetFunction::Subtract);
-    return isSuccess;
+    ScoreboardOperationResult result;
+    scoreboard.modifyPlayerScore(result, id, *obj, score, PlayerScoreSetFunction::Subtract);
+    return result == ScoreboardOperationResult::Success;
 }
 
 

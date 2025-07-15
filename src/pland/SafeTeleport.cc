@@ -302,7 +302,7 @@ public:
     }
 
     uint64_t createTask(Player* player, DimensionPos targetPos, DimensionPos sourcePos) {
-        if (queueMap_.find(player->getRealName()) != queueMap_.end()) {
+        if (queueMap_.find(player->getUuid()) != queueMap_.end()) {
             mc_utils::sendText<mc_utils::LogLevel::Error>(*player, "传送任务已存在，请等待当前任务完成"_trf(*player));
             return -1;
         }

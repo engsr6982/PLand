@@ -7,6 +7,7 @@
 #include "mc/deps/core/math/Color.h"
 #include "mc/deps/core/string/HashedString.h"
 #include "mc/deps/core/utility/optional_ref.h"
+#include "mc/platform/UUID.h"
 #include "mc/nbt/CompoundTag.h"
 #include "mc/network/ServerNetworkHandler.h"
 #include "mc/network/packet/SetTimePacket.h"
@@ -149,7 +150,7 @@ static auto const ListOperator = [](CommandOrigin const& ori, CommandOutput& out
     oss << "管理员: "_tr();
     auto& infoDb = ll::service::PlayerInfo::getInstance();
     for (auto& pl : pls) {
-        auto info = infoDb.fromUuid(pl);
+        auto info = infoDb.fromUuid(mce::UUID::fromString(pl));
         if (info) {
             oss << info->name;
         } else {

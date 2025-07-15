@@ -144,7 +144,7 @@ LandReSelector::LandReSelector(Player& player, LandData_sptr const& data)
     mOldBoxGeoId = DrawHandleManager::getInstance().getOrCreateHandle(player)->draw(
         data->mPos,
         mDimensionId,
-        mce::Color::ORANGE()
+        mce::Color(255, 165, 0)
     );
 }
 
