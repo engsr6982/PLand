@@ -86,3 +86,7 @@ C:\PLand
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request，共同完善 PLand。
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=engsr6982/PLand&type=Date)](https://star-history.com/#engsr6982/PLand&Date)
