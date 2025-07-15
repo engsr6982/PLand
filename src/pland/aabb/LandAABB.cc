@@ -164,4 +164,33 @@ bool LandAABB::isAboveLand(BlockPos const& pos) const {
            pos.y > max.y;
 }
 
+
+int LandAABB::getMinSpacing(LandAABB const& a, LandAABB const& b) {
+    // X 方向间距
+    int xSpacing = 0;
+    if (a.max.x < b.min.x) {
+        xSpacing = b.min.x - a.max.x;
+    } else if (b.max.x < a.min.x) {
+        xSpacing = a.min.x - b.max.x;
+    } else {
+        // 重叠部分
+        xSpacing = std::min(a.max.x, b.max.x) - std::max(a.min.x, b.min.x);
+        xSpacing = -xSpacing;
+    }
+
+    // Z 方向间距
+    int zSpacing = 0;
+    if (a.max.z < b.min.z) {
+        zSpacing = b.min.z - a.max.z;
+    } else if (b.max.z < a.min.z) {
+        zSpacing = a.min.z - b.max.z;
+    } else {
+        zSpacing = std::min(a.max.z, b.max.z) - std::max(a.min.z, b.min.z);
+        zSpacing = -zSpacing;
+    }
+
+    return std::min(xSpacing, zSpacing);
+}
+
+
 } // namespace land

@@ -69,6 +69,12 @@ public:
      * 如果目标 AABB 在源 AABB 内，则返回 true，否则返回 false
      */
     LDNDAPI static bool isContain(LandAABB const& src, LandAABB const& dst);
+
+    /**
+     * @brief 获取两个 AABB 之间的最小间距(x/z 轴)
+     * @return 返回实际间距（重叠则为实际重叠部分长度，负数）
+     */
+    LDNDAPI static int getMinSpacing(LandAABB const& a, LandAABB const& b);
 };
 
 
