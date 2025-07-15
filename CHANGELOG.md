@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 调整工程结构并重构代码 #111 @engsr6982
 - 调整默认配置文件 #104 @yangyangzhong82
+- 抽离领地创建逻辑，并改进错误提示 #102 @engsr6982
 
 ## [0.10.0] - 2025-6-18
 
