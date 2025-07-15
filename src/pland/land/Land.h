@@ -6,6 +6,7 @@
 #include "pland/aabb/LandAABB.h"
 #include "pland/infra/DirtyCounter.h"
 #include <cstdint>
+#include <unordered_set>
 #include <vector>
 
 
@@ -100,15 +101,27 @@ public:
 
     LDNDAPI bool isCollision(BlockPos const& pos1, BlockPos const& pos2) const;
 
-    LDNDAPI bool isDirty() const; // 是否需要保存(数据有变动)
+    /**
+     * @brief 数据是否被修改
+     * @note 当调用任意 set 方法时，数据会被标记为已修改
+     * @note 调用 save 方法时，数据会被保存到数据库，并重置为未修改
+     */
+    LDNDAPI bool isDirty() const;
 
     /**
      * @brief 获取领地类型
      */
     LDNDAPI Type getType() const;
 
-    LDNDAPI bool hasParentLand() const; // 是否有父领地
-    LDNDAPI bool hasSubLand() const;    // 是否有子领地
+    /**
+     * @brief 是否有父领地
+     */
+    LDNDAPI bool hasParentLand() const;
+
+    /**
+     * @brief 是否有子领地
+     */
+    LDNDAPI bool hasSubLand() const;
 
     /**
      * @brief 是否为子领地(有父领地、无子领地)
@@ -156,14 +169,32 @@ public:
      */
     LDNDAPI SharedLand getRootLand() const;
 
+    /**
+     * @brief 获取从当前领地的根领地出发的所有子领地（包含根和当前领地）
+     */
+    LDNDAPI std::unordered_set<SharedLand> getFamilyTree() const;
 
+    /**
+     * @brief 获取当前领地及其所有上级父领地（包含自身）
+     */
+    LDNDAPI std::unordered_set<SharedLand> getSelfAndAncestors() const;
+
+    /**
+     * @brief 获取一个玩家在当前领地所拥有的权限类别
+     */
     LDNDAPI LandPermType getPermType(UUIDs const& uuid) const;
 
     LDAPI void updateXUIDToUUID(UUIDs const& ownerUUID); // xuid -> uuid
 
-    LDAPI void load(nlohmann::json& json);         // 加载数据
-    LDAPI nlohmann::json dump() const;             // 导出数据
-    LDAPI void           save(bool force = false); // 保存数据(保存到数据库)
+    LDAPI void load(nlohmann::json& json); // 加载数据
+    LDAPI nlohmann::json dump() const;     // 导出数据
+
+    /**
+     * @brief 保存数据(保存到数据库)
+     * @param force 是否强制保存(即使数据未修改)
+     * @note 此函数仅在数据有修改时才会保存，否则不会保存
+     */
+    LDAPI void save(bool force = false);
 
     LDAPI bool operator==(SharedLand const& other) const;
 

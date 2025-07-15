@@ -162,6 +162,51 @@ SharedLand Land::getRootLand() const {
     return root;
 }
 
+std::unordered_set<SharedLand> Land::getFamilyTree() const {
+    std::unordered_set<SharedLand> descendants;
+
+    auto root = getRootLand();
+
+    std::stack<SharedLand> stack;
+    stack.push(root);
+
+    while (!stack.empty()) {
+        auto current = stack.top();
+        stack.pop();
+
+        descendants.insert(current);
+        for (auto& lan : current->getSubLands()) {
+            stack.push(lan);
+        }
+    }
+    return descendants;
+}
+
+std::unordered_set<SharedLand> Land::getSelfAndAncestors() const {
+    std::unordered_set<SharedLand> parentLands;
+
+    auto self = LandRegistry::getInstance().getLand(this->mContext.mLandID);
+    if (!self) {
+        return parentLands;
+    }
+
+    std::stack<SharedLand> stack;
+    stack.push(self);
+
+    while (!stack.empty()) {
+        auto cur = stack.top();
+        stack.pop();
+
+        parentLands.insert(cur);
+        if (cur->hasParentLand()) {
+            stack.push(cur->getParentLand());
+        }
+    }
+
+    return parentLands;
+}
+
+
 bool Land::isCollision(BlockPos const& pos, int radius) const {
     BlockPos minPos(pos.x - radius, mContext.mIs3DLand ? pos.y - radius : mContext.mPos.min.y, pos.z - radius);
     BlockPos maxPos(pos.x + radius, mContext.mIs3DLand ? pos.y + radius : mContext.mPos.max.y, pos.z + radius);
