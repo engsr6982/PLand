@@ -50,7 +50,11 @@ long long LegacyMoneyInterface::get(mce::UUID const& uuid) const {
     if (!xuid) {
         return 0;
     }
-    return get(*xuid);
+    auto func = (LLMoney_Get_Func)GetProcAddress(GetModuleHandle(LEGACY_MONEY_MODULE_NAME), "LLMoney_Get");
+    if (!func) {
+        throw std::runtime_error("Dynamic call to LLMoney_Get failed.");
+    }
+    return func(*xuid);
 }
 
 bool LegacyMoneyInterface::set(Player& player, long long amount) const {
@@ -71,7 +75,11 @@ bool LegacyMoneyInterface::set(mce::UUID const& uuid, long long amount) const {
     if (!xuid) {
         return false;
     }
-    return set(*xuid, amount);
+    auto func = (LLMoney_Set_Func)GetProcAddress(GetModuleHandle(LEGACY_MONEY_MODULE_NAME), "LLMoney_Set");
+    if (!func) {
+        throw std::runtime_error("Dynamic call to LLMoney_Set failed.");
+    }
+    return func(*xuid, amount);
 }
 
 bool LegacyMoneyInterface::add(Player& player, long long amount) const {
@@ -92,7 +100,11 @@ bool LegacyMoneyInterface::add(mce::UUID const& uuid, long long amount) const {
     if (!xuid) {
         return false;
     }
-    return add(*xuid, amount);
+    auto func = (LLMoney_Add_Func)GetProcAddress(GetModuleHandle(LEGACY_MONEY_MODULE_NAME), "LLMoney_Add");
+    if (!func) {
+        throw std::runtime_error("Dynamic call to LLMoney_Add failed.");
+    }
+    return func(*xuid, amount);
 }
 
 bool LegacyMoneyInterface::reduce(Player& player, long long amount) const {
@@ -113,7 +125,11 @@ bool LegacyMoneyInterface::reduce(mce::UUID const& uuid, long long amount) const
     if (!xuid) {
         return false;
     }
-    return reduce(*xuid, amount);
+    auto func = (LLMoney_Reduce_Func)GetProcAddress(GetModuleHandle(LEGACY_MONEY_MODULE_NAME), "LLMoney_Reduce");
+    if (!func) {
+        throw std::runtime_error("Dynamic call to LLMoney_Reduce failed.");
+    }
+    return func(*xuid, amount);
 }
 
 bool LegacyMoneyInterface::transfer(Player& from, Player& to, long long amount) const {
@@ -138,6 +154,10 @@ bool LegacyMoneyInterface::transfer(mce::UUID const& from, mce::UUID const& to, 
     if (!toXuid) {
         return false;
     }
-    return transfer(*fromXuid, *toXuid, amount);
+    auto func = (LLMoney_Trans_Func)GetProcAddress(GetModuleHandle(LEGACY_MONEY_MODULE_NAME), "LLMoney_Trans");
+    if (!func) {
+        throw std::runtime_error("Dynamic call to LLMoney_Trans failed.");
+    }
+    return func(*fromXuid, *toXuid, amount, "PLand internal transfer");
 }
 } // namespace land::internals
