@@ -62,7 +62,7 @@ void NewLandGUI::sendChooseLandDim(Player& player) {
             PlayerAskCreateLandAfterEvent ev(pl, land3D);
             ll::event::EventBus::getInstance().publish(ev);
 
-            auto selector = std::make_unique<DefaultSelector>(pl, !land3D);
+            auto selector = std::make_unique<DefaultSelector>(pl, land3D);
             if (mod::ModEntry::getInstance().getSelectorManager()->startSelection(std::move(selector))) {
                 mc_utils::sendText(
                     pl,

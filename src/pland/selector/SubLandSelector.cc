@@ -8,7 +8,7 @@ namespace land {
 
 
 SubLandSelector::SubLandSelector(Player& player, SharedLand parent)
-: ISelector(player, parent->getDimensionId(), false) {
+: ISelector(player, parent->getDimensionId(), true) {
     mParentRangeDrawId = DrawHandleManager::getInstance().getOrCreateHandle(player)->draw(
         parent->getAABB(),
         parent->getDimensionId(),

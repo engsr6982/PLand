@@ -8,7 +8,7 @@ namespace land {
 
 
 ChangeLandRangeSelector::ChangeLandRangeSelector(Player& player, SharedLand land)
-: ISelector(player, land->getDimensionId(), !land->is3D()) {
+: ISelector(player, land->getDimensionId(), land->is3D()) {
     mOldRangeDrawId = DrawHandleManager::getInstance().getOrCreateHandle(player)->draw(
         land->getAABB(),
         land->getDimensionId(),
