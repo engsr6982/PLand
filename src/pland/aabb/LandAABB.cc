@@ -100,9 +100,19 @@ bool LandAABB::hasPos(const BlockPos& pos, bool ignoreY) const {
     }
 }
 
-bool LandAABB::operator==(LandAABB const& pos) const { return min == pos.min && max == pos.max; }
-bool LandAABB::operator!=(LandAABB const& pos) const { return !(*this == pos); }
+LandAABB LandAABB::expanded(int spacing, bool ignoreY) const {
+    return ignoreY ?
+        LandAABB{
+            LandPos{min.x - spacing, min.y, min.z - spacing},
+            LandPos{max.x + spacing, max.y, max.z + spacing},
+        } :
+        LandAABB{
+            LandPos{min.x - spacing, min.y - spacing, min.z - spacing},
+            LandPos{max.x + spacing, max.y + spacing, max.z + spacing},
+        };
+}
 
+bool LandAABB::operator==(LandAABB const& pos) const { return min == pos.min && max == pos.max; }
 
 bool LandAABB::isCollision(const LandAABB& pos1, const LandAABB& pos2) {
     return !(
