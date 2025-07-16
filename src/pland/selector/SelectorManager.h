@@ -21,7 +21,7 @@ class SelectorManager final {
     std::shared_ptr<std::atomic<bool>>                    mCoroStop{nullptr};
     std::shared_ptr<ll::coro::InterruptableSleep>         mInterruptableSleep{nullptr};
 
-    LDAPI bool startSelection(std::unique_ptr<ISelector> selector);
+    LDAPI bool startSelectionImpl(std::unique_ptr<ISelector> selector);
 
 public:
     LD_DISALLOW_COPY_AND_MOVE(SelectorManager);
@@ -42,7 +42,7 @@ public:
     template <typename T>
         requires std::is_base_of_v<ISelector, T> && std::is_final_v<T>
     bool startSelection(std::unique_ptr<T> selector) {
-        return startSelection(std::move(selector));
+        return startSelectionImpl(std::move(selector));
     }
 
     // 停止选区

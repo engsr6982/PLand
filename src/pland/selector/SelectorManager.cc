@@ -123,7 +123,7 @@ ISelector* SelectorManager::getSelector(UUIDm const& uuid) const {
 }
 ISelector* SelectorManager::getSelector(Player& player) const { return getSelector(player.getUuid()); }
 
-bool SelectorManager::startSelection(std::unique_ptr<ISelector> selector) {
+bool SelectorManager::startSelectionImpl(std::unique_ptr<ISelector> selector) {
     auto uuid = selector->getPlayer()->getUuid();
     if (hasSelector(uuid)) {
         return false;
