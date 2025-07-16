@@ -1,5 +1,10 @@
 #include "pland/DrawHandleManager.h"
 #include "bsci/GeometryGroup.h"
+#include "ll/api/io/Logger.h"
+#include "pland/mod/ModEntry.h"
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 #include "ll/api/base/StdInt.h"
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/service/Bedrock.h"
@@ -12,6 +17,7 @@
 #include "pland/PLand.h"
 #include "pland/math/LandAABB.h"
 #include <memory>
+#include <stdexcept>
 
 
 namespace land {
@@ -32,11 +38,42 @@ struct DrawIdImpl : public DrawHandle::DrawId {
 
 class DarwHandleImpl : public DrawHandle {
 private:
+#ifdef _WIN32
+    using CreateDefaultFn = std::unique_ptr<bsci::GeometryGroup> (*)();
+    CreateDefaultFn mCreateDefaultFunc{};
+#endif
     std::unique_ptr<bsci::GeometryGroup>                               mGeometryGroup;
     std::unordered_map<LandID, std::pair<LandData_wptr, UniqueDrawId>> mLandGeoMap;
 
 public:
-    explicit DarwHandleImpl() : DrawHandle(), mGeometryGroup(bsci::GeometryGroup::createDefault()) {}
+    explicit DarwHandleImpl() : DrawHandle() {
+#ifdef _WIN32
+        HMODULE bsciModule = GetModuleHandleA("BedrockServerClientInterface.dll");
+        if (!bsciModule) {
+            bsciModule = LoadLibraryA("BedrockServerClientInterface.dll");
+        }
+
+        if (bsciModule) {
+
+            mCreateDefaultFunc = (CreateDefaultFn)GetProcAddress(
+                bsciModule,
+                "?createDefault@GeometryGroup@bsci@@SA?AV?$unique_ptr@VGeometryGroup@bsci@@U?$default_delete@"
+                "VGeometryGroup@bsci@@@std@@@std@@XZ"
+            );
+        }
+
+        if (mCreateDefaultFunc) {
+            mGeometryGroup = mCreateDefaultFunc();
+        } else {
+            auto& logger = mod::ModEntry::getInstance().getSelf().getLogger();
+            logger.warn("未能加载 BedrockServerClientInterface.dll，绘图功能将不可用。");
+            logger.error("请检查 是否已安装BedrockServerClientInterface且兼容。");
+            throw std::runtime_error("Failed to load bsci::GeometryGroup::createDefault from bsci.dll");
+        }
+#else
+        mGeometryGroup = bsci::GeometryGroup::createDefault();
+#endif
+    }
 
     // 辅助函数
     AABB fixAABB(LandPos const& min, LandPos const& max) {
@@ -82,7 +119,15 @@ public:
     void reinit() override {
         this->mLandGeoMap.clear();
         this->mGeometryGroup.reset();
+#ifdef _WIN32
+        if (mCreateDefaultFunc) {
+            this->mGeometryGroup = mCreateDefaultFunc();
+        } else {
+            throw std::runtime_error("bsci::GeometryGroup::createDefault not loaded");
+        }
+#else
         this->mGeometryGroup = bsci::GeometryGroup::createDefault();
+#endif
     }
 };
 
