@@ -8,6 +8,10 @@
 #include <unordered_map>
 
 
+namespace bsci {
+class GeometryGroup;
+}
+
 namespace land {
 
 
@@ -28,7 +32,7 @@ public:
     struct DrawId {
         LDAPI virtual ~DrawId() = default;
 
-        LDNDAPI virtual uint64 getValue() const                      = 0; // bsci::GeometryGroup::GeoId::value
+        LDNDAPI virtual uint64 getValue() const                      = 0;
         LDNDAPI virtual bool   operator==(DrawId const& other) const = 0;
         LDNDAPI virtual        operator bool() const                 = 0;
 
