@@ -138,5 +138,13 @@ void SelectorManager::stopSelection(UUIDm const& uuid) {
 }
 void SelectorManager::stopSelection(Player& player) { return stopSelection(player.getUuid()); }
 
+void SelectorManager::forEach(ForEachFunc const& func) const {
+    for (auto const& [uuid, selector] : mSelectors) {
+        bool isContinue = func(uuid, selector.get());
+        if (!isContinue) {
+            break;
+        }
+    }
+}
 
 } // namespace land

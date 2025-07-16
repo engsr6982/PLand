@@ -8,7 +8,7 @@ namespace land {
 
 class DefaultSelector final : public ISelector {
 public:
-    LDAPI explicit DefaultSelector(Player& player, bool alwaysUseDimensionHeight = false);
+    LDAPI explicit DefaultSelector(Player& player, bool is3D = false);
 
     LDNDAPI SharedLand newLand() const;
 };

@@ -13,7 +13,7 @@
 namespace land {
 
 void ISelector::initTitlePacket(Player& player) {
-    mTitlePacket.mTitleText    = "[ 请选区 ]"_trf(player);
+    mTitlePacket.mTitleText    = "[ {}选区 ]"_trf(player, is3D() ? "3D" : "2D");
     mSubTitlePacket.mTitleText = "输入 /pland set a 或使用 '{}' 选择点 A"_trf(player, Config::cfg.selector.alias);
 }
 
@@ -21,10 +21,10 @@ ISelector::ISelector(Player& player) : mPlayer(player.getWeakEntity()), mDimid(p
     initTitlePacket(player);
 }
 
-ISelector::ISelector(Player& player, LandDimid dimid, bool alwaysUseDimensionHeight)
+ISelector::ISelector(Player& player, LandDimid dimid, bool is3D)
 : mPlayer(player.getWeakEntity()),
   mDimid(dimid),
-  mAlwaysUseDimensionHeight(alwaysUseDimensionHeight) {
+  m3D(is3D) {
     initTitlePacket(player);
 }
 
@@ -79,8 +79,6 @@ void ISelector::setYRange(int start, int end) {
     }
     mPointA->y = start;
     mPointB->y = end;
-    fixMinMax();
-
     if (auto player = getPlayer()) {
         mc_utils::sendText(player, "已设置选区高度范围: {} ~ {}"_trf(*player, mPointA->y, mPointB->y));
     }
@@ -97,7 +95,7 @@ void ISelector::fixMinMax() {
 bool ISelector::isPointASet() const { return mPointA.has_value(); }
 bool ISelector::isPointBSet() const { return mPointB.has_value(); }
 bool ISelector::isPointABSet() const { return mPointA.has_value() && mPointB.has_value(); }
-bool ISelector::isAlwaysUseDimensionHeight() const { return mAlwaysUseDimensionHeight; }
+bool ISelector::is3D() const { return m3D; }
 
 void ISelector::sendTitle() const {
     if (auto player = getPlayer()) {
@@ -115,6 +113,15 @@ std::optional<LandAABB> ISelector::newLandAABB() const {
     return std::nullopt;
 }
 
+std::string ISelector::dumpDebugInfo() const {
+    return "DimensionId: {}, PointA: {}, PointB: {}, is3D: {}"_tr(
+        mDimid,
+        mPointA.has_value() ? mPointA->toString() : "nullopt",
+        mPointB.has_value() ? mPointB->toString() : "nullopt",
+        is3D()
+    );
+}
+
 
 // virtual
 void ISelector::onPointASet() {
@@ -129,10 +136,6 @@ void ISelector::onPointASet() {
 void ISelector::onPointBSet() {
     if (auto player = getPlayer()) {
         mc_utils::sendText(player, "已选择点 B: {}"_trf(*player, *mPointB));
-
-        // 更新副标题
-        mTitlePacket.mTitleText    = "[ 选区完成 ]"_trf(*player);
-        mSubTitlePacket.mTitleText = "输入 /pland buy 呼出购买菜单"_trf(*player, Config::cfg.selector.alias);
     }
 }
 
@@ -154,9 +157,11 @@ void ISelector::onPointABSet() {
         return;
     }
 
-    fixMinMax();
+    mTitlePacket.mTitleText    = "[ 选区完成 ]"_trf(*player);
+    mSubTitlePacket.mTitleText = "输入 /pland buy 呼出购买菜单"_trf(*player, Config::cfg.selector.alias);
 
-    if (isAlwaysUseDimensionHeight()) {
+
+    if (is3D()) {
         auto dimension = player->getLevel().getDimension(getDimensionId()).lock();
         if (dimension) {
             auto& range = dimension->mHeightRange;
@@ -185,7 +190,6 @@ void ISelector::onPointConfirmed() {
     if (mDrawedRange) {
         handle->remove(mDrawedRange);
     }
-
     mDrawedRange = handle->draw(*newLandAABB(), mDimid, mce::Color::GREEN());
 }
 

@@ -29,7 +29,6 @@ public:
     explicit SelectorManager();
     ~SelectorManager();
 
-
     // 玩家是否正在选区 & 是否有选区任务
     LDNDAPI bool hasSelector(UUIDm const& uuid) const;
     LDNDAPI bool hasSelector(Player& player) const;
@@ -48,6 +47,9 @@ public:
     // 停止选区
     LDAPI void stopSelection(UUIDm const& uuid);
     LDAPI void stopSelection(Player& player);
+
+    using ForEachFunc = std::function<bool(UUIDm const&, ISelector*)>;
+    LDAPI void forEach(ForEachFunc const& func) const;
 };
 
 LD_DECLARE_REQUIRE(SelectorManager);

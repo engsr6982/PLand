@@ -16,7 +16,7 @@ namespace land {
 class ISelector {
     WeakRef<EntityContext>   mPlayer{};
     LandDimid                mDimid{-1};
-    bool                     mAlwaysUseDimensionHeight = false;
+    bool                     m3D = false;
     std::optional<BlockPos>  mPointA{std::nullopt};
     std::optional<BlockPos>  mPointB{std::nullopt};
     DrawHandle::UniqueDrawId mDrawedRange{nullptr};
@@ -27,7 +27,7 @@ class ISelector {
 
 public:
     LDAPI explicit ISelector(Player& player);
-    LDAPI explicit ISelector(Player& player, LandDimid dimid, bool alwaysUseDimensionHeight = false);
+    LDAPI explicit ISelector(Player& player, LandDimid dimid, bool is3D = false);
     LDAPI virtual ~ISelector();
 
 public:
@@ -45,11 +45,13 @@ public:
     LDNDAPI bool isPointASet() const;
     LDNDAPI bool isPointBSet() const;
     LDNDAPI bool isPointABSet() const;
-    LDNDAPI bool isAlwaysUseDimensionHeight() const;
+    LDNDAPI bool is3D() const;
 
     LDAPI void sendTitle() const;
 
     LDNDAPI std::optional<LandAABB> newLandAABB() const;
+
+    LDNDAPI std::string dumpDebugInfo() const;
 
     template <typename T>
     [[nodiscard]] T* as() {

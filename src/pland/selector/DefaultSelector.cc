@@ -8,8 +8,7 @@
 namespace land {
 
 
-DefaultSelector::DefaultSelector(Player& player, bool alwaysUseDimensionHeight)
-: ISelector(player, player.getDimensionId(), alwaysUseDimensionHeight) {}
+DefaultSelector::DefaultSelector(Player& player, bool is3D) : ISelector(player, player.getDimensionId(), is3D) {}
 
 SharedLand DefaultSelector::newLand() const {
     if (!isPointABSet()) {
@@ -21,7 +20,7 @@ SharedLand DefaultSelector::newLand() const {
         return nullptr;
     }
 
-    return Land::make(*newLandAABB(), getDimensionId(), !isAlwaysUseDimensionHeight(), player->getUuid().asString());
+    return Land::make(*newLandAABB(), getDimensionId(), !is3D(), player->getUuid().asString());
 }
 
 

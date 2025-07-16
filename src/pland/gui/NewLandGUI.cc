@@ -80,8 +80,6 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
     if (!selector) {
         return;
     }
-    selector->fixMinMax();
-
     CustomForm fm(PLUGIN_NAME + ("| 确认Y轴范围"_trf(player)));
 
     fm.appendLabel("确认选区的Y轴范围\n您可以在此调节Y轴范围，如果不需要修改，请直接点击提交"_trf(player));

@@ -46,7 +46,7 @@ void LandBuyGUI::impl(Player& player) {
 }
 
 void LandBuyGUI::impl(Player& player, DefaultSelector* selector) {
-    bool const& is3D = !selector->isAlwaysUseDimensionHeight();
+    bool const& is3D = !selector->is3D();
     auto        aabb = selector->newLandAABB();
 
     aabb->fix();

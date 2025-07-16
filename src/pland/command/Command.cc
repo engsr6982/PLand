@@ -495,6 +495,20 @@ bool LandCommand::setup() {
     }
 #endif
 
+#ifdef DEBUG
+    cmd.overload().text("debug").text("dump_selectors").execute([](CommandOrigin const& ori, CommandOutput&) {
+        if (ori.getOriginType() != CommandOriginType::DedicatedServer) {
+            return;
+        }
+
+        auto& logger = mod::ModEntry::getInstance().getSelf().getLogger();
+        mod::ModEntry::getInstance().getSelectorManager()->forEach([&logger](UUIDm const& uuid, ISelector* selector) {
+            logger.debug("Selector: {} - {}", uuid.asString(), selector->dumpDebugInfo());
+            return true;
+        });
+    });
+#endif
+
     return true;
 }
 
