@@ -35,5 +35,7 @@ public:
         LDNDAPI T* operator->();                                                                                       \
     }
 
+#define LD_IMPL_REQUIRE(T) T* Require<T>::operator->()
+
 
 } // namespace land

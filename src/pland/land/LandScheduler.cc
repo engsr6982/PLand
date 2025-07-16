@@ -22,7 +22,8 @@
 
 namespace land {
 
-LandScheduler* Require<LandScheduler>::operator->() {
+
+LD_IMPL_REQUIRE(LandScheduler) {
     auto res = mod::ModEntry::getInstance().mLandScheduler.get();
     if (!res) [[unlikely]] {
         throw std::runtime_error(LD_ERR_RAII_RESOURCE_EMPTY(LandScheduler));
