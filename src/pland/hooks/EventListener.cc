@@ -42,7 +42,7 @@
 #include "pland/land/LandRegistry.h"
 #include "pland/land/LandScheduler.h"
 #include "pland/mod/ModEntry.h"
-#include "pland/selector/LandSelector.h"
+#include "pland/selector/SelectorManager.h"
 #include "pland/utils/McUtils.h"
 #include <cstdint>
 #include <functional>
@@ -199,13 +199,13 @@ EventListener::EventListener() {
         bus->emplaceListener<ll::event::PlayerDisconnectEvent>([logger](ll::event::PlayerDisconnectEvent& ev) {
             auto& player = ev.self();
             if (player.isSimulatedPlayer()) return;
-            logger->debug("Player {} disconnect, remove all cache");
+            logger->debug("Player {} disconnect, remove all resources");
 
             auto& uuid    = player.getUuid();
             auto  uuidStr = uuid.asString();
 
             GlobalPlayerLocaleCodeCached.erase(uuidStr);
-            SelectorManager::getInstance().cancel(player);
+            mod::ModEntry::getInstance().getSelectorManager()->stopSelection(uuid);
             DrawHandleManager::getInstance().removeHandle(player);
             Require<LandScheduler>()->mLandidMap.erase(uuid);
             Require<LandScheduler>()->mDimidMap.erase(uuid);

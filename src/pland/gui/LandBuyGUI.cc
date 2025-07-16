@@ -12,7 +12,11 @@
 #include "pland/land/LandEvent.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/land/StorageLayerError.h"
-#include "pland/selector/LandSelector.h"
+#include "pland/mod/ModEntry.h"
+#include "pland/selector/ChangeLandRangeSelector.h"
+#include "pland/selector/DefaultSelector.h"
+#include "pland/selector/SelectorManager.h"
+#include "pland/selector/SubLandSelector.h"
 #include "pland/utils/McUtils.h"
 #include <climits>
 #include <stack>
@@ -25,42 +29,25 @@
 namespace land {
 
 void LandBuyGUI::impl(Player& player) {
-    auto selector = SelectorManager::getInstance().get(player);
-    if (!selector) {
+    auto manager = mod::ModEntry::getInstance().getSelectorManager();
+    if (!manager->hasSelector(player)) {
         mc_utils::sendText<mc_utils::LogLevel::Error>(player, "请先使用 /pland new 来选择领地"_trf(player));
         return;
     }
 
-    switch (selector->getType()) {
-    case Selector::Type::Default: {
-        impl(player, selector);
-        break;
-    }
-
-    case Selector::Type::ReSelector: {
-        if (auto reSelector = selector->As<LandReSelector>()) {
-            impl(player, reSelector);
-        }
-        break;
-    }
-
-    case Selector::Type::SubLand: {
-        if (auto subSelector = selector->As<SubLandSelector>()) {
-            impl(player, subSelector);
-        }
-        break;
-    }
+    auto selector = manager->getSelector(player);
+    if (auto def = selector->as<DefaultSelector>()) {
+        impl(player, def);
+    } else if (auto re = selector->as<ChangeLandRangeSelector>()) {
+        impl(player, re);
+    } else if (auto sub = selector->as<SubLandSelector>()) {
+        impl(player, sub);
     }
 }
 
-void LandBuyGUI::impl(Player& player, Selector* selector) {
-    if (selector->getType() != Selector::Type::Default) {
-        throw std::runtime_error("invalid selector type");
-        return;
-    }
-
-    bool const& is3D = selector->is3D();
-    auto        aabb = selector->getAABB();
+void LandBuyGUI::impl(Player& player, DefaultSelector* selector) {
+    bool const& is3D = !selector->isAlwaysUseDimensionHeight();
+    auto        aabb = selector->newLandAABB();
 
     aabb->fix();
     int const volume = aabb->getVolume();
@@ -142,7 +129,7 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
                 return;
             }
 
-            SelectorManager::getInstance().cancel(pl);
+            mod::ModEntry::getInstance().getSelectorManager()->stopSelection(pl);
             ll::event::EventBus::getInstance().publish(PlayerBuyLandAfterEvent{pl, landPtr});
 
             mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
@@ -150,15 +137,14 @@ void LandBuyGUI::impl(Player& player, Selector* selector) {
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
     fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", "path", [](Player& pl) {
-        SelectorManager::getInstance().cancel(pl);
+        mod::ModEntry::getInstance().getSelectorManager()->stopSelection(pl);
     });
 
     fm.sendTo(player);
 }
 
-void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
-    bool const& is3D = reSelector->is3D();
-    auto        aabb = reSelector->getAABB();
+void LandBuyGUI::impl(Player& player, ChangeLandRangeSelector* reSelector) {
+    auto aabb = reSelector->newLandAABB();
 
     aabb->fix();
     int const volume = aabb->getVolume();
@@ -167,12 +153,9 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
     int const height = aabb->getHeight();
 
     auto       landPtr       = reSelector->getLand();
-    int const& originalPrice = landPtr->getOriginalBuyPrice();                                   // 原始购买价格
-    auto       _variables    = PriceCalculate::Variable::make(*aabb, landPtr->getDimensionId()); // 传入维度ID
-    double     newRangePrice = PriceCalculate::eval(
-        is3D ? Config::cfg.land.bought.threeDimensionl.calculate : Config::cfg.land.bought.twoDimensionl.calculate,
-        _variables
-    );
+    int const& originalPrice = landPtr->getOriginalBuyPrice(); // 原始购买价格
+    auto       _variables    = PriceCalculate::Variable::make(*aabb, landPtr->getDimensionId());
+    double     newRangePrice = PriceCalculate::eval(Config::cfg.land.bought.threeDimensionl.calculate, _variables);
 
     // 应用维度价格系数
     auto it = Config::cfg.land.bought.dimensionPriceCoefficients.find(std::to_string(landPtr->getDimensionId()));
@@ -218,7 +201,7 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
         "确认购买"_trf(player),
         "textures/ui/realms_green_check",
         "path",
-        [needPay, refund, discountedPrice, aabb, length, width, height, is3D, reSelector, landPtr](Player& pl) {
+        [needPay, refund, discountedPrice, aabb, reSelector, landPtr](Player& pl) {
             auto& eco = EconomySystem::getInstance();
             if ((needPay > 0 && eco->get(pl) < needPay) && Config::cfg.economy.enabled) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您的余额不足，无法购买"_trf(pl));
@@ -251,22 +234,21 @@ void LandBuyGUI::impl(Player& player, LandReSelector* reSelector) {
             landPtr->setOriginalBuyPrice(discountedPrice);
             LandRegistry::getInstance().refreshLandRange(landPtr); // 刷新领地范围
 
-            SelectorManager::getInstance().cancel(pl);
+            mod::ModEntry::getInstance().getSelectorManager()->stopSelection(pl);
             ll::event::EventBus::getInstance().publish(LandRangeChangeAfterEvent{pl, landPtr, *aabb, needPay, refund});
             mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "领地范围修改成功"_trf(pl));
         }
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
     fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", "path", [](Player& pl) {
-        SelectorManager::getInstance().cancel(pl);
+        mod::ModEntry::getInstance().getSelectorManager()->stopSelection(pl);
     });
 
     fm.sendTo(player);
 }
 
 void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
-    bool const& is3D = subSelector->is3D();
-    auto        aabb = subSelector->getAABB();
+    auto aabb = subSelector->newLandAABB();
 
     aabb->fix();
     int const volume = aabb->getVolume();
@@ -327,7 +309,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
         "确认购买"_trf(player),
         "textures/ui/realms_green_check",
         "path",
-        [discountedPrice, aabb, length, width, height, is3D, subSelector, &parentPos](Player& pl) {
+        [discountedPrice, aabb, subSelector, &parentPos](Player& pl) {
             auto& economy = EconomySystem::getInstance();
             if (economy->get(pl) < discountedPrice && Config::cfg.economy.enabled) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您的余额不足，无法购买"_trf(pl));
@@ -346,24 +328,23 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
             }
 
             // 创建领地
-            SharedLand landPtr = subSelector->newLand();
+            SharedLand subLand = subSelector->newSubLand();
+            subLand->setOriginalBuyPrice(discountedPrice); // 保存购买价格
 
-            landPtr->setOriginalBuyPrice(discountedPrice); // 保存购买价格
-
-            if (!LandRegistry::getInstance().addSubLand(subSelector->getParentLand(), landPtr)) {
+            if (!LandRegistry::getInstance().addSubLand(subSelector->getParentLand(), subLand)) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地创建失败，请重试"_trf(pl));
                 (void)economy->add(pl, discountedPrice); // 补回经济
                 return;
             }
 
-            SelectorManager::getInstance().cancel(pl);
-            ll::event::EventBus::getInstance().publish(PlayerBuyLandAfterEvent{pl, landPtr});
+            mod::ModEntry::getInstance().getSelectorManager()->stopSelection(pl);
+            ll::event::EventBus::getInstance().publish(PlayerBuyLandAfterEvent{pl, subLand});
             mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
         }
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
     fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", "path", [](Player& pl) {
-        SelectorManager::getInstance().cancel(pl);
+        mod::ModEntry::getInstance().getSelectorManager()->stopSelection(pl);
     });
 
     fm.sendTo(player);

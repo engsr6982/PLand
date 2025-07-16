@@ -21,7 +21,8 @@
 #include "pland/land/LandRegistry.h"
 #include "pland/land/StorageLayerError.h"
 #include "pland/mod/ModEntry.h"
-#include "pland/selector/LandSelector.h"
+#include "pland/selector/ChangeLandRangeSelector.h"
+#include "pland/selector/SelectorManager.h"
 #include "pland/utils/JSON.h"
 #include "pland/utils/McUtils.h"
 #include <cstdint>
@@ -472,10 +473,14 @@ void LandManagerGUI::sendChangLandRangeGUI(Player& player, SharedLand const& ptr
             return;
         }
 
-        auto selector = std::make_unique<LandReSelector>(self, ptr);
-        if (!SelectorManager::getInstance().start(std::move(selector))) {
+        auto manager = mod::ModEntry::getInstance().getSelectorManager();
+        if (manager->hasSelector(self.getUuid())) {
             mc_utils::sendText<mc_utils::LogLevel::Error>(self, "选区开启失败，当前存在未完成的选区任务"_trf(self));
+            return;
         }
+
+        auto selector = std::make_unique<ChangeLandRangeSelector>(self, ptr);
+        manager->startSelection(std::move(selector));
     });
 }
 

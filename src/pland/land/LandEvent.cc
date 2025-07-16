@@ -2,6 +2,7 @@
 #include "ll/api/event/Emitter.h"
 #include "mc/world/actor/player/Player.h"
 #include "pland/land/Land.h"
+#include "pland/selector/ISelector.h"
 
 
 namespace land {
@@ -12,7 +13,7 @@ bool    PlayerAskCreateLandAfterEvent::is3DLand() const { return mIs3DLand; }
 
 
 Player&    PlayerBuyLandBeforeEvent::getPlayer() const { return mPlayer; }
-Selector*  PlayerBuyLandBeforeEvent::getSelector() const { return mSelector; }
+ISelector* PlayerBuyLandBeforeEvent::getSelector() const { return mSelector; }
 int&       PlayerBuyLandBeforeEvent::getPrice() const { return mPrice; }
 Player&    PlayerBuyLandAfterEvent::getPlayer() const { return mPlayer; }
 SharedLand PlayerBuyLandAfterEvent::getLand() const { return mLand; }

@@ -15,7 +15,7 @@
 #include "pland/infra/Config.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/land/LandScheduler.h"
-#include "pland/selector/LandSelector.h"
+#include "pland/selector/SelectorManager.h"
 
 
 #ifdef LD_TEST
@@ -75,9 +75,10 @@ bool ModEntry::load() {
 bool ModEntry::enable() {
     land::LandCommand::setup();
 
-    this->mLandScheduler = std::make_unique<land::LandScheduler>();
-    this->mEventListener = std::make_unique<land::EventListener>();
-    this->mSafeTeleport  = std::make_unique<land::SafeTeleport>();
+    this->mLandScheduler   = std::make_unique<land::LandScheduler>();
+    this->mEventListener   = std::make_unique<land::EventListener>();
+    this->mSafeTeleport    = std::make_unique<land::SafeTeleport>();
+    this->mSelectorManager = std::make_unique<land::SelectorManager>();
 
 
 #ifdef LD_TEST
@@ -106,12 +107,10 @@ bool ModEntry::disable() {
     logger.debug("Stopping coroutine...");
     land::GlobalRepeatCoroTaskRunning.store(false);
 
-    logger.debug("cleaning up...");
-    land::SelectorManager::getInstance().cleanup();
-
     mLandScheduler.reset();
     mEventListener.reset();
     mSafeTeleport.reset();
+    mSelectorManager.reset();
 
     return true;
 }
@@ -136,6 +135,12 @@ void ModEntry::onConfigReload() {
         getSelf().getLogger().error("Failed to reload event listener: unknown error");
     }
 }
+
+ModEntry::ModEntry() : mSelf(*ll::mod::NativeMod::current()) {}
+ll::mod::NativeMod&    ModEntry::getSelf() const { return mSelf; }
+land::SafeTeleport*    ModEntry::getSafeTeleport() const { return mSafeTeleport.get(); }
+land::LandScheduler*   ModEntry::getLandScheduler() const { return mLandScheduler.get(); }
+land::SelectorManager* ModEntry::getSelectorManager() const { return mSelectorManager.get(); }
 
 
 } // namespace mod

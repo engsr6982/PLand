@@ -17,7 +17,7 @@ struct ForbiddenRange {
 };
 
 struct Config {
-    int              version{19};
+    int              version{20};
     ll::io::LogLevel logLevel{ll::io::LogLevel::Info};
 
     EconomyConfig economy;
@@ -73,7 +73,8 @@ struct Config {
     } land;
 
     struct {
-        string tool{"minecraft:stick"}; // 工具
+        string      tool{"minecraft:stick"}; // 工具
+        std::string alias{"木棍"};           // 别名
     } selector;
 
     struct {

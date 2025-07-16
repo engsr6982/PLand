@@ -5,7 +5,8 @@
 #include "pland/Global.h"
 #include "pland/aabb/LandAABB.h"
 #include "pland/land/Land.h"
-#include "pland/selector/LandSelector.h"
+#include "pland/selector/ISelector.h"
+#include "pland/selector/SelectorManager.h"
 
 
 namespace land {
@@ -39,20 +40,20 @@ public:
 // 玩家购买领地 (LandBuyGUI)
 class PlayerBuyLandBeforeEvent final : public ll::event::Cancellable<ll::event::Event> {
 protected:
-    Player&   mPlayer;
-    Selector* mSelector;
-    int&      mPrice;
+    Player&    mPlayer;
+    ISelector* mSelector;
+    int&       mPrice;
 
 public:
-    LDAPI constexpr explicit PlayerBuyLandBeforeEvent(Player& player, Selector* selector, int& price)
+    LDAPI constexpr explicit PlayerBuyLandBeforeEvent(Player& player, ISelector* selector, int& price)
     : Cancellable(),
       mPlayer(player),
       mSelector(selector),
       mPrice(price) {}
 
-    LDNDAPI Player&   getPlayer() const;
-    LDNDAPI Selector* getSelector() const;
-    LDNDAPI int&      getPrice() const;
+    LDNDAPI Player&    getPlayer() const;
+    LDNDAPI ISelector* getSelector() const;
+    LDNDAPI int&       getPrice() const;
 };
 class PlayerBuyLandAfterEvent final : public ll::event::Event {
 protected:

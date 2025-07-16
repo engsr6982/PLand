@@ -12,7 +12,9 @@
 #include "pland/land/LandEvent.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/mod/ModEntry.h"
-#include "pland/selector/LandSelector.h"
+#include "pland/selector/DefaultSelector.h"
+#include "pland/selector/SelectorManager.h"
+#include "pland/selector/SubLandSelector.h"
 #include "pland/utils/McUtils.h"
 #include "pland/utils/Utils.h"
 #include <string>
@@ -60,7 +62,8 @@ void NewLandGUI::sendChooseLandDim(Player& player) {
             PlayerAskCreateLandAfterEvent ev(pl, land3D);
             ll::event::EventBus::getInstance().publish(ev);
 
-            if (SelectorManager::getInstance().start(Selector::createDefault(pl, pl.getDimensionId().id, land3D))) {
+            auto selector = std::make_unique<DefaultSelector>(pl, !land3D);
+            if (mod::ModEntry::getInstance().getSelectorManager()->startSelection(std::move(selector))) {
                 mc_utils::sendText(
                     pl,
                     "选区功能已开启，使用命令 /pland set 或使用 {} 来选择ab点"_trf(pl, Config::cfg.selector.tool)
@@ -73,31 +76,26 @@ void NewLandGUI::sendChooseLandDim(Player& player) {
 
 
 void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& exception) {
-    auto selector = SelectorManager::getInstance().get(player);
+    auto selector = mod::ModEntry::getInstance().getSelectorManager()->getSelector(player);
     if (!selector) {
         return;
     }
-    selector->fixAABBMinMax();
+    selector->fixMinMax();
 
     CustomForm fm(PLUGIN_NAME + ("| 确认Y轴范围"_trf(player)));
 
     fm.appendLabel("确认选区的Y轴范围\n您可以在此调节Y轴范围，如果不需要修改，请直接点击提交"_trf(player));
 
-    bool const       isSubLand   = selector->getType() == Selector::Type::SubLand;
     SubLandSelector* subSelector = nullptr;
     SharedLand       parentLand  = nullptr;
-    if (isSubLand) {
-        if (subSelector = selector->As<SubLandSelector>(); subSelector) {
-            if (parentLand = subSelector->getParentLand(); parentLand) {
-                auto& aabb = parentLand->getAABB();
-                fm.appendLabel(
-                    "当前为子领地模式，子领地的Y轴范围不能超过父领地。\n父领地Y轴范围: {} ~ {}"_trf(
-                        player,
-                        aabb.min.y,
-                        aabb.max.y
-                    )
-                );
-            }
+    if (subSelector = selector->as<SubLandSelector>(); subSelector) {
+        if (parentLand = subSelector->getParentLand(); parentLand) {
+            auto& aabb = parentLand->getAABB();
+            fm.appendLabel("当前为子领地模式，子领地的Y轴范围不能超过父领地。\n父领地Y轴范围: {} ~ {}"_trf(
+                player,
+                aabb.min.y,
+                aabb.max.y
+            ));
         }
     }
 
@@ -106,59 +104,53 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
 
     fm.appendLabel(exception);
 
-    fm.sendTo(
-        player,
-        [selector, isSubLand, subSelector, parentLand](Player& pl, CustomFormResult res, FormCancelReason) {
-            if (!res.has_value()) {
+    fm.sendTo(player, [selector, subSelector, parentLand](Player& pl, CustomFormResult res, FormCancelReason) {
+        if (!res.has_value()) {
+            return;
+        }
+
+        string start = std::get<string>(res->at("start"));
+        string end   = std::get<string>(res->at("end"));
+
+        if (!isNumber(start) || !isNumber(end) || isOutOfRange(start) || isOutOfRange(end)) {
+            sendConfirmPrecinctsYRange(pl, "请输入正确的Y轴范围"_trf(pl));
+            return;
+        }
+
+        try {
+            int startY = std::stoi(start);
+            int endY   = std::stoi(end);
+
+            if (startY >= endY) {
+                sendConfirmPrecinctsYRange(pl, "请输入正确的Y轴范围, 开始Y轴必须小于结束Y轴"_trf(pl));
                 return;
             }
 
-            string start = std::get<string>(res->at("start"));
-            string end   = std::get<string>(res->at("end"));
+            if (subSelector) {
+                if (!subSelector || !parentLand) {
+                    throw std::runtime_error("subSelector or parentLand is nullptr");
+                }
 
-            if (!isNumber(start) || !isNumber(end) || isOutOfRange(start) || isOutOfRange(end)) {
-                sendConfirmPrecinctsYRange(pl, "请输入正确的Y轴范围"_trf(pl));
-                return;
-            }
-
-            try {
-                int startY = std::stoi(start);
-                int endY   = std::stoi(end);
-
-                if (startY >= endY) {
-                    sendConfirmPrecinctsYRange(pl, "请输入正确的Y轴范围, 开始Y轴必须小于结束Y轴"_trf(pl));
+                auto& aabb = parentLand->getAABB();
+                if (startY < aabb.min.y || endY > aabb.max.y) {
+                    sendConfirmPrecinctsYRange(pl, "请输入正确的Y轴范围, 子领地的Y轴范围不能超过父领地"_trf(pl));
                     return;
                 }
-
-                if (isSubLand) {
-                    if (!subSelector || !parentLand) {
-                        throw std::runtime_error("subSelector or parentLand is nullptr");
-                    }
-
-                    auto& aabb = parentLand->getAABB();
-                    if (startY < aabb.min.y || endY > aabb.max.y) {
-                        sendConfirmPrecinctsYRange(pl, "请输入正确的Y轴范围, 子领地的Y轴范围不能超过父领地"_trf(pl));
-                        return;
-                    }
-                }
-
-                selector->mPointA->y = startY;
-                selector->mPointB->y = endY;
-                selector->fixAABBMinMax();
-                selector->onFixesY();
-                mc_utils::sendText(pl, "Y轴范围已修改为 {} ~ {}"_trf(pl, startY, endY));
-            } catch (...) {
-                mc_utils::sendText<mc_utils::LogLevel::Fatal>(pl, "插件内部错误, 请联系开发者"_trf(pl));
-                mod::ModEntry::getInstance().getSelf().getLogger().error(
-                    "An exception is caught in {} and user {} enters data: {}, {}",
-                    __FUNCTION__,
-                    pl.getRealName(),
-                    start,
-                    end
-                );
             }
+
+            selector->setYRange(startY, endY);
+            selector->onPointConfirmed();
+        } catch (...) {
+            mc_utils::sendText<mc_utils::LogLevel::Fatal>(pl, "插件内部错误, 请联系开发者"_trf(pl));
+            mod::ModEntry::getInstance().getSelf().getLogger().error(
+                "An exception is caught in {} and user {} enters data: {}, {}",
+                __FUNCTION__,
+                pl.getRealName(),
+                start,
+                end
+            );
         }
-    );
+    });
 }
 
 
