@@ -9,8 +9,8 @@
 
 namespace mod {
 
-class ModEntry {
-    ModEntry();
+class PLand {
+    PLand();
 
 public: /* private */
     [[nodiscard]] ll::mod::NativeMod& getSelf() const;
@@ -28,7 +28,7 @@ public: /* private */
     bool unload();
 
 public: /* public */
-    LDAPI static ModEntry& getInstance();
+    LDAPI static PLand& getInstance();
 
     LDAPI void onConfigReload();
 

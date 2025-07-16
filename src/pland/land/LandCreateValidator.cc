@@ -6,7 +6,7 @@
 #include "pland/aabb/LandAABB.h"
 #include "pland/infra/Config.h"
 #include "pland/land/LandRegistry.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 #include "pland/utils/McUtils.h"
 
 namespace land {
@@ -89,7 +89,7 @@ LandCreateValidator::isLandRangeLegal(LandAABB const& range, LandDimid dimid, bo
 
     auto dimension = ll::service::getLevel()->getDimension(dimid).lock();
     if (!dimension) {
-        mod::ModEntry::getInstance().getSelf().getLogger().warn(
+        mod::PLand::getInstance().getSelf().getLogger().warn(
             "LandCreateValidator::isLandRangeLegal: dimension {} is not found",
             dimid
         );

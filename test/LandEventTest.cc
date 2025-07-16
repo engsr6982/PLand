@@ -2,7 +2,7 @@
 #include "TestMain.h"
 #include "ll/api/event/EventBus.h"
 #include "ll/api/event/ListenerBase.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 
 namespace test {
 
@@ -10,7 +10,7 @@ std::vector<ll::event::ListenerPtr> mLandEventListeners;
 
 void TestMain::_setupLandEventTest() {
     auto& bus    = ll::event::EventBus::getInstance();
-    auto  logger = &mod::ModEntry::getInstance().getSelf().getLogger();
+    auto  logger = &mod::PLand::getInstance().getSelf().getLogger();
 
     mLandEventListeners = {
         bus.emplaceListener<land::PlayerAskCreateLandBeforeEvent>([logger](land::PlayerAskCreateLandBeforeEvent& ev) {

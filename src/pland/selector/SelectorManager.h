@@ -12,7 +12,7 @@ namespace land {
 
 /**
  * @brief 选区管理器
- * @note 由 ModEntry 管理 (RAII)
+ * @note 由 PLand 管理 (RAII)
  */
 class SelectorManager final {
     std::unordered_map<UUIDm, std::unique_ptr<ISelector>> mSelectors{};

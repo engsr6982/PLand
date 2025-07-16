@@ -11,7 +11,7 @@
 #include "pland/land/Land.h"
 #include "pland/land/LandEvent.h"
 #include "pland/land/LandRegistry.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 #include "pland/selector/DefaultSelector.h"
 #include "pland/selector/SelectorManager.h"
 #include "pland/selector/SubLandSelector.h"
@@ -63,7 +63,7 @@ void NewLandGUI::sendChooseLandDim(Player& player) {
             ll::event::EventBus::getInstance().publish(ev);
 
             auto selector = std::make_unique<DefaultSelector>(pl, land3D);
-            if (mod::ModEntry::getInstance().getSelectorManager()->startSelection(std::move(selector))) {
+            if (mod::PLand::getInstance().getSelectorManager()->startSelection(std::move(selector))) {
                 mc_utils::sendText(
                     pl,
                     "选区功能已开启，使用命令 /pland set 或使用 {} 来选择ab点"_trf(pl, Config::cfg.selector.tool)
@@ -76,7 +76,7 @@ void NewLandGUI::sendChooseLandDim(Player& player) {
 
 
 void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& exception) {
-    auto selector = mod::ModEntry::getInstance().getSelectorManager()->getSelector(player);
+    auto selector = mod::PLand::getInstance().getSelectorManager()->getSelector(player);
     if (!selector) {
         return;
     }
@@ -140,7 +140,7 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
             selector->onPointConfirmed();
         } catch (...) {
             mc_utils::sendText<mc_utils::LogLevel::Fatal>(pl, "插件内部错误, 请联系开发者"_trf(pl));
-            mod::ModEntry::getInstance().getSelf().getLogger().error(
+            mod::PLand::getInstance().getSelf().getLogger().error(
                 "An exception is caught in {} and user {} enters data: {}, {}",
                 __FUNCTION__,
                 pl.getRealName(),

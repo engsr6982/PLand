@@ -15,7 +15,7 @@
 #include "pland/infra/Require.h"
 #include "pland/land/LandEvent.h"
 #include "pland/land/LandRegistry.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 #include <cstdio>
 #include <stdexcept>
 
@@ -24,7 +24,7 @@ namespace land {
 
 
 LD_IMPL_REQUIRE(LandScheduler) {
-    auto res = mod::ModEntry::getInstance().getLandScheduler();
+    auto res = mod::PLand::getInstance().getLandScheduler();
     if (!res) [[unlikely]] {
         throw std::runtime_error(LD_ERR_RAII_RESOURCE_EMPTY(LandScheduler));
     }
@@ -80,7 +80,7 @@ LandScheduler::LandScheduler() {
         }
     }).launch(ll::thread::ServerThreadExecutor::getDefault());
 
-    auto* logger = &mod::ModEntry::getInstance().getSelf().getLogger();
+    auto* logger = &mod::PLand::getInstance().getSelf().getLogger();
 
     // tip
     auto* infos = &ll::service::PlayerInfo::getInstance();

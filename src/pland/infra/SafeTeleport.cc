@@ -5,7 +5,7 @@
 #include "mc/network/packet/SetTitlePacket.h"
 #include "mc/world/actor/player/Player.h"
 #include "pland/Global.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 #include "pland/utils/McUtils.h"
 #include <cstdint>
 #include <ll/api/coro/CoroTask.h>
@@ -147,7 +147,7 @@ void SafeTeleport::Task::_findSafePos() {
     _tryApplyDimensionFixPatch(heightRange); // 尝试应用维度修复补丁
 
 #ifdef DEBUG
-    auto& logger = mod::ModEntry::getInstance().getSelf().getLogger();
+    auto& logger = mod::PLand::getInstance().getSelf().getLogger();
 #endif
 
     while (y > end && !mAbortFlag.load()) {
@@ -200,7 +200,7 @@ SafeTeleport::SafeTeleport() {
             try {
                 polling();
             } catch (...) {
-                mod::ModEntry::getInstance().getSelf().getLogger().error(
+                mod::PLand::getInstance().getSelf().getLogger().error(
                     "An exception occurred while polling SafeTeleport tasks"
                 );
             }
@@ -217,7 +217,7 @@ SafeTeleport::~SafeTeleport() {
     }
     mTasks.clear();
 }
-SafeTeleport* SafeTeleport::getInstance() { return mod::ModEntry::getInstance().getSafeTeleport(); }
+SafeTeleport* SafeTeleport::getInstance() { return mod::PLand::getInstance().getSafeTeleport(); }
 
 
 void SafeTeleport::launchTask(Player& player, DimensionPos targetPos) {

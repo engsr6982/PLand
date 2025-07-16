@@ -8,7 +8,7 @@
 #include "pland/Global.h"
 #include "pland/aabb/LandAABB.h"
 #include "pland/land/Land.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 #include "pland/utils/JSON.h"
 #include "pland/utils/Utils.h"
 #include <algorithm>
@@ -57,7 +57,7 @@ void LandRegistry::_loadPlayerSettings() {
 }
 
 void LandRegistry::_connectDatabaseAndCheckVersion() {
-    auto&       self    = mod::ModEntry::getInstance().getSelf();
+    auto&       self    = mod::PLand::getInstance().getSelf();
     auto&       logger  = self.getLogger();
     auto const& dataDir = self.getDataDir();
     auto const  dbDir   = dataDir / DB_DIR_NAME();
@@ -201,7 +201,7 @@ Result<void, StorageLayerError::Error> LandRegistry::_removeLand(SharedLand cons
 namespace land {
 
 void LandRegistry::init() {
-    auto& logger = mod::ModEntry::getInstance().getSelf().getLogger();
+    auto& logger = mod::PLand::getInstance().getSelf().getLogger();
 
     logger.trace("打开数据库...");
     _connectDatabaseAndCheckVersion();
@@ -232,9 +232,9 @@ void LandRegistry::init() {
             lastSaveTime = std::time(nullptr); // 更新时间
 
             if (!mThreadStopFlag) {
-                mod::ModEntry::getInstance().getSelf().getLogger().debug("[Thread] Saving land data...");
+                mod::PLand::getInstance().getSelf().getLogger().debug("[Thread] Saving land data...");
                 this->save();
-                mod::ModEntry::getInstance().getSelf().getLogger().debug("[Thread] Land data saved.");
+                mod::PLand::getInstance().getSelf().getLogger().debug("[Thread] Land data saved.");
             } else break;
         }
     });
@@ -337,7 +337,7 @@ Result<void, StorageLayerError::Error> LandRegistry::_addLand(SharedLand land) {
 
     auto result = mLandCache.emplace(land->getId(), land);
     if (!result.second) {
-        mod::ModEntry::getInstance().getSelf().getLogger().warn("添加领地失败, ID: {}", land->getId());
+        mod::PLand::getInstance().getSelf().getLogger().warn("添加领地失败, ID: {}", land->getId());
         return std::unexpected(StorageLayerError::Error::STLMapError);
     }
 

@@ -20,7 +20,7 @@
 #include "pland/land/LandEvent.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/land/StorageLayerError.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 #include "pland/selector/ChangeLandRangeSelector.h"
 #include "pland/selector/SelectorManager.h"
 #include "pland/utils/JSON.h"
@@ -473,7 +473,7 @@ void LandManagerGUI::sendChangLandRangeGUI(Player& player, SharedLand const& ptr
             return;
         }
 
-        auto manager = mod::ModEntry::getInstance().getSelectorManager();
+        auto manager = mod::PLand::getInstance().getSelectorManager();
         if (manager->hasSelector(self.getUuid())) {
             mc_utils::sendText<mc_utils::LogLevel::Error>(self, "选区开启失败，当前存在未完成的选区任务"_trf(self));
             return;
@@ -496,7 +496,7 @@ void LandManagerGUI::sendChangeMemberGUI(Player& player, SharedLand ptr) {
     for (auto& member : ptr->getMembers()) {
         auto i = infos.fromUuid(UUIDm::fromString(member));
         if (!i) {
-            mod::ModEntry::getInstance().getSelf().getLogger().warn("Failed to get player info of {}", member);
+            mod::PLand::getInstance().getSelf().getLogger().warn("Failed to get player info of {}", member);
         }
 
         fm.appendButton(i.has_value() ? i->name : member, [member, ptr](Player& self) {
@@ -570,7 +570,7 @@ void LandManagerGUI::_sendRemoveMemberGUI(Player& player, SharedLand ptr, UUIDs 
 
     auto info = ll::service::PlayerInfo::getInstance().fromUuid(UUIDm::fromString(member));
     if (!info) {
-        mod::ModEntry::getInstance().getSelf().getLogger().warn("Failed to get player info of {}", member);
+        mod::PLand::getInstance().getSelf().getLogger().warn("Failed to get player info of {}", member);
     }
 
     ModalForm fm(

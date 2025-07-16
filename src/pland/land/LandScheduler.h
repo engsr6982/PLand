@@ -11,7 +11,7 @@ namespace land {
 /**
  * @brief 领地调度器
  * 处理玩家进出领地事件、以及标题提示等
- * 该类使用 RAII 管理资源，由 pland 的 ModEntry 持有
+ * 该类使用 RAII 管理资源，由 pland 的 PLand 持有
  */
 class LandScheduler {
 public:

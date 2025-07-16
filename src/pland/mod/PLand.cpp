@@ -1,4 +1,4 @@
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 
 #include <memory>
 
@@ -28,12 +28,12 @@
 
 namespace mod {
 
-ModEntry& ModEntry::getInstance() {
-    static ModEntry instance;
+PLand& PLand::getInstance() {
+    static PLand instance;
     return instance;
 }
 
-bool ModEntry::load() {
+bool PLand::load() {
     auto& logger = getSelf().getLogger();
     logger.info(R"(  _____   _                        _ )");
     logger.info(R"( |  __ \ | |                      | |)");
@@ -72,7 +72,7 @@ bool ModEntry::load() {
     return true;
 }
 
-bool ModEntry::enable() {
+bool PLand::enable() {
     land::LandCommand::setup();
 
     this->mLandScheduler   = std::make_unique<land::LandScheduler>();
@@ -92,7 +92,7 @@ bool ModEntry::enable() {
     return true;
 }
 
-bool ModEntry::disable() {
+bool PLand::disable() {
 #ifdef LD_DEVTOOL
     if (land::Config::cfg.internal.devTools) devtool::DevToolAppManager::getInstance().destroyApp();
 #endif
@@ -115,9 +115,9 @@ bool ModEntry::disable() {
     return true;
 }
 
-bool ModEntry::unload() { return true; }
+bool PLand::unload() { return true; }
 
-void ModEntry::onConfigReload() {
+void PLand::onConfigReload() {
     auto& logger = getSelf().getLogger();
     logger.trace("Reloading event listener...");
     try {
@@ -136,13 +136,13 @@ void ModEntry::onConfigReload() {
     }
 }
 
-ModEntry::ModEntry() : mSelf(*ll::mod::NativeMod::current()) {}
-ll::mod::NativeMod&    ModEntry::getSelf() const { return mSelf; }
-land::SafeTeleport*    ModEntry::getSafeTeleport() const { return mSafeTeleport.get(); }
-land::LandScheduler*   ModEntry::getLandScheduler() const { return mLandScheduler.get(); }
-land::SelectorManager* ModEntry::getSelectorManager() const { return mSelectorManager.get(); }
+PLand::PLand() : mSelf(*ll::mod::NativeMod::current()) {}
+ll::mod::NativeMod&    PLand::getSelf() const { return mSelf; }
+land::SafeTeleport*    PLand::getSafeTeleport() const { return mSafeTeleport.get(); }
+land::LandScheduler*   PLand::getLandScheduler() const { return mLandScheduler.get(); }
+land::SelectorManager* PLand::getSelectorManager() const { return mSelectorManager.get(); }
 
 
 } // namespace mod
 
-LL_REGISTER_MOD(mod::ModEntry, mod::ModEntry::getInstance());
+LL_REGISTER_MOD(mod::PLand, mod::PLand::getInstance());

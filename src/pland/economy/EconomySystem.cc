@@ -3,7 +3,7 @@
 #include "pland/economy/impl/LegacyMoneyInterface.h"
 #include "pland/economy/impl/ScoreBoardInterface.h"
 #include "pland/infra/Config.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 #include <memory>
 #include <stdexcept>
 
@@ -14,17 +14,17 @@ namespace land {
 std::shared_ptr<internals::IEconomyInterface> EconomySystem::createEconomySystem() const {
     auto& cfg = getConfig();
     if (!cfg.enabled) {
-        mod::ModEntry::getInstance().getSelf().getLogger().debug("using internals::EmtpyInterface");
+        mod::PLand::getInstance().getSelf().getLogger().debug("using internals::EmtpyInterface");
         return std::make_shared<internals::EmtpyInterface>();
     }
 
     switch (cfg.kit) {
     case land::EconomyKit::LegacyMoney: {
-        mod::ModEntry::getInstance().getSelf().getLogger().debug("using internals::LegacyMoneyInterface");
+        mod::PLand::getInstance().getSelf().getLogger().debug("using internals::LegacyMoneyInterface");
         return std::make_shared<internals::LegacyMoneyInterface>();
     }
     case land::EconomyKit::ScoreBoard: {
-        mod::ModEntry::getInstance().getSelf().getLogger().debug("using internals::ScoreBoardInterface");
+        mod::PLand::getInstance().getSelf().getLogger().debug("using internals::ScoreBoardInterface");
         return std::make_shared<internals::ScoreBoardInterface>();
     }
     }

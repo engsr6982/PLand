@@ -4,7 +4,7 @@
 #include "pland/aabb/LandAABB.h"
 #include "pland/land/Land.h"
 #include "pland/land/LandRegistry.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 #include "pland/utils/JSON.h"
 #include <algorithm>
 #include <cstddef>
@@ -210,7 +210,7 @@ bool iLandConverter::execute() {
         return false;
     }
 
-    auto& logger = mod::ModEntry::getInstance().getSelf().getLogger();
+    auto& logger = mod::PLand::getInstance().getSelf().getLogger();
     // 反射
     mRelationShip = reflection<RawRelationShip>(*rawRelationShipJSON);
     mData         = reflection<RawData>(*rawDataJSON);

@@ -41,7 +41,7 @@
 #include "pland/land/Land.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/land/LandScheduler.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 #include "pland/selector/SelectorManager.h"
 #include "pland/utils/McUtils.h"
 #include <cstdint>
@@ -177,7 +177,7 @@ static const std::unordered_map<std::string_view, bool LandPermTable::*> BlockFu
 EventListener::EventListener() {
     auto* db     = &LandRegistry::getInstance();
     auto* bus    = &ll::event::EventBus::getInstance();
-    auto* logger = &mod::ModEntry::getInstance().getSelf().getLogger();
+    auto* logger = &mod::PLand::getInstance().getSelf().getLogger();
 
 
     mListenerPtrs = {
@@ -205,7 +205,7 @@ EventListener::EventListener() {
             auto  uuidStr = uuid.asString();
 
             GlobalPlayerLocaleCodeCached.erase(uuidStr);
-            mod::ModEntry::getInstance().getSelectorManager()->stopSelection(uuid);
+            mod::PLand::getInstance().getSelectorManager()->stopSelection(uuid);
             DrawHandleManager::getInstance().removeHandle(player);
             Require<LandScheduler>()->mLandidMap.erase(uuid);
             Require<LandScheduler>()->mDimidMap.erase(uuid);

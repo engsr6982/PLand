@@ -8,7 +8,7 @@
 #include "mc/world/actor/player/Player.h"
 #include "pland/infra/Config.h"
 #include "pland/infra/Require.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/mod/PLand.h"
 #include "pland/utils/Date.h"
 #include "pland/utils/McUtils.h"
 #include <atomic>
@@ -17,7 +17,7 @@
 namespace land {
 
 LD_IMPL_REQUIRE(SelectorManager) {
-    auto manager = mod::ModEntry::getInstance().getSelectorManager();
+    auto manager = mod::PLand::getInstance().getSelectorManager();
     if (!manager) [[unlikely]] {
         throw std::runtime_error(LD_ERR_RAII_RESOURCE_EMPTY(SelectorManager));
     }
@@ -89,13 +89,13 @@ SelectorManager::SelectorManager() {
                     ++iter;
                 } catch (std::exception const& e) {
                     iter = mSelectors.erase(iter);
-                    mod::ModEntry::getInstance().getSelf().getLogger().error(
+                    mod::PLand::getInstance().getSelf().getLogger().error(
                         "SelectorManager: Exception in selector tick: {}",
                         e.what()
                     );
                 } catch (...) {
                     iter = mSelectors.erase(iter);
-                    mod::ModEntry::getInstance().getSelf().getLogger().error(
+                    mod::PLand::getInstance().getSelf().getLogger().error(
                         "SelectorManager: Unknown exception in selector tick"
                     );
                 }
