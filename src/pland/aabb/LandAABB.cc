@@ -176,30 +176,21 @@ bool LandAABB::isAboveLand(BlockPos const& pos) const {
 
 
 int LandAABB::getMinSpacing(LandAABB const& a, LandAABB const& b) {
-    // X 方向间距
-    int xSpacing = 0;
-    if (a.max.x < b.min.x) {
-        xSpacing = b.min.x - a.max.x;
-    } else if (b.max.x < a.min.x) {
-        xSpacing = a.min.x - b.max.x;
-    } else {
-        // 重叠部分
-        xSpacing = std::min(a.max.x, b.max.x) - std::max(a.min.x, b.min.x);
-        xSpacing = -xSpacing;
+    // 检查是否有重叠
+    if (a.max.x >= b.min.x && a.min.x <= b.max.x &&
+        a.max.z >= b.min.z && a.min.z <= b.max.z) {
+        // 如果有重叠，计算最大重叠深度（返回负值）
+        int xOverlap = std::min(a.max.x - b.min.x, b.max.x - a.min.x);
+        int zOverlap = std::min(a.max.z - b.min.z, b.max.z - a.min.z);
+        return -std::min(xOverlap, zOverlap); // 返回负的重叠深度
     }
 
-    // Z 方向间距
-    int zSpacing = 0;
-    if (a.max.z < b.min.z) {
-        zSpacing = b.min.z - a.max.z;
-    } else if (b.max.z < a.min.z) {
-        zSpacing = a.min.z - b.max.z;
-    } else {
-        zSpacing = std::min(a.max.z, b.max.z) - std::max(a.min.z, b.min.z);
-        zSpacing = -zSpacing;
-    }
-
-    return std::min(xSpacing, zSpacing);
+    // 如果没有重叠，计算最小间距
+    int xSpacing = std::max(a.min.x - b.max.x, b.min.x - a.max.x);
+    int zSpacing = std::max(a.min.z - b.max.z, b.min.z - a.max.z);
+    
+    // 返回最小间距（正值）
+    return std::max(xSpacing, zSpacing);
 }
 
 
