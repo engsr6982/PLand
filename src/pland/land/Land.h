@@ -43,6 +43,7 @@ public:
     LDAPI explicit Land(LandAABB const& pos, LandDimid dimid, bool is3D, UUIDs const& owner);
 
     template <typename... Args>
+        requires std::constructible_from<Land, Args...>
     static SharedLand make(Args&&... args) {
         return std::make_shared<Land>(std::forward<Args>(args)...);
     }
