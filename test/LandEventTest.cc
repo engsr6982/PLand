@@ -2,7 +2,7 @@
 #include "TestMain.h"
 #include "ll/api/event/EventBus.h"
 #include "ll/api/event/ListenerBase.h"
-#include "pland/mod/PLand.h"
+#include "pland/PLand.h"
 
 namespace test {
 

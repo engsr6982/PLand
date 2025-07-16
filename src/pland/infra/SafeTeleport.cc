@@ -5,7 +5,7 @@
 #include "mc/network/packet/SetTitlePacket.h"
 #include "mc/world/actor/player/Player.h"
 #include "pland/Global.h"
-#include "pland/mod/PLand.h"
+#include "pland/PLand.h"
 #include "pland/utils/McUtils.h"
 #include <cstdint>
 #include <ll/api/coro/CoroTask.h>
