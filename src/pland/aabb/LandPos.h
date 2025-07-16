@@ -41,12 +41,18 @@ public:
 
     LDNDAPI int distance(Vec3 const& pos) const; // 获取到pos的距离
 
-    LDAPI LandPos& operator=(LandPos const& pos) = default;
-    LDAPI bool     operator==(LandPos const& pos) const;
-    LDAPI bool     operator!=(LandPos const& pos) const;
-    LDAPI LandPos& operator=(BlockPos const& pos);
-    LDAPI bool     operator==(BlockPos const& pos) const;
-    LDAPI bool     operator!=(BlockPos const& pos) const;
+    template <HasXYZ T>
+    bool operator==(T const& t) const {
+        return x == t.x && y == t.y && z == t.z;
+    }
+
+    template <HasXYZ T>
+    LandPos& operator=(T const& t) {
+        x = t.x;
+        y = t.y;
+        z = t.z;
+        return *this;
+    }
 };
 
 
