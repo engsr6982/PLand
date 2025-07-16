@@ -26,7 +26,7 @@
 #include "DevToolAppManager.h"
 #endif
 
-namespace mod {
+namespace land {
 
 PLand& PLand::getInstance() {
     static PLand instance;
@@ -143,6 +143,6 @@ land::LandScheduler*   PLand::getLandScheduler() const { return mLandScheduler.g
 land::SelectorManager* PLand::getSelectorManager() const { return mSelectorManager.get(); }
 
 
-} // namespace mod
+} // namespace land
 
-LL_REGISTER_MOD(mod::PLand, mod::PLand::getInstance());
+LL_REGISTER_MOD(land::PLand, land::PLand::getInstance());

@@ -69,7 +69,6 @@
 #include <sstream>
 
 
-
 #ifdef LD_DEVTOOL
 #include "DevToolApp.h"
 #include "DevToolAppManager.h"
@@ -266,7 +265,7 @@ static auto const Buy = [](CommandOrigin const& ori, CommandOutput& out) {
 static auto const Reload = [](CommandOrigin const& ori, CommandOutput& out) {
     CHECK_TYPE(ori, out, CommandOriginType::DedicatedServer);
     if (Config::tryLoad()) {
-        mod::PLand::getInstance().onConfigReload();
+        land::PLand::getInstance().onConfigReload();
         mc_utils::sendText(out, "领地系统配置已重新加载"_tr());
     } else {
         mc_utils::sendText(out, "领地系统配置加载失败，请检查配置文件"_tr());
@@ -374,7 +373,7 @@ static auto const SetLanguage = [](CommandOrigin const& ori, CommandOutput& out)
         PlayerSettings::SYSTEM_LOCALE_CODE()
     };
     if (langs.size() == 2) {
-        fs::path const& langDir = mod::PLand::getInstance().getSelf().getLangDir();
+        fs::path const& langDir = land::PLand::getInstance().getSelf().getLangDir();
         for (auto const& lang : fs::directory_iterator(langDir)) {
             if (lang.path().extension() == ".json") {
                 langs.push_back(lang.path().stem().string());
@@ -502,8 +501,8 @@ bool LandCommand::setup() {
             return;
         }
 
-        auto& logger = mod::PLand::getInstance().getSelf().getLogger();
-        mod::PLand::getInstance().getSelectorManager()->forEach([&logger](UUIDm const& uuid, ISelector* selector) {
+        auto& logger = land::PLand::getInstance().getSelf().getLogger();
+        land::PLand::getInstance().getSelectorManager()->forEach([&logger](UUIDm const& uuid, ISelector* selector) {
             logger.debug("Selector: {} - {}", uuid.asString(), selector->dumpDebugInfo());
             return true;
         });

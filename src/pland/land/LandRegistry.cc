@@ -27,7 +27,6 @@
 #include <vector>
 
 
-
 namespace land {
 std::string PlayerSettings::SYSTEM_LOCALE_CODE() { return "system"; }
 std::string PlayerSettings::SERVER_LOCALE_CODE() { return "server"; }
@@ -58,7 +57,7 @@ void LandRegistry::_loadPlayerSettings() {
 }
 
 void LandRegistry::_connectDatabaseAndCheckVersion() {
-    auto&       self    = mod::PLand::getInstance().getSelf();
+    auto&       self    = land::PLand::getInstance().getSelf();
     auto&       logger  = self.getLogger();
     auto const& dataDir = self.getDataDir();
     auto const  dbDir   = dataDir / DB_DIR_NAME();
@@ -202,7 +201,7 @@ Result<void, StorageLayerError::Error> LandRegistry::_removeLand(SharedLand cons
 namespace land {
 
 void LandRegistry::init() {
-    auto& logger = mod::PLand::getInstance().getSelf().getLogger();
+    auto& logger = land::PLand::getInstance().getSelf().getLogger();
 
     logger.trace("打开数据库...");
     _connectDatabaseAndCheckVersion();
@@ -233,9 +232,9 @@ void LandRegistry::init() {
             lastSaveTime = std::time(nullptr); // 更新时间
 
             if (!mThreadStopFlag) {
-                mod::PLand::getInstance().getSelf().getLogger().debug("[Thread] Saving land data...");
+                land::PLand::getInstance().getSelf().getLogger().debug("[Thread] Saving land data...");
                 this->save();
-                mod::PLand::getInstance().getSelf().getLogger().debug("[Thread] Land data saved.");
+                land::PLand::getInstance().getSelf().getLogger().debug("[Thread] Land data saved.");
             } else break;
         }
     });
@@ -338,7 +337,7 @@ Result<void, StorageLayerError::Error> LandRegistry::_addLand(SharedLand land) {
 
     auto result = mLandCache.emplace(land->getId(), land);
     if (!result.second) {
-        mod::PLand::getInstance().getSelf().getLogger().warn("添加领地失败, ID: {}", land->getId());
+        land::PLand::getInstance().getSelf().getLogger().warn("添加领地失败, ID: {}", land->getId());
         return std::unexpected(StorageLayerError::Error::STLMapError);
     }
 

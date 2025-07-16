@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 #define CONFIG_FILE "Config.json"
 
 bool Config::tryLoad() {
-    auto dir = mod::PLand::getInstance().getSelf().getConfigDir() / CONFIG_FILE;
+    auto dir = land::PLand::getInstance().getSelf().getConfigDir() / CONFIG_FILE;
 
     if (!fs::exists(dir)) {
         trySave();
@@ -22,7 +22,7 @@ bool Config::tryLoad() {
 }
 
 bool Config::trySave() {
-    auto dir = mod::PLand::getInstance().getSelf().getConfigDir() / CONFIG_FILE;
+    auto dir = land::PLand::getInstance().getSelf().getConfigDir() / CONFIG_FILE;
 
     bool status = ll::config::saveConfig(cfg, dir);
 

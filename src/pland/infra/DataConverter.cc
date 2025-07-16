@@ -12,7 +12,6 @@
 #include <fstream>
 
 
-
 namespace land {
 
 
@@ -211,7 +210,7 @@ bool iLandConverter::execute() {
         return false;
     }
 
-    auto& logger = mod::PLand::getInstance().getSelf().getLogger();
+    auto& logger = land::PLand::getInstance().getSelf().getLogger();
     // 反射
     mRelationShip = reflection<RawRelationShip>(*rawRelationShipJSON);
     mData         = reflection<RawData>(*rawDataJSON);

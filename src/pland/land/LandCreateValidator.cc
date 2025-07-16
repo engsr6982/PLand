@@ -90,7 +90,7 @@ LandCreateValidator::isLandRangeLegal(LandAABB const& range, LandDimid dimid, bo
 
     auto dimension = ll::service::getLevel()->getDimension(dimid).lock();
     if (!dimension) {
-        mod::PLand::getInstance().getSelf().getLogger().warn(
+        land::PLand::getInstance().getSelf().getLogger().warn(
             "LandCreateValidator::isLandRangeLegal: dimension {} is not found",
             dimid
         );

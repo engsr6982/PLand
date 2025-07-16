@@ -4,7 +4,6 @@
 #include "pland/land/LandRegistry.h"
 
 
-
 #include <imgui_internal.h>
 #include <memory>
 #include <string>
@@ -44,7 +43,7 @@ void LandCacheViewerWindow::handleEditLand(land::SharedLand land) {
 }
 void LandCacheViewerWindow::handleExportLand(land::SharedLand land) {
     namespace fs = std::filesystem;
-    auto dir     = mod::PLand::getInstance().getSelf().getModDir() / "devtool_exports";
+    auto dir     = land::PLand::getInstance().getSelf().getModDir() / "devtool_exports";
     if (!fs::exists(dir)) {
         fs::create_directory(dir);
     }
@@ -248,7 +247,7 @@ void LandEditor::renderMenuElement() {
                 land->load(json);
             } catch (...) {
                 land->load(backup);
-                mod::PLand::getInstance().getSelf().getLogger().error("Failed to parse json");
+                land::PLand::getInstance().getSelf().getLogger().error("Failed to parse json");
             }
         }
         if (ImGui::IsItemHovered()) {

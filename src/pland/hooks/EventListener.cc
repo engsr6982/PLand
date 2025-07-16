@@ -51,7 +51,6 @@
 #include <vector>
 
 
-
 #include "ll/api/event/entity/ActorHurtEvent.h"
 #include "ll/api/event/player/PlayerAttackEvent.h"
 #include "ll/api/event/player/PlayerDestroyBlockEvent.h"
@@ -178,7 +177,7 @@ static const std::unordered_map<std::string_view, bool LandPermTable::*> BlockFu
 EventListener::EventListener() {
     auto* db     = &LandRegistry::getInstance();
     auto* bus    = &ll::event::EventBus::getInstance();
-    auto* logger = &mod::PLand::getInstance().getSelf().getLogger();
+    auto* logger = &land::PLand::getInstance().getSelf().getLogger();
 
 
     mListenerPtrs = {
@@ -206,7 +205,7 @@ EventListener::EventListener() {
             auto  uuidStr = uuid.asString();
 
             GlobalPlayerLocaleCodeCached.erase(uuidStr);
-            mod::PLand::getInstance().getSelectorManager()->stopSelection(uuid);
+            land::PLand::getInstance().getSelectorManager()->stopSelection(uuid);
             DrawHandleManager::getInstance().removeHandle(player);
             Require<LandScheduler>()->mLandidMap.erase(uuid);
             Require<LandScheduler>()->mDimidMap.erase(uuid);

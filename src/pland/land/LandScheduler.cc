@@ -20,12 +20,11 @@
 #include <stdexcept>
 
 
-
 namespace land {
 
 
 LD_IMPL_REQUIRE(LandScheduler) {
-    auto res = mod::PLand::getInstance().getLandScheduler();
+    auto res = land::PLand::getInstance().getLandScheduler();
     if (!res) [[unlikely]] {
         throw std::runtime_error(LD_ERR_RAII_RESOURCE_EMPTY(LandScheduler));
     }
@@ -81,7 +80,7 @@ LandScheduler::LandScheduler() {
         }
     }).launch(ll::thread::ServerThreadExecutor::getDefault());
 
-    auto* logger = &mod::PLand::getInstance().getSelf().getLogger();
+    auto* logger = &land::PLand::getInstance().getSelf().getLogger();
 
     // tip
     auto* infos = &ll::service::PlayerInfo::getInstance();

@@ -10,7 +10,7 @@ std::vector<ll::event::ListenerPtr> mLandEventListeners;
 
 void TestMain::_setupLandEventTest() {
     auto& bus    = ll::event::EventBus::getInstance();
-    auto  logger = &mod::PLand::getInstance().getSelf().getLogger();
+    auto  logger = &land::PLand::getInstance().getSelf().getLogger();
 
     mLandEventListeners = {
         bus.emplaceListener<land::PlayerAskCreateLandBeforeEvent>([logger](land::PlayerAskCreateLandBeforeEvent& ev) {

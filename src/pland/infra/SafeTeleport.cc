@@ -147,7 +147,7 @@ void SafeTeleport::Task::_findSafePos() {
     _tryApplyDimensionFixPatch(heightRange); // 尝试应用维度修复补丁
 
 #ifdef DEBUG
-    auto& logger = mod::PLand::getInstance().getSelf().getLogger();
+    auto& logger = land::PLand::getInstance().getSelf().getLogger();
 #endif
 
     while (y > end && !mAbortFlag.load()) {
@@ -200,7 +200,7 @@ SafeTeleport::SafeTeleport() {
             try {
                 polling();
             } catch (...) {
-                mod::PLand::getInstance().getSelf().getLogger().error(
+                land::PLand::getInstance().getSelf().getLogger().error(
                     "An exception occurred while polling SafeTeleport tasks"
                 );
             }
@@ -217,7 +217,7 @@ SafeTeleport::~SafeTeleport() {
     }
     mTasks.clear();
 }
-SafeTeleport* SafeTeleport::getInstance() { return mod::PLand::getInstance().getSafeTeleport(); }
+SafeTeleport* SafeTeleport::getInstance() { return land::PLand::getInstance().getSafeTeleport(); }
 
 
 void SafeTeleport::launchTask(Player& player, DimensionPos targetPos) {

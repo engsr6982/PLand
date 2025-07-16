@@ -7,7 +7,7 @@
 #include "pland/selector/SelectorManager.h"
 #include <memory>
 
-namespace mod {
+namespace land {
 
 class PLand {
     PLand();
@@ -45,4 +45,4 @@ private:
     std::unique_ptr<land::SelectorManager> mSelectorManager;
 };
 
-} // namespace mod
+} // namespace land

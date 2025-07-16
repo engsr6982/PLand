@@ -26,11 +26,10 @@
 #include <vector>
 
 
-
 namespace land {
 
 void LandBuyGUI::impl(Player& player) {
-    auto manager = mod::PLand::getInstance().getSelectorManager();
+    auto manager = land::PLand::getInstance().getSelectorManager();
     if (!manager->hasSelector(player)) {
         mc_utils::sendText<mc_utils::LogLevel::Error>(player, "请先使用 /pland new 来选择领地"_trf(player));
         return;
@@ -130,7 +129,7 @@ void LandBuyGUI::impl(Player& player, DefaultSelector* selector) {
                 return;
             }
 
-            mod::PLand::getInstance().getSelectorManager()->stopSelection(pl);
+            land::PLand::getInstance().getSelectorManager()->stopSelection(pl);
             ll::event::EventBus::getInstance().publish(PlayerBuyLandAfterEvent{pl, landPtr});
 
             mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
@@ -138,7 +137,7 @@ void LandBuyGUI::impl(Player& player, DefaultSelector* selector) {
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
     fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", "path", [](Player& pl) {
-        mod::PLand::getInstance().getSelectorManager()->stopSelection(pl);
+        land::PLand::getInstance().getSelectorManager()->stopSelection(pl);
     });
 
     fm.sendTo(player);
@@ -235,14 +234,14 @@ void LandBuyGUI::impl(Player& player, ChangeLandRangeSelector* reSelector) {
             landPtr->setOriginalBuyPrice(discountedPrice);
             LandRegistry::getInstance().refreshLandRange(landPtr); // 刷新领地范围
 
-            mod::PLand::getInstance().getSelectorManager()->stopSelection(pl);
+            land::PLand::getInstance().getSelectorManager()->stopSelection(pl);
             ll::event::EventBus::getInstance().publish(LandRangeChangeAfterEvent{pl, landPtr, *aabb, needPay, refund});
             mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "领地范围修改成功"_trf(pl));
         }
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
     fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", "path", [](Player& pl) {
-        mod::PLand::getInstance().getSelectorManager()->stopSelection(pl);
+        land::PLand::getInstance().getSelectorManager()->stopSelection(pl);
     });
 
     fm.sendTo(player);
@@ -338,14 +337,14 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
                 return;
             }
 
-            mod::PLand::getInstance().getSelectorManager()->stopSelection(pl);
+            land::PLand::getInstance().getSelectorManager()->stopSelection(pl);
             ll::event::EventBus::getInstance().publish(PlayerBuyLandAfterEvent{pl, subLand});
             mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "购买领地成功"_trf(pl));
         }
     );
     fm.appendButton("暂存订单"_trf(player), "textures/ui/recipe_book_icon", "path"); // close
     fm.appendButton("放弃订单"_trf(player), "textures/ui/cancel", "path", [](Player& pl) {
-        mod::PLand::getInstance().getSelectorManager()->stopSelection(pl);
+        land::PLand::getInstance().getSelectorManager()->stopSelection(pl);
     });
 
     fm.sendTo(player);

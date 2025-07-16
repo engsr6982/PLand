@@ -8,24 +8,23 @@
 #include <stdexcept>
 
 
-
 namespace land {
 
 
 std::shared_ptr<internals::IEconomyInterface> EconomySystem::createEconomySystem() const {
     auto& cfg = getConfig();
     if (!cfg.enabled) {
-        mod::PLand::getInstance().getSelf().getLogger().debug("using internals::EmtpyInterface");
+        land::PLand::getInstance().getSelf().getLogger().debug("using internals::EmtpyInterface");
         return std::make_shared<internals::EmtpyInterface>();
     }
 
     switch (cfg.kit) {
     case land::EconomyKit::LegacyMoney: {
-        mod::PLand::getInstance().getSelf().getLogger().debug("using internals::LegacyMoneyInterface");
+        land::PLand::getInstance().getSelf().getLogger().debug("using internals::LegacyMoneyInterface");
         return std::make_shared<internals::LegacyMoneyInterface>();
     }
     case land::EconomyKit::ScoreBoard: {
-        mod::PLand::getInstance().getSelf().getLogger().debug("using internals::ScoreBoardInterface");
+        land::PLand::getInstance().getSelf().getLogger().debug("using internals::ScoreBoardInterface");
         return std::make_shared<internals::ScoreBoardInterface>();
     }
     }

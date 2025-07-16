@@ -21,7 +21,7 @@ llong ScoreBoardInterface::get(Player& player) const {
     Scoreboard& scoreboard = ll::service::getLevel()->getScoreboard();
     Objective*  obj        = scoreboard.getObjective(cfg.scoreboardName);
     if (!obj) {
-        mod::PLand::getInstance().getSelf().getLogger().error(
+        land::PLand::getInstance().getSelf().getLogger().error(
             "[ScoreBoardInterface] Could not find scoreboard: {}",
             cfg.scoreboardName
         );
@@ -38,7 +38,7 @@ llong ScoreBoardInterface::get(Player& player) const {
 llong ScoreBoardInterface::get(mce::UUID const& uuid) const {
     auto player = ll::service::getLevel()->getPlayer(uuid);
     if (!player) {
-        mod::PLand::getInstance().getSelf().getLogger().error(
+        land::PLand::getInstance().getSelf().getLogger().error(
             "[ScoreBoardInterface] Offline operations on the scoreboard are not supported"
         );
         return 0;
@@ -52,7 +52,7 @@ bool ScoreBoardInterface::set(Player& player, llong amount) const {
     Scoreboard& scoreboard = ll::service::getLevel()->getScoreboard();
     Objective*  obj        = scoreboard.getObjective(cfg.scoreboardName);
     if (!obj) {
-        mod::PLand::getInstance().getSelf().getLogger().error(
+        land::PLand::getInstance().getSelf().getLogger().error(
             "[ScoreBoardInterface] Could not find scoreboard: {}",
             cfg.scoreboardName
         );
@@ -69,7 +69,7 @@ bool ScoreBoardInterface::set(Player& player, llong amount) const {
 bool ScoreBoardInterface::set(mce::UUID const& uuid, llong amount) const {
     auto player = ll::service::getLevel()->getPlayer(uuid);
     if (!player) {
-        mod::PLand::getInstance().getSelf().getLogger().error(
+        land::PLand::getInstance().getSelf().getLogger().error(
             "[ScoreBoardInterface] Offline operations on the scoreboard are not supported"
         );
         return false;
@@ -83,7 +83,7 @@ bool ScoreBoardInterface::add(Player& player, llong amount) const {
     Scoreboard& scoreboard = ll::service::getLevel()->getScoreboard();
     Objective*  obj        = scoreboard.getObjective(cfg.scoreboardName);
     if (!obj) {
-        mod::PLand::getInstance().getSelf().getLogger().error(
+        land::PLand::getInstance().getSelf().getLogger().error(
             "[ScoreBoardInterface] Could not find scoreboard: {}",
             cfg.scoreboardName
         );
@@ -100,7 +100,7 @@ bool ScoreBoardInterface::add(Player& player, llong amount) const {
 bool ScoreBoardInterface::add(mce::UUID const& uuid, llong amount) const {
     auto player = ll::service::getLevel()->getPlayer(uuid);
     if (!player) {
-        mod::PLand::getInstance().getSelf().getLogger().error(
+        land::PLand::getInstance().getSelf().getLogger().error(
             "[ScoreBoardInterface] Offline operations on the scoreboard are not supported"
         );
         return false;
@@ -114,7 +114,7 @@ bool ScoreBoardInterface::reduce(Player& player, llong amount) const {
     Scoreboard& scoreboard = ll::service::getLevel()->getScoreboard();
     Objective*  obj        = scoreboard.getObjective(cfg.scoreboardName);
     if (!obj) {
-        mod::PLand::getInstance().getSelf().getLogger().error(
+        land::PLand::getInstance().getSelf().getLogger().error(
             "[ScoreBoardInterface] Could not find scoreboard: {}",
             cfg.scoreboardName
         );
@@ -131,7 +131,7 @@ bool ScoreBoardInterface::reduce(Player& player, llong amount) const {
 bool ScoreBoardInterface::reduce(mce::UUID const& uuid, llong amount) const {
     auto player = ll::service::getLevel()->getPlayer(uuid);
     if (!player) {
-        mod::PLand::getInstance().getSelf().getLogger().error(
+        land::PLand::getInstance().getSelf().getLogger().error(
             "[ScoreBoardInterface] Offline operations on the scoreboard are not supported"
         );
         return false;
@@ -154,7 +154,7 @@ bool ScoreBoardInterface::transfer(mce::UUID const& from, mce::UUID const& to, l
     auto toPlayer   = ll::service::getLevel()->getPlayer(to);
 
     if (!fromPlayer || !toPlayer) {
-        mod::PLand::getInstance().getSelf().getLogger().error(
+        land::PLand::getInstance().getSelf().getLogger().error(
             "[ScoreBoardInterface] Offline operations on the scoreboard are not supported"
         );
         return false;
