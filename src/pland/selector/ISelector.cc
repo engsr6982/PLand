@@ -84,11 +84,9 @@ void ISelector::setYRange(int start, int end) {
     }
 }
 
-void ISelector::fixMinMax() {
+void ISelector::checkAndSwapY() {
     if (mPointA && mPointB) {
-        if (mPointA->x > mPointB->x) std::swap(mPointA->x, mPointB->x);
         if (mPointA->y > mPointB->y) std::swap(mPointA->y, mPointB->y);
-        if (mPointA->z > mPointB->z) std::swap(mPointA->z, mPointB->z);
     }
 }
 
@@ -176,6 +174,7 @@ void ISelector::onPointABSet() {
         return;
     }
 
+    checkAndSwapY();
     NewLandGUI::sendConfirmPrecinctsYRange(*player);
 }
 

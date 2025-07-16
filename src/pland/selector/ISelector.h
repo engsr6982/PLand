@@ -40,7 +40,7 @@ public:
     LDAPI void setPointB(BlockPos const& point);
     LDAPI void setYRange(int start, int end);
 
-    LDAPI void fixMinMax();
+    LDAPI void checkAndSwapY();
 
     LDNDAPI bool isPointASet() const;
     LDNDAPI bool isPointBSet() const;
