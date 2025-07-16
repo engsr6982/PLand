@@ -17,17 +17,18 @@ struct ForbiddenRange {
 };
 
 struct Config {
-    int              version{18};
+    int              version{19};
     ll::io::LogLevel logLevel{ll::io::LogLevel::Info};
 
     EconomyConfig economy;
 
     struct {
-        bool   landTp{true};    // 领地传送
-        int    maxLand{20};     // 最大领地数量
-        int    minSpacing{16};  // 最小领地间距
-        double refundRate{0.9}; // 退款率(0.0~1.0，1.0为全额退款，0.9为退还90%)
-        double discountRate{1}; // 折扣率(0.0~1.0，1.0为原价，0.9为打9折)
+        bool   landTp{true};             // 领地传送
+        int    maxLand{20};              // 最大领地数量
+        int    minSpacing{16};           // 最小领地间距
+        bool   minSpacingIncludeY{true}; // 最小领地间距是否包含Y轴
+        double refundRate{0.9};          // 退款率(0.0~1.0，1.0为全额退款，0.9为退还90%)
+        double discountRate{1};          // 折扣率(0.0~1.0，1.0为原价，0.9为打9折)
 
         bool setupDrawCommand{false}; // 安装领地绘制命令
         int  drawRange{64};           // 绘制 x 范围内的领地
@@ -36,6 +37,7 @@ struct Config {
             bool   enabled{false};                              // 是否启用
             int    maxNested{5};                                // 最大嵌套层数(默认5，最大16)
             int    minSpacing{8};                               // 子领地之间的最小间距
+            int    minSpacingIncludeY{true};                    // 子领地之间的最小间距是否包含Y轴
             int    maxSubLand{6};                               // 每个领地的最大子领地数量
             string calculate{"(square * 8 + height * 20) * 0"}; // 价格公式
         } subLand;
