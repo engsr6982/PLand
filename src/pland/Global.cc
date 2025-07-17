@@ -7,8 +7,6 @@
 
 namespace land {
 
-std::atomic<bool> GlobalRepeatCoroTaskRunning = true;
-
 std::unordered_map<std::string, std::string> GlobalPlayerLocaleCodeCached;
 
 std::string GetPlayerLocaleCodeFromSettings(Player& player) {

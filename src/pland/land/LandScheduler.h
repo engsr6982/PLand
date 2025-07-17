@@ -1,9 +1,11 @@
 #pragma once
+#include "ll/api/coro/InterruptableSleep.h"
 #include "ll/api/event/ListenerBase.h"
 #include "pland/Global.h"
 #include "pland/infra/Require.h"
 #include <unordered_map>
 
+class Player;
 
 namespace land {
 
@@ -14,19 +16,28 @@ namespace land {
  * 该类使用 RAII 管理资源，由 pland 的 PLand 持有
  */
 class LandScheduler {
+private:
+    std::vector<Player*>                   mPlayers{};
+    std::unordered_map<Player*, LandDimid> mDimensionMap{};
+    std::unordered_map<Player*, LandID>    mLandIdMap{};
+
+    ll::event::ListenerPtr mPlayerJoinServerListener{nullptr};
+    ll::event::ListenerPtr mPlayerDisconnectListener{nullptr};
+    ll::event::ListenerPtr mPlayerEnterLandListener{nullptr};
+
+    std::shared_ptr<std::atomic<bool>>            mQuit{nullptr};
+    std::shared_ptr<ll::coro::InterruptableSleep> mEventSchedulingSleep{nullptr};
+    std::shared_ptr<ll::coro::InterruptableSleep> mLandTipSchedulingSleep{nullptr};
+
+
 public:
-    std::unordered_map<UUIDm, LandDimid> mDimidMap;
-    std::unordered_map<UUIDm, LandID>    mLandidMap;
-    ll::event::ListenerPtr               mPlayerEnterLandListener;
-
-    LD_DISALLOW_COPY(LandScheduler);
-
+    LD_DISALLOW_COPY_AND_MOVE(LandScheduler);
     LDAPI explicit LandScheduler();
     LDAPI ~LandScheduler();
+
+    LDAPI void tickEvent();
+    LDAPI void tickLandTip();
 };
-
-
-LD_DECLARE_REQUIRE(LandScheduler);
 
 
 } // namespace land

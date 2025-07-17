@@ -207,8 +207,6 @@ EventListener::EventListener() {
             GlobalPlayerLocaleCodeCached.erase(uuidStr);
             land::PLand::getInstance().getSelectorManager()->stopSelection(uuid);
             DrawHandleManager::getInstance().removeHandle(player);
-            Require<LandScheduler>()->mLandidMap.erase(uuid);
-            Require<LandScheduler>()->mDimidMap.erase(uuid);
         }),
     };
 

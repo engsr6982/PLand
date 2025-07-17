@@ -99,9 +99,6 @@ bool PLand::disable() {
 
     auto& logger = getSelf().getLogger();
 
-    logger.trace("Stopping coroutine...");
-    land::GlobalRepeatCoroTaskRunning.store(false);
-
     logger.trace("[Main thread] Saving land registry data...");
     mLandRegistry->save();
     logger.trace("[Main thread] Land registry data saved.");

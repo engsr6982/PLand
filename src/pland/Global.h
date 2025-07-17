@@ -48,8 +48,6 @@ enum class LandPermType : int {
     Guest,        // 访客
 };
 
-extern std::atomic<bool> GlobalRepeatCoroTaskRunning;
-
 extern std::unordered_map<std::string, std::string> GlobalPlayerLocaleCodeCached;
 LDNDAPI extern std::string                          GetPlayerLocaleCodeFromSettings(Player& player
                          ); // PLand::getInstance().getLandRegistry()->getPlayerLocaleCode
