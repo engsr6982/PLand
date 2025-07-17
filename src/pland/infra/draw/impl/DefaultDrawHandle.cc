@@ -41,6 +41,12 @@ public:
     ParticleSpawner& operator=(ParticleSpawner&&) noexcept = default;
 
     explicit ParticleSpawner(LandAABB const& aabb, LandDimid dimId) : mId(getNextGeoId()), mDimensionId(dimId) {
+        static std::optional<MolangVariableMap> molang{std::nullopt};
+        if (!molang) {
+            molang = MolangVariableMap{}; // TODO: 验证 Molang 是否真的有效
+            molang->setMolangVariable("variable.particle_lifetime", 25);
+        }
+
         auto dim    = VanillaDimensions::fromSerializedInt(dimId);
         auto points = aabb.getBorder();
         mPackets.reserve(points.size());
@@ -49,7 +55,7 @@ public:
                 Vec3{point.x + 0.5, point.y + 0.5, point.z + 0.5},
                 "minecraft:villager_happy",
                 dim,
-                std::nullopt
+                molang
             );
         }
     }
@@ -76,7 +82,7 @@ public:
 
         ll::coro::keepThis([quit = mQuit, sleep = mSleep, this]() -> ll::coro::CoroTask<> {
             while (!quit->load()) {
-                co_await sleep->sleepFor(25_tick);
+                co_await sleep->sleepFor(30_tick);
                 if (quit->load()) {
                     break;
                 }
