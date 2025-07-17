@@ -1,6 +1,7 @@
 #include "DefaultDrawHandle.h"
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/coro/InterruptableSleep.h"
+#include "ll/api/thread/ServerThreadExecutor.h"
 #include "mc/network/packet/SpawnParticleEffectPacket.h"
 #include "mc/util/MolangVariable.h"
 #include "mc/util/MolangVariableMap.h"
@@ -44,7 +45,12 @@ public:
         auto points = aabb.getBorder();
         mPackets.reserve(points.size());
         for (auto& point : points) {
-            mPackets.emplace_back(Vec3{point.x + 0.5, point.y + 0.5, point.z + 0.5}, "wax_particle", dim, std::nullopt);
+            mPackets.emplace_back(
+                Vec3{point.x + 0.5, point.y + 0.5, point.z + 0.5},
+                "minecraft:villager_happy",
+                dim,
+                std::nullopt
+            );
         }
     }
 
@@ -80,7 +86,7 @@ public:
                 }
             }
             co_return;
-        });
+        }).launch(ll::thread::ServerThreadExecutor::getDefault());
     }
 
     ~Impl() {
@@ -119,8 +125,11 @@ public:
     }
 
     void clearLand() {
-        for (auto& [id, spawner] : mSpawners) {
+        auto iter = mDrawedLands.begin();
+        while (iter != mDrawedLands.end()) {
+            auto& [landId, id] = *iter;
             this->remove(id);
+            iter = mDrawedLands.erase(iter);
         }
         mDrawedLands.clear();
     }
