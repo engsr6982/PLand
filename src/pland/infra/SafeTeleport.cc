@@ -217,7 +217,6 @@ SafeTeleport::~SafeTeleport() {
     }
     mTasks.clear();
 }
-SafeTeleport* SafeTeleport::getInstance() { return land::PLand::getInstance().getSafeTeleport(); }
 
 
 void SafeTeleport::launchTask(Player& player, DimensionPos targetPos) {

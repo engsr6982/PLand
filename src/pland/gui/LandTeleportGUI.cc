@@ -1,5 +1,6 @@
 #include "LandTeleportGUI.h"
 #include "CommonUtilGUI.h"
+#include "pland/PLand.h"
 #include "pland/gui/LandMainMenuGUI.h"
 #include "pland/gui/common/ChooseLandAdvancedUtilGUI.h"
 #include "pland/gui/form/BackSimpleForm.h"
@@ -24,7 +25,10 @@ void LandTeleportGUI::sendTo(Player& player) {
 
 void LandTeleportGUI::impl(Player& player, SharedLand land) {
     if (land->getTeleportPos().isZero()) {
-        SafeTeleport::getInstance()->launchTask(player, {land->getAABB().getMin().as(), land->getDimensionId()});
+        PLand::getInstance().getSafeTeleport()->launchTask(
+            player,
+            {land->getAABB().getMin().as(), land->getDimensionId()}
+        );
         return;
     }
     player.teleport(land->getTeleportPos().as(), land->getDimensionId());
