@@ -107,11 +107,11 @@ LandCreateValidator::isLandRangeLegal(LandAABB const& range, LandDimid dimid, bo
         return std::unexpected(ErrorContext::landRangeTooLarge(range, squareRange.max));
     }
 
-    if (is3D && height < squareRange.minHeight) {
-        return std::unexpected(ErrorContext::landHeightTooSmall(range, squareRange.minHeight));
+    if (is3D && range.min.y < dimension->mHeightRange->mMin) {
+        return std::unexpected(ErrorContext::landHeightTooSmall(range, dimension->mHeightRange->mMin));
     }
 
-    if (is3D && height > dimension->mHeightRange->mMax) {
+    if (is3D && range.max.y > dimension->mHeightRange->mMax) {
         return std::unexpected(ErrorContext::landHeightTooLarge(range, dimension->mHeightRange->mMax));
     }
 
@@ -332,11 +332,11 @@ void LandCreateValidator::sendErrorMessage(Player& player, ErrorContext const& c
         break;
     }
     case ErrorCode::LandHeightTooSmall: {
-        msg = "领地高度过低，当前高度: {0}, 最小高度: {1}"_trf(player, ctx.currentRange.getHeight(), ctx.minHeight);
+        msg = "领地高度过低，当前高度: {0}, 最小高度: {1}"_trf(player, ctx.currentRange.getMin().y, ctx.minHeight);
         break;
     }
     case ErrorCode::LandHeightTooLarge: {
-        msg = "领地高度过高，当前高度: {0}, 最大高度: {1}"_trf(player, ctx.currentRange.getHeight(), ctx.maxHeight);
+        msg = "领地高度过高，当前高度: {0}, 最大高度: {1}"_trf(player,ctx.currentRange.getMax().y, ctx.maxHeight);
         break;
     }
     case ErrorCode::LandRangeWithOtherCollision: {
