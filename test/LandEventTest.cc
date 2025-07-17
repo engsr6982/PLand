@@ -86,7 +86,7 @@ void TestMain::_setupLandEventTest() {
             logger->debug(
                 "[Test] LandOwnerChangeBeforeEvent - Player: {}, NewOwner: {}, LandID: {}",
                 ev.getPlayer().getRealName(),
-                ev.getNewOwner().getRealName(),
+                ev.getNewOwner(),
                 ev.getLandID()
             );
         }),
@@ -94,7 +94,7 @@ void TestMain::_setupLandEventTest() {
             logger->debug(
                 "[Test] LandOwnerChangeAfterEvent - Player: {}, NewOwner: {}, LandID: {}",
                 ev.getPlayer().getRealName(),
-                ev.getNewOwner().getRealName(),
+                ev.getNewOwner(),
                 ev.getLandID()
             );
         }),
