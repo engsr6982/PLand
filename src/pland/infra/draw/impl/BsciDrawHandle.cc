@@ -15,9 +15,7 @@ namespace bsci {
 class GeometryGroup {
 public:
     struct GeoId {
-        uint64             value;
-        constexpr bool     operator==(GeoId const& other) const { return other.value == value; }
-        explicit constexpr operator bool() const { return value == 0; }
+        uint64 value;
     };
 
 protected:
