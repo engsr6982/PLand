@@ -6,6 +6,7 @@
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/level/Level.h"
 #include "pland/Global.h"
+#include "pland/PLand.h"
 #include "pland/land/Land.h"
 #include "pland/land/LandRegistry.h"
 #include <algorithm>
@@ -26,7 +27,7 @@ void ChooseLandUtilGUI::sendTo(
     fm.setTitle(PLUGIN_NAME + ("| 选择领地"_trf(player)));
     fm.setContent("请选择一个领地"_trf(player));
 
-    auto lands = LandRegistry::getInstance().getLands(player.getUuid().asString(), showShredLand);
+    auto lands = PLand::getInstance().getLandRegistry()->getLands(player.getUuid().asString(), showShredLand);
     for (auto& land : lands) {
         fm.appendButton(
             "{}\n维度: {} | ID: {}"_trf(player, land->getName(), land->getDimensionId(), land->getId()),

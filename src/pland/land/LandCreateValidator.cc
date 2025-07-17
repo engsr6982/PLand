@@ -58,12 +58,12 @@ LandCreateValidator::validateCreateSubLand(Player& player, SharedLand land, Land
 
 
 LandCreateValidator::ValidateResult LandCreateValidator::isPlayerLandCountLimitExceeded(UUIDs const& uuids) {
-    auto& registry = LandRegistry::getInstance();
-    auto  count    = static_cast<int>(registry.getLands(uuids).size());
+    auto  registry = PLand::getInstance().getLandRegistry();
+    auto  count    = static_cast<int>(registry->getLands(uuids).size());
     auto& maxCount = Config::cfg.land.maxLand;
 
     // 非管理员 && 领地数量超过限制
-    if (!registry.isOperator(uuids) && count >= Config::cfg.land.maxLand) {
+    if (!registry->isOperator(uuids) && count >= Config::cfg.land.maxLand) {
         return std::unexpected(ErrorContext::landCountLimitExceeded(count, maxCount));
     }
 
@@ -120,7 +120,7 @@ LandCreateValidator::isLandRangeLegal(LandAABB const& range, LandDimid dimid, bo
 
 LandCreateValidator::ValidateResult
 LandCreateValidator::isLandRangeWithOtherCollision(SharedLand const& land, std::optional<LandAABB> newRange) {
-    return isLandRangeWithOtherCollision(&LandRegistry::getInstance(), land, newRange);
+    return isLandRangeWithOtherCollision(PLand::getInstance().getLandRegistry(), land, newRange);
 }
 
 LandCreateValidator::ValidateResult LandCreateValidator::isLandRangeWithOtherCollision(
@@ -336,7 +336,7 @@ void LandCreateValidator::sendErrorMessage(Player& player, ErrorContext const& c
         break;
     }
     case ErrorCode::LandHeightTooLarge: {
-        msg = "领地高度过高，当前高度: {0}, 最大高度: {1}"_trf(player,ctx.currentRange.getMax().y, ctx.maxHeight);
+        msg = "领地高度过高，当前高度: {0}, 最大高度: {1}"_trf(player, ctx.currentRange.getMax().y, ctx.maxHeight);
         break;
     }
     case ErrorCode::LandRangeWithOtherCollision: {

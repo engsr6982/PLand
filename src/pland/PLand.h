@@ -3,6 +3,7 @@
 #include "ll/api/mod/NativeMod.h"
 #include "pland/hooks/EventListener.h"
 #include "pland/infra/SafeTeleport.h"
+#include "pland/land/LandRegistry.h"
 #include "pland/land/LandScheduler.h"
 #include "pland/selector/SelectorManager.h"
 #include <memory>
@@ -32,17 +33,19 @@ public: /* public */
 
     LDAPI void onConfigReload();
 
-    LDNDAPI land::SafeTeleport* getSafeTeleport() const;
-    LDNDAPI land::LandScheduler* getLandScheduler() const;
-    LDNDAPI land::SelectorManager* getSelectorManager() const;
+    LDNDAPI SafeTeleport*    getSafeTeleport() const;
+    LDNDAPI LandScheduler*   getLandScheduler() const;
+    LDNDAPI SelectorManager* getSelectorManager() const;
+    LDNDAPI LandRegistry*    getLandRegistry() const;
 
 private:
     ll::mod::NativeMod& mSelf;
 
-    std::unique_ptr<land::EventListener>   mEventListener;
-    std::unique_ptr<land::LandScheduler>   mLandScheduler;
-    std::unique_ptr<land::SafeTeleport>    mSafeTeleport;
-    std::unique_ptr<land::SelectorManager> mSelectorManager;
+    std::unique_ptr<LandRegistry>    mLandRegistry;
+    std::unique_ptr<EventListener>   mEventListener;
+    std::unique_ptr<LandScheduler>   mLandScheduler;
+    std::unique_ptr<SafeTeleport>    mSafeTeleport;
+    std::unique_ptr<SelectorManager> mSelectorManager;
 };
 
 } // namespace land

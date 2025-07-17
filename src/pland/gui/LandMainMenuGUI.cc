@@ -2,6 +2,7 @@
 #include "LandManagerGUI.h"
 #include "NewLandGUI.h"
 #include "PlayerSettingGUI.h"
+#include "pland/PLand.h"
 #include "pland/gui/CommonUtilGui.h"
 #include "pland/gui/LandManagerGUI.h"
 #include "pland/gui/LandTeleportGUI.h"
@@ -28,13 +29,13 @@ void LandMainMenuGUI::sendTo(Player& player) {
         // ChooseLandUtilGUI::sendTo(pl, LandManagerGUI::sendMainMenu, false, BackSimpleForm<>::makeCallback<sendTo>());
         ChooseLandAdvancedUtilGUI::sendTo(
             pl,
-            LandRegistry::getInstance().getLands(pl.getUuid().asString()),
+            PLand::getInstance().getLandRegistry()->getLands(pl.getUuid().asString()),
             LandManagerGUI::sendMainMenu,
             BackSimpleForm<>::makeCallback<sendTo>()
         );
     });
 
-    if (Config::cfg.land.landTp || LandRegistry::getInstance().isOperator(player.getUuid().asString())) {
+    if (Config::cfg.land.landTp || PLand::getInstance().getLandRegistry()->isOperator(player.getUuid().asString())) {
         fm.appendButton("领地传送"_trf(player), "textures/ui/icon_recipe_nature", "path", [](Player& pl) {
             LandTeleportGUI::sendTo(pl);
         });

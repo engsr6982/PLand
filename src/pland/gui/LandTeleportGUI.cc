@@ -17,7 +17,7 @@ void LandTeleportGUI::sendTo(Player& player) {
     // ChooseLandUtilGUI::sendTo(player, impl, true, BackSimpleForm<>::makeCallback<LandMainMenuGUI::sendTo>());
     ChooseLandAdvancedUtilGUI::sendTo(
         player,
-        LandRegistry::getInstance().getLands(player.getUuid().asString(), true),
+        PLand::getInstance().getLandRegistry()->getLands(player.getUuid().asString(), true),
         impl,
         BackSimpleForm<>::makeCallback<sendTo>()
     );
