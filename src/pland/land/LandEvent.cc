@@ -42,12 +42,12 @@ LandID       LandMemberChangeAfterEvent::getLandID() const { return mLandID; }
 bool         LandMemberChangeAfterEvent::isAdd() const { return mIsAdd; }
 
 
-Player& LandOwnerChangeBeforeEvent::getPlayer() const { return mPlayer; }
-Player& LandOwnerChangeBeforeEvent::getNewOwner() const { return mNewOwner; }
-LandID  LandOwnerChangeBeforeEvent::getLandID() const { return mLandID; }
-Player& LandOwnerChangeAfterEvent::getPlayer() const { return mPlayer; }
-Player& LandOwnerChangeAfterEvent::getNewOwner() const { return mNewOwner; }
-LandID  LandOwnerChangeAfterEvent::getLandID() const { return mLandID; }
+Player&      LandOwnerChangeBeforeEvent::getPlayer() const { return mPlayer; }
+UUIDs const& LandOwnerChangeBeforeEvent::getNewOwner() const { return mNewOwner; }
+LandID       LandOwnerChangeBeforeEvent::getLandID() const { return mLandID; }
+Player&      LandOwnerChangeAfterEvent::getPlayer() const { return mPlayer; }
+UUIDs const& LandOwnerChangeAfterEvent::getNewOwner() const { return mNewOwner; }
+LandID       LandOwnerChangeAfterEvent::getLandID() const { return mLandID; }
 
 
 Player&           LandRangeChangeBeforeEvent::getPlayer() const { return mPlayer; }

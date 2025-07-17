@@ -171,36 +171,36 @@ public:
 // 领地主人变动(EditLandOwnerGui)
 class LandOwnerChangeBeforeEvent final : public ll::event::Cancellable<ll::event::Event> {
 protected:
-    Player& mPlayer;   // 操作者
-    Player& mNewOwner; // 新主人
-    LandID  mLandID;
+    Player&      mPlayer;    // 操作者
+    UUIDs const& mNewOwner; // 新主人 UUID
+    LandID       mLandID;
 
 public:
-    LDAPI LandOwnerChangeBeforeEvent(Player& player, Player& newOwner, LandID landID)
+    LDAPI LandOwnerChangeBeforeEvent(Player& player, UUIDs const& newOwner, LandID landID)
     : Cancellable(),
       mPlayer(player),
       mNewOwner(newOwner),
       mLandID(landID) {}
 
-    LDNDAPI Player& getPlayer() const;
-    LDNDAPI Player& getNewOwner() const;
-    LDNDAPI LandID  getLandID() const;
+    LDNDAPI Player&      getPlayer() const;
+    LDNDAPI UUIDs const& getNewOwner() const;
+    LDNDAPI LandID       getLandID() const;
 };
 class LandOwnerChangeAfterEvent final : public ll::event::Event {
 protected:
-    Player& mPlayer;   // 操作者
-    Player& mNewOwner; // 目标玩家
-    LandID  mLandID;
+    Player&      mPlayer;    // 操作者
+    UUIDs const& mNewOwner; // 目标玩家 UUID
+    LandID       mLandID;
 
 public:
-    LDAPI LandOwnerChangeAfterEvent(Player& player, Player& newOwner, LandID landID)
+    LDAPI LandOwnerChangeAfterEvent(Player& player, UUIDs const& newOwner, LandID landID)
     : mPlayer(player),
       mNewOwner(newOwner),
       mLandID(landID) {}
 
-    LDNDAPI Player& getPlayer() const;
-    LDNDAPI Player& getNewOwner() const;
-    LDNDAPI LandID  getLandID() const;
+    LDNDAPI Player&      getPlayer() const;
+    LDNDAPI UUIDs const& getNewOwner() const;
+    LDNDAPI LandID       getLandID() const;
 };
 
 

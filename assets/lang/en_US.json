@@ -282,5 +282,13 @@
     "目标玩家已离线，无法继续操作!": "The target player is offline and cannot continue the operation!",
     "此区域禁止创建领地，请重新选择": "This area is forbidden for plot creation. Please reselect.",
     "此区域禁止修改领地范围，请重新选择": "This area is forbidden for plot modification. Please reselect.",
-    "此区域禁止创建子领地，请重新选择": "This area is forbidden for sub-plot creation. Please reselect."
+    "此区域禁止创建子领地，请重新选择": "This area is forbidden for sub-plot creation. Please reselect.",
+    "添加在线成员": "Add Online Member",
+    "添加离线成员": "Add Offline Member",
+    "请输入离线玩家名称": "Please enter the offline player name",
+    "玩家名称不能为空!": "Player name cannot be empty!",
+    "未找到该玩家信息，请检查名称是否正确!": "Player information not found, please check if the name is correct!",
+    "转让给在线玩家": "Transfer to Online Player",
+    "转让给离线玩家": "Transfer to Offline Player",
+    "| 转让领地": "| Transfer Territory"
 }
