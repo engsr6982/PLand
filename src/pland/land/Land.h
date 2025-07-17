@@ -158,7 +158,7 @@ public:
     LDNDAPI SharedLand getParentLand() const;
 
     /**
-     * @brief 获取子领地
+     * @brief 获取子领地(当前领地名下的所有子领地)
      */
     LDNDAPI std::vector<SharedLand> getSubLands() const;
 
@@ -181,6 +181,11 @@ public:
      * @brief 获取当前领地及其所有上级父领地（包含自身）
      */
     LDNDAPI std::unordered_set<SharedLand> getSelfAndAncestors() const;
+
+    /**
+     * @brief 获取当前领地及其所有下级子领地（包含自身）
+     */
+    LDNDAPI std::unordered_set<SharedLand> getSelfAndDescendants() const;
 
     /**
      * @brief 获取一个玩家在当前领地所拥有的权限类别

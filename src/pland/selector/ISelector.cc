@@ -7,6 +7,7 @@
 #include "pland/gui/NewLandGUI.h"
 #include "pland/infra/Config.h"
 #include "pland/infra/DrawHandleManager.h"
+#include "pland/infra/draw/IDrawHandle.h"
 #include "pland/utils/McUtils.h"
 
 
@@ -34,7 +35,7 @@ ISelector::~ISelector() {
         return;
     }
     if (mDrawedRange) {
-        DrawHandleManager::getInstance().getOrCreateHandle(*player)->remove(mDrawedRange);
+        DrawHandleManager::getInstance().getOrCreateHandle(*player)->remove(std::move(mDrawedRange));
     }
 }
 
@@ -187,7 +188,7 @@ void ISelector::onPointConfirmed() {
     auto handle = DrawHandleManager::getInstance().getOrCreateHandle(*player);
 
     if (mDrawedRange) {
-        handle->remove(mDrawedRange);
+        handle->remove(std::move(mDrawedRange));
     }
     mDrawedRange = handle->draw(*newLandAABB(), mDimid, mce::Color::GREEN());
 }

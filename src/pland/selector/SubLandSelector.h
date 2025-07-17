@@ -1,23 +1,22 @@
 #pragma once
-#include "pland/infra/DrawHandleManager.h"
-#include "pland/land/Land.h"
 #include "pland/selector/ISelector.h"
 
 
 namespace land {
 
+class Land;
 
 class SubLandSelector final : public ISelector {
-    WeakLand                 mParentLand;
-    DrawHandle::UniqueDrawId mParentRangeDrawId;
+    std::weak_ptr<Land>    mParentLand;
+    std::unique_ptr<GeoId> mParentRangeDrawId;
 
 public:
-    LDAPI explicit SubLandSelector(Player& player, SharedLand parent);
+    LDAPI explicit SubLandSelector(Player& player, std::shared_ptr<Land> parent);
     LDAPI ~SubLandSelector() override;
 
-    LDNDAPI SharedLand getParentLand() const;
+    LDNDAPI std::shared_ptr<Land> getParentLand() const;
 
-    LDNDAPI SharedLand newSubLand() const;
+    LDNDAPI std::shared_ptr<Land> newSubLand() const;
 };
 
 

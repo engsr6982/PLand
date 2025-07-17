@@ -6,14 +6,14 @@
     "dependencies": [
         {
             "name": "iListenAttentively"
-        },
-        {
-            "name": "BedrockServerClientInterface"
         }
     ],
     "optionalDependencies": [
         {
             "name": "LegacyMoney"
+        },
+        {
+            "name": "BedrockServerClientInterface"
         }
     ]
 }

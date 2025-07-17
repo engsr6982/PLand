@@ -12,16 +12,18 @@ class ItemStack;
 
 namespace land {
 
+struct GeoId;
+class LandAABB;
 
 class ISelector {
-    WeakRef<EntityContext>   mPlayer{};
-    LandDimid                mDimid{-1};
-    bool                     m3D = false;
-    std::optional<BlockPos>  mPointA{std::nullopt};
-    std::optional<BlockPos>  mPointB{std::nullopt};
-    DrawHandle::UniqueDrawId mDrawedRange{nullptr};
-    SetTitlePacket           mTitlePacket{SetTitlePacket::TitleType::Title};
-    SetTitlePacket           mSubTitlePacket{SetTitlePacket::TitleType::Subtitle};
+    WeakRef<EntityContext>  mPlayer{};
+    LandDimid               mDimid{-1};
+    bool                    m3D = false;
+    std::optional<BlockPos> mPointA{std::nullopt};
+    std::optional<BlockPos> mPointB{std::nullopt};
+    std::unique_ptr<GeoId>  mDrawedRange{nullptr};
+    SetTitlePacket          mTitlePacket{SetTitlePacket::TitleType::Title};
+    SetTitlePacket          mSubTitlePacket{SetTitlePacket::TitleType::Subtitle};
 
     void initTitlePacket(Player& player);
 
