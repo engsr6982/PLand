@@ -3,7 +3,6 @@
 #include "ll/api/coro/InterruptableSleep.h"
 #include "ll/api/event/ListenerBase.h"
 #include "pland/Global.h"
-#include "pland/infra/Require.h"
 #include <unordered_map>
 
 
@@ -52,6 +51,5 @@ public:
     LDAPI void forEach(ForEachFunc const& func) const;
 };
 
-LD_DECLARE_REQUIRE(SelectorManager);
 
 } // namespace land

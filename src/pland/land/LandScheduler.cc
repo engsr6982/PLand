@@ -15,7 +15,6 @@
 #include "pland/Global.h"
 #include "pland/PLand.h"
 #include "pland/infra/Config.h"
-#include "pland/infra/Require.h"
 #include "pland/land/LandEvent.h"
 #include "pland/land/LandRegistry.h"
 #include <cstdio>

@@ -34,7 +34,6 @@
 #include "pland/infra/Config.h"
 #include "pland/infra/DataConverter.h"
 #include "pland/infra/DrawHandleManager.h"
-#include "pland/infra/Require.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/selector/SelectorManager.h"
 #include "pland/selector/SubLandSelector.h"
@@ -204,7 +203,7 @@ static auto const New = [](CommandOrigin const& ori, CommandOutput& out, NewPara
         }
 
         auto selector = std::make_unique<SubLandSelector>(player, land);
-        if (Require<SelectorManager> {} -> startSelection(std::move(selector))) {
+        if (PLand::getInstance().getSelectorManager()->startSelection(std::move(selector))) {
             mc_utils::sendText(
                 player,
                 "选区功能已开启，使用命令 /pland set 或使用 {} 来选择ab点"_trf(player, Config::cfg.selector.tool)
@@ -230,7 +229,7 @@ static auto const Set = [](CommandOrigin const& ori, CommandOutput& out, SetPara
     CHECK_TYPE(ori, out, CommandOriginType::Player);
     auto& player = *static_cast<Player*>(ori.getEntity());
 
-    if (!Require<SelectorManager>()->hasSelector(player)) {
+    if (!PLand::getInstance().getSelectorManager()->hasSelector(player)) {
         mc_utils::sendText<mc_utils::LogLevel::Error>(
             out,
             "您还没有开启领地选区，请先使用 /pland new 命令"_trf(player)
@@ -240,7 +239,7 @@ static auto const Set = [](CommandOrigin const& ori, CommandOutput& out, SetPara
 
     auto pos = player.getFeetBlockPos();
 
-    auto selector = Require<SelectorManager>()->getSelector(player);
+    auto selector = PLand::getInstance().getSelectorManager()->getSelector(player);
     if (param.type == SetType::A) {
         selector->setPointA(pos);
     } else {
@@ -251,7 +250,7 @@ static auto const Set = [](CommandOrigin const& ori, CommandOutput& out, SetPara
 static auto const Cancel = [](CommandOrigin const& ori, CommandOutput& out) {
     CHECK_TYPE(ori, out, CommandOriginType::Player);
     auto& player = *static_cast<Player*>(ori.getEntity());
-    Require<SelectorManager>()->stopSelection(player);
+    PLand::getInstance().getSelectorManager()->stopSelection(player);
     mc_utils::sendText(out, "已取消新建领地"_trf(player));
 };
 

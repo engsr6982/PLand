@@ -8,21 +8,12 @@
 #include "mc/world/actor/player/Player.h"
 #include "pland/PLand.h"
 #include "pland/infra/Config.h"
-#include "pland/infra/Require.h"
 #include "pland/utils/Date.h"
 #include "pland/utils/McUtils.h"
 #include <atomic>
 
 
 namespace land {
-
-LD_IMPL_REQUIRE(SelectorManager) {
-    auto manager = land::PLand::getInstance().getSelectorManager();
-    if (!manager) [[unlikely]] {
-        throw std::runtime_error(LD_ERR_RAII_RESOURCE_EMPTY(SelectorManager));
-    }
-    return manager;
-}
 
 
 SelectorManager::SelectorManager() {
