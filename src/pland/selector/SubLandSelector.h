@@ -7,8 +7,8 @@ namespace land {
 class Land;
 
 class SubLandSelector final : public ISelector {
-    std::weak_ptr<Land>    mParentLand;
-    std::unique_ptr<GeoId> mParentRangeDrawId;
+    std::weak_ptr<Land> mParentLand;
+    GeoId               mParentRangeDrawId;
 
 public:
     LDAPI explicit SubLandSelector(Player& player, std::shared_ptr<Land> parent);

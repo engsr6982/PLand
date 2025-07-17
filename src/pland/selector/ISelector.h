@@ -4,6 +4,7 @@
 #include "mc/world/level/BlockPos.h"
 #include "pland/Global.h"
 #include "pland/infra/DrawHandleManager.h"
+#include "pland/infra/draw/IDrawHandle.h"
 
 
 class Player;
@@ -12,7 +13,6 @@ class ItemStack;
 
 namespace land {
 
-struct GeoId;
 class LandAABB;
 
 class ISelector {
@@ -21,7 +21,7 @@ class ISelector {
     bool                    m3D = false;
     std::optional<BlockPos> mPointA{std::nullopt};
     std::optional<BlockPos> mPointB{std::nullopt};
-    std::unique_ptr<GeoId>  mDrawedRange{nullptr};
+    GeoId                   mDrawedRange{};
     SetTitlePacket          mTitlePacket{SetTitlePacket::TitleType::Title};
     SetTitlePacket          mSubTitlePacket{SetTitlePacket::TitleType::Subtitle};
 

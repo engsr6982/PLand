@@ -1,5 +1,4 @@
 #pragma once
-#include "pland/infra/draw/GeoId.h"
 #include "pland/infra/draw/IDrawHandle.h"
 
 class AABB;
@@ -17,11 +16,13 @@ public:
     LDAPI explicit BsciDrawHandle();
     LDAPI ~BsciDrawHandle() override;
 
-    LDNDAPI GeoIdPtr draw(LandAABB const& aabb, DimensionType dimId, mce::Color const& color) override;
+    LDNDAPI GeoId draw(LandAABB const& aabb, DimensionType dimId, mce::Color const& color) override;
 
     LDAPI void draw(std::shared_ptr<Land> const& land, mce::Color const& color) override;
 
-    LDAPI void remove(GeoIdPtr id) override;
+    LDAPI void remove(GeoId id) override;
+
+    LDAPI void remove(LandID landId) override;
 
     LDAPI void remove(std::shared_ptr<Land> land) override;
 
@@ -30,6 +31,7 @@ public:
     LDAPI void clearLand() override;
 
     LDNDAPI AABB fixAABB(LandPos const& min, LandPos const& max);
+
     LDNDAPI AABB fixAABB(LandAABB const& aabb);
 
     LDAPI static bool isBsciModuleLoaded();

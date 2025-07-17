@@ -1,14 +1,26 @@
 #pragma once
 #include "mc/deps/core/math/Color.h"
 #include "pland/Global.h"
-#include "pland/infra/draw/GeoId.h"
 
 #include <mc/deps/core/utility/AutomaticID.h>
+
+
 namespace land {
 
 
 class LandAABB;
 class Land;
+
+
+struct GeoId {
+    uint64 value;
+
+    operator bool() const { return value != 0; }
+    bool operator==(GeoId const& other) const { return value == other.value; }
+
+    GeoId() = default;
+    explicit GeoId(uint64 v) : value(v) {}
+};
 
 class IDrawHandle {
 public:
@@ -17,11 +29,13 @@ public:
     LDAPI explicit IDrawHandle() = default;
     LDAPI virtual ~IDrawHandle() = default;
 
-    virtual GeoIdPtr draw(LandAABB const& aabb, DimensionType dimId, mce::Color const& color) = 0;
+    virtual GeoId draw(LandAABB const& aabb, DimensionType dimId, mce::Color const& color) = 0;
 
     virtual void draw(std::shared_ptr<Land> const& land, mce::Color const& color) = 0;
 
-    virtual void remove(GeoIdPtr id) = 0;
+    virtual void remove(GeoId id) = 0;
+
+    virtual void remove(LandID landId) = 0;
 
     virtual void remove(std::shared_ptr<Land> land) = 0;
 

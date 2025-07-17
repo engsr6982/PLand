@@ -2,7 +2,6 @@
 #include "mc/_HeaderOutputPredefine.h"
 #include "mc/world/phys/AABB.h"
 #include "pland/aabb/LandAABB.h"
-#include "pland/infra/draw/GeoId.h"
 #include "pland/infra/draw/IDrawHandle.h"
 #include "pland/infra/draw/impl/BSCIDrawHandle.h"
 #include "pland/land/Land.h"
@@ -14,9 +13,7 @@
 namespace bsci {
 class GeometryGroup {
 public:
-    struct GeoId {
-        uint64 value;
-    };
+    using GeoId = ::land::GeoId;
 
 protected:
     // vIndex: - 
@@ -118,17 +115,6 @@ public:
 
 namespace land {
 
-struct BsciGeoId final : public GeoId {
-    bsci::GeometryGroup::GeoId impl;
-
-    BsciGeoId(bsci::GeometryGroup::GeoId id) : impl(id) {}
-    ~BsciGeoId() override = default;
-
-    uint64 value() const override { return impl.value; }
-
-    bool operator==(GeoId const& other) const override { return other.value() == impl.value; }
-};
-
 
 using CreateGeometryGroupFn            = std::unique_ptr<bsci::GeometryGroup> (*)();
 static const wchar_t* BSCI_MODULE_NAME = L"BedrockServerClientInterface.dll";
@@ -158,7 +144,7 @@ public:
 
 
     std::unique_ptr<bsci::GeometryGroup> mGeometryGroup;
-    std::unordered_map<LandID, GeoIdPtr> mLandGeoMap;
+    std::unordered_map<LandID, GeoId>    mLandGeoMap;
 
     Impl() { mGeometryGroup = createDefault(); }
     ~Impl() = default;
@@ -175,35 +161,36 @@ BsciDrawHandle::BsciDrawHandle() : impl(std::make_unique<Impl>()) {}
 
 BsciDrawHandle::~BsciDrawHandle() = default;
 
-GeoIdPtr BsciDrawHandle::draw(LandAABB const& aabb, DimensionType dimId, mce::Color const& color) {
-    auto id = impl->mGeometryGroup->box(dimId, fixAABB(aabb), color);
-    return std::make_unique<BsciGeoId>(id);
+GeoId BsciDrawHandle::draw(LandAABB const& aabb, DimensionType dimId, mce::Color const& color) {
+    return impl->mGeometryGroup->box(dimId, fixAABB(aabb), color);
 }
 
 void BsciDrawHandle::draw(std::shared_ptr<Land> const& land, mce::Color const& color) {
     auto id = draw(land->getAABB(), land->getDimensionId(), color);
-    impl->mLandGeoMap.emplace(land->getId(), std::move(id));
+    impl->mLandGeoMap.emplace(land->getId(), id);
 }
 
-void BsciDrawHandle::remove(GeoIdPtr id) {
-    if (auto bsId = id->as<BsciGeoId>()) {
-        impl->mGeometryGroup->remove(bsId->impl);
+void BsciDrawHandle::remove(GeoId id) {
+    if (id) {
+        impl->mGeometryGroup->remove(id);
     }
 }
 
-void BsciDrawHandle::remove(std::shared_ptr<Land> land) {
-    auto iter = impl->mLandGeoMap.find(land->getId());
+void BsciDrawHandle::remove(LandID landId) {
+    auto iter = impl->mLandGeoMap.find(landId);
     if (iter != impl->mLandGeoMap.end()) {
-        remove(std::move(iter->second));
+        remove(iter->second);
         impl->mLandGeoMap.erase(iter);
     }
 }
+
+void BsciDrawHandle::remove(std::shared_ptr<Land> land) { remove(land->getId()); }
 
 void BsciDrawHandle::clear() { impl->reset(); }
 
 void BsciDrawHandle::clearLand() {
     for (auto& [id, geoId] : impl->mLandGeoMap) {
-        impl->mGeometryGroup->remove(geoId->as<BsciGeoId>()->impl);
+        impl->mGeometryGroup->remove(geoId);
     }
     impl->mLandGeoMap.clear();
 }

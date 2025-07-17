@@ -35,7 +35,7 @@ ISelector::~ISelector() {
         return;
     }
     if (mDrawedRange) {
-        DrawHandleManager::getInstance().getOrCreateHandle(*player)->remove(std::move(mDrawedRange));
+        DrawHandleManager::getInstance().getOrCreateHandle(*player)->remove(mDrawedRange);
     }
 }
 
@@ -188,7 +188,7 @@ void ISelector::onPointConfirmed() {
     auto handle = DrawHandleManager::getInstance().getOrCreateHandle(*player);
 
     if (mDrawedRange) {
-        handle->remove(std::move(mDrawedRange));
+        handle->remove(mDrawedRange);
     }
     mDrawedRange = handle->draw(*newLandAABB(), mDimid, mce::Color::GREEN());
 }
