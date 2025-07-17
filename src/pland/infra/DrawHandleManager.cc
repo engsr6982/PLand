@@ -12,7 +12,6 @@
 #include "pland/land/Land.h"
 #include "pland/land/LandRegistry.h"
 #include <memory>
-#include <windows.h>
 
 
 namespace land {
@@ -37,18 +36,7 @@ private:
     std::unordered_map<LandID, std::pair<WeakLand, UniqueDrawId>> mLandGeoMap;
 
 public:
-    explicit DarwHandleImpl() : DrawHandle() {
-        auto dllModule        = GetModuleHandleA("BedrockServerClientInterface.dll");
-        using t_createDefault = decltype(bsci::GeometryGroup::createDefault);
-        auto createDefault    = (t_createDefault*)GetProcAddress(
-            dllModule,
-            "?createDefault@GeometryGroup@bsci@@SA?AV?$unique_ptr@VGeometryGroup@bsci@@U?$default_delete@"
-               "VGeometryGroup@bsci@@@std@@@std@@XZ"
-        );
-        if (createDefault) {
-            mGeometryGroup = createDefault();
-        }
-    }
+    explicit DarwHandleImpl() : DrawHandle(), mGeometryGroup(bsci::GeometryGroup::createDefault()) {}
 
     // 辅助函数
     AABB fixAABB(LandPos const& min, LandPos const& max) {
@@ -61,17 +49,11 @@ public:
 
 
     UniqueDrawId draw(LandAABB const& pos, DimensionType dim, const mce::Color& color) override {
-        if (!mGeometryGroup) {
-            return std::make_unique<DrawIdImpl>(0);
-        }
         auto result = mGeometryGroup->box(dim, fixAABB(pos), color);
         return std::make_unique<DrawIdImpl>(result);
     }
 
     void draw(SharedLand const& land, const mce::Color& color) override {
-        if (!mGeometryGroup) {
-            return;
-        }
         auto iter = mLandGeoMap.find(land->getId());
         if (iter != mLandGeoMap.end()) {
             return;
@@ -81,9 +63,6 @@ public:
     }
 
     void remove(LandID landID) override {
-        if (!mGeometryGroup) {
-            return;
-        }
         auto iter = mLandGeoMap.find(landID);
         if (iter != mLandGeoMap.end()) {
             mGeometryGroup->remove(iter->second.second->cast<DrawIdImpl>()->value);
@@ -91,12 +70,7 @@ public:
         }
     }
 
-    void remove(UniqueDrawId const& drawId) override {
-        if (!mGeometryGroup) {
-            return;
-        }
-        mGeometryGroup->remove(drawId->cast<DrawIdImpl>()->value);
-    }
+    void remove(UniqueDrawId const& drawId) override { mGeometryGroup->remove(drawId->cast<DrawIdImpl>()->value); }
 
     void removeLands() override {
         for (auto& [id, pair] : mLandGeoMap) {
@@ -108,16 +82,7 @@ public:
     void reinit() override {
         this->mLandGeoMap.clear();
         this->mGeometryGroup.reset();
-        auto dllModule        = GetModuleHandleA("BedrockServerClientInterface.dll");
-        using t_createDefault = decltype(bsci::GeometryGroup::createDefault);
-        auto createDefault    = (t_createDefault*)GetProcAddress(
-            dllModule,
-            "?createDefault@GeometryGroup@bsci@@SA?AV?$unique_ptr@VGeometryGroup@bsci@@U?$default_delete@"
-               "VGeometryGroup@bsci@@@std@@@std@@XZ"
-        );
-        if (createDefault) {
-            mGeometryGroup = createDefault();
-        }
+        this->mGeometryGroup = bsci::GeometryGroup::createDefault();
     }
 };
 
