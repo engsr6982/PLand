@@ -9,13 +9,6 @@
 #include "ll/api/event/player/PlayerPickUpItemEvent.h"
 #include "ll/api/event/player/PlayerPlaceBlockEvent.h"
 
-#include "ila/event/minecraft/world/actor/ArmorStandSwapItemEvent.h"
-#include "ila/event/minecraft/world/actor/player/PlayerAttackBlockEvent.h"
-#include "ila/event/minecraft/world/actor/player/PlayerDropItemEvent.h"
-#include "ila/event/minecraft/world/actor/player/PlayerEditSignEvent.h"
-#include "ila/event/minecraft/world/actor/player/PlayerInteractEntityEvent.h"
-#include "ila/event/minecraft/world/actor/player/PlayerOperatedItemFrameEvent.h"
-
 #include "mc/deps/core/string/HashedString.h"
 #include "mc/world/item/BucketItem.h"
 #include "mc/world/item/FishingRodItem.h"
@@ -39,8 +32,10 @@
 #include <string_view>
 #include <unordered_map>
 
+
 namespace land {
 
+// These maps are used by PlayerInteractBlockEvent, so they stay in this file.
 static const std::unordered_map<std::string_view, bool LandPermTable::*> ItemSpecificPermissionMap = {
     {          "minecraft:skull",       &LandPermTable::allowPlace}, // 放置头颅
     {         "minecraft:banner",       &LandPermTable::allowPlace}, // 放置旗帜
@@ -98,7 +93,8 @@ static const std::unordered_map<std::string_view, bool LandPermTable::*> BlockFu
     {               "minecraft:vault",             &LandPermTable::useVault}  //  蜂箱
 };
 
-void EventListener::registerPlayerListeners() {
+
+void EventListener::registerLLPlayerListeners() {
     auto* db     = PLand::getInstance().getLandRegistry();
     auto* bus    = &ll::event::EventBus::getInstance();
     auto* logger = &land::PLand::getInstance().getSelf().getLogger();
@@ -237,19 +233,6 @@ void EventListener::registerPlayerListeners() {
         );
     });
 
-    RegisterListenerIf(Config::cfg.listeners.PlayerInteractEntityBeforeEvent, [&]() {
-        return bus->emplaceListener<ila::mc::PlayerInteractEntityBeforeEvent>(
-            [db, logger](ila::mc::PlayerInteractEntityBeforeEvent& ev) {
-                logger->debug("[交互实体] name: {}", ev.self().getRealName());
-                auto& entity = ev.target();
-                auto  land   = db->getLandAt(entity.getPosition(), ev.self().getDimensionId());
-                if (PreCheckLandExistsAndPermission(land, ev.self().getUuid().asString())) return;
-                if (land->getPermTable().allowInteractEntity) return;
-                ev.cancel();
-            }
-        );
-    });
-
     RegisterListenerIf(Config::cfg.listeners.PlayerAttackEvent, [&]() {
         return bus->emplaceListener<ll::event::PlayerAttackEvent>([db, logger](ll::event::PlayerAttackEvent& ev) {
             auto& player = ev.self();
@@ -289,79 +272,6 @@ void EventListener::registerPlayerListeners() {
             if (land->getPermTable().allowPickupItem) return;
             ev.cancel();
         });
-    });
-
-    RegisterListenerIf(Config::cfg.listeners.PlayerAttackBlockBeforeEvent, [&]() {
-        return bus->emplaceListener<ila::mc::PlayerAttackBlockBeforeEvent>([db, logger](
-                                                                               ila::mc::PlayerAttackBlockBeforeEvent& ev
-                                                                           ) {
-            auto& self = ev.self();
-            auto& pos  = ev.pos();
-            logger->debug("[AttackBlock] {}", pos.toString());
-            auto land = db->getLandAt(pos, self.getDimensionId());
-            if (PreCheckLandExistsAndPermission(land, self.getUuid().asString())) return;
-            auto const& blockTypeName = self.getDimensionBlockSourceConst().getBlock(pos).getTypeName();
-            CANCEL_AND_RETURN_IF(!land->getPermTable().allowAttackDragonEgg && blockTypeName == "minecraft:dragon_egg");
-        });
-    });
-
-    RegisterListenerIf(Config::cfg.listeners.ArmorStandSwapItemBeforeEvent, [&]() {
-        return bus->emplaceListener<ila::mc::ArmorStandSwapItemBeforeEvent>(
-            [db, logger](ila::mc::ArmorStandSwapItemBeforeEvent& ev) {
-                Player& player = ev.player();
-                logger->debug("[ArmorStandSwapItem]: executed");
-                auto land = db->getLandAt(ev.self().getPosition(), player.getDimensionId());
-                if (PreCheckLandExistsAndPermission(land, player.getUuid().asString())) {
-                    return;
-                }
-                if (land->getPermTable().useArmorStand) return;
-                ev.cancel();
-            }
-        );
-    });
-
-    RegisterListenerIf(Config::cfg.listeners.PlayerDropItemBeforeEvent, [&]() {
-        return bus->emplaceListener<ila::mc::PlayerDropItemBeforeEvent>(
-            [db, logger](ila::mc::PlayerDropItemBeforeEvent& ev) {
-                Player& player = ev.self();
-                logger->debug("[PlayerDropItem]: executed");
-                auto land = db->getLandAt(player.getPosition(), player.getDimensionId());
-                if (PreCheckLandExistsAndPermission(land, player.getUuid().asString())) {
-                    return;
-                }
-                if (land->getPermTable().allowDropItem) return;
-                ev.cancel();
-            }
-        );
-    });
-
-    RegisterListenerIf(Config::cfg.listeners.PlayerOperatedItemFrameBeforeEvent, [&]() {
-        return bus->emplaceListener<ila::mc::PlayerOperatedItemFrameBeforeEvent>(
-            [db, logger](ila::mc::PlayerOperatedItemFrameBeforeEvent& ev) {
-                logger->debug("[PlayerUseItemFrame] pos: {}", ev.blockPos().toString());
-                auto land = db->getLandAt(ev.blockPos(), ev.self().getDimensionId());
-                if (PreCheckLandExistsAndPermission(land, ev.self().getUuid().asString())) return;
-                if (land->getPermTable().useItemFrame) return;
-                ev.cancel();
-            }
-        );
-    });
-
-    RegisterListenerIf(Config::cfg.listeners.PlayerEditSignBeforeEvent, [&]() {
-        return bus->emplaceListener<ila::mc::PlayerEditSignBeforeEvent>(
-            [db, logger](ila::mc::PlayerEditSignBeforeEvent& ev) {
-                auto& player = ev.self();
-                auto& pos    = ev.pos();
-                logger->debug("[PlayerEditSign] {} -> {}", player.getRealName(), pos.toString());
-                auto land = db->getLandAt(pos, player.getDimensionId());
-                if (PreCheckLandExistsAndPermission(land, player.getUuid().asString())) {
-                    return;
-                }
-                if (land && !land->getPermTable().editSign) {
-                    ev.cancel();
-                }
-            }
-        );
     });
 }
 

@@ -3,7 +3,6 @@
 #include "pland/hooks/listeners/ListenerHelper.h"
 
 #include "ll/api/event/EventBus.h"
-#include "ll/api/event/world/SpawnMobEvent.h"
 
 #include "ila/event/minecraft/world/actor/ActorDestroyBlockEvent.h"
 #include "ila/event/minecraft/world/actor/ActorRideEvent.h"
@@ -14,7 +13,7 @@
 #include "ila/event/minecraft/world/actor/ProjectileCreateEvent.h"
 
 #include "mc/server/ServerPlayer.h"
-
+#include "mc/world/actor/ActorDefinitionIdentifier.h"
 #include "pland/PLand.h"
 #include "pland/infra/Config.h"
 #include "pland/land/LandRegistry.h"
@@ -22,7 +21,7 @@
 
 namespace land {
 
-void EventListener::registerEntityListeners() {
+void EventListener::registerILAEntityListeners() {
     auto* db     = PLand::getInstance().getLandRegistry();
     auto* bus    = &ll::event::EventBus::getInstance();
     auto* logger = &land::PLand::getInstance().getSelf().getLogger();
@@ -54,35 +53,17 @@ void EventListener::registerEntityListeners() {
     });
 
     RegisterListenerIf(Config::cfg.listeners.EndermanTakeBlockEvent, [&]() {
-        return bus->emplaceListener<ila::mc::EndermanLeaveBlockBeforeEvent>(
-            [db, logger](ila::mc::EndermanLeaveBlockBeforeEvent& ev) {
+        return bus->emplaceListener<ila::mc::EndermanTakeBlockBeforeEvent>(
+            [db, logger](ila::mc::EndermanTakeBlockBeforeEvent& ev) {
                 auto& actor    = ev.self();
                 auto& blockPos = ev.pos();
-                logger->debug("[EndermanLeave] Actor: {}, Pos: {}", actor.getTypeName(), blockPos.toString());
+                logger->debug("[EndermanTake] Actor: {}, Pos: {}", actor.getTypeName(), blockPos.toString());
                 auto land = db->getLandAt(blockPos, actor.getDimensionId());
                 if (PreCheckLandExistsAndPermission(land)) return;
                 if (land->getPermTable().allowActorDestroy) return;
                 ev.cancel();
             }
         );
-    });
-
-    RegisterListenerIf(Config::cfg.listeners.SpawnedMobEvent, [&]() {
-        return bus->emplaceListener<ll::event::SpawnedMobEvent>([db, logger](ll::event::SpawnedMobEvent& ev) {
-            auto mob = ev.mob();
-            if (!mob.has_value()) return;
-            auto& pos = mob->getPosition();
-            logger->debug("[SpawnedMob] {}", pos.toString());
-            auto land = db->getLandAt(pos, mob->getDimensionId());
-            if (PreCheckLandExistsAndPermission(land)) return;
-            auto const& tab       = land->getPermTable();
-            bool        isMonster = mob->hasCategory(::ActorCategory::Monster) || mob->hasFamily("monster");
-            if (isMonster) {
-                if (!tab.allowMonsterSpawn) mob->despawn();
-            } else {
-                if (!tab.allowAnimalSpawn) mob->despawn();
-            }
-        });
     });
 
     RegisterListenerIf(Config::cfg.listeners.ActorRideBeforeEvent, [&]() {

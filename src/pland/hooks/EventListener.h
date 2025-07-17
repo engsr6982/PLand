@@ -19,10 +19,18 @@ class EventListener {
     void RegisterListenerIf(bool need, std::function<ll::event::ListenerPtr()> const& factory);
 
     // 为不同事件类别声明注册函数
-    void registerSessionListeners();
-    void registerPlayerListeners();
-    void registerEntityListeners();
-    void registerWorldListeners();
+    // 按照 ll 和 ila 库进行拆分
+    void registerLLSessionListeners();
+
+    void registerLLPlayerListeners();
+    void registerILAPlayerListeners();
+
+    void registerLLEntityListeners();
+    void registerILAEntityListeners();
+
+    void registerLLWorldListeners();
+    void registerILAWorldListeners();
+
 
 public:
     LD_DISALLOW_COPY(EventListener);

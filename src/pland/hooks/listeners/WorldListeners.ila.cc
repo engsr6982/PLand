@@ -3,7 +3,6 @@
 #include "pland/hooks/listeners/ListenerHelper.h"
 
 #include "ll/api/event/EventBus.h"
-#include "ll/api/event/world/FireSpreadEvent.h"
 
 #include "ila/event/minecraft/world/ExplosionEvent.h"
 #include "ila/event/minecraft/world/PistonPushEvent.h"
@@ -27,21 +26,10 @@
 
 namespace land {
 
-void EventListener::registerWorldListeners() {
+void EventListener::registerILAWorldListeners() {
     auto* db     = PLand::getInstance().getLandRegistry();
     auto* bus    = &ll::event::EventBus::getInstance();
     auto* logger = &land::PLand::getInstance().getSelf().getLogger();
-
-    RegisterListenerIf(Config::cfg.listeners.FireSpreadEvent, [&]() {
-        return bus->emplaceListener<ll::event::FireSpreadEvent>([db](ll::event::FireSpreadEvent& ev) {
-            auto& pos  = ev.pos();
-            auto  land = db->getLandAt(pos, ev.blockSource().getDimensionId());
-            if (PreCheckLandExistsAndPermission(land) || (land && land->getPermTable().allowFireSpread)) {
-                return;
-            }
-            ev.cancel();
-        });
-    });
 
     RegisterListenerIf(Config::cfg.listeners.ExplosionBeforeEvent, [&]() {
         return bus->emplaceListener<ila::mc::ExplosionBeforeEvent>([db, logger](ila::mc::ExplosionBeforeEvent& ev) {
