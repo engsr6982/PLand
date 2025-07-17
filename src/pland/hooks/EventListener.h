@@ -1,6 +1,9 @@
+
 #pragma once
 #include "ll/api/event/ListenerBase.h"
 #include "pland/Global.h"
+#include <functional>
+#include <vector>
 
 
 namespace land {
@@ -13,7 +16,13 @@ namespace land {
 class EventListener {
     std::vector<ll::event::ListenerPtr> mListenerPtrs;
 
-    inline void RegisterListenerIf(bool need, std::function<ll::event::ListenerPtr()> const& factory);
+    void RegisterListenerIf(bool need, std::function<ll::event::ListenerPtr()> const& factory);
+
+    // 为不同事件类别声明注册函数
+    void registerSessionListeners();
+    void registerPlayerListeners();
+    void registerEntityListeners();
+    void registerWorldListeners();
 
 public:
     LD_DISALLOW_COPY(EventListener);
