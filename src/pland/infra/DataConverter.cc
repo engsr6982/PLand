@@ -44,14 +44,14 @@ std::unique_ptr<nlohmann::json> DataConverter::loadJson(fs::path const& file) co
 }
 
 void DataConverter::writeToDb(SharedLand const& data) {
-    auto& db = LandRegistry::getInstance();
+    auto db = PLand::getInstance().getLandRegistry();
     if (mClearDb && !mIsCleanedDb) {
         mIsCleanedDb = true;
-        for (auto& land : db.getLands()) {
-            db.removeLand(land->getId());
+        for (auto& land : db->getLands()) {
+            db->removeLand(land->getId());
         }
     }
-    db._addLand(data);
+    db->_addLand(data);
 }
 
 void DataConverter::writeToDb(std::vector<SharedLand> const& data) {

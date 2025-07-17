@@ -1,5 +1,6 @@
 #include "TestMain.h"
 #include "mc/world/actor/player/Player.h"
+#include "pland/PLand.h"
 #include "pland/gui/common/ChooseLandAdvancedUtilGUI.h"
 #include "pland/land/Land.h"
 #include "pland/land/LandRegistry.h"
@@ -25,7 +26,7 @@ void TestMain::_setupChooseLandAdvancedUtilGUITest() {
             }
             auto& player = *static_cast<Player*>(origin.getEntity());
 
-            auto lands = land::LandRegistry::getInstance().getLands();
+            auto lands = land::PLand::getInstance().getLandRegistry()->getLands();
 
             land::ChooseLandAdvancedUtilGUI::sendTo(player, lands, [](Player& self, land::SharedLand land) {
                 self.sendMessage("选择领地: " + land->getName() + "ID: " + std::to_string(land->getId()));

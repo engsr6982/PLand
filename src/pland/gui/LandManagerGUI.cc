@@ -85,7 +85,7 @@ void LandManagerGUI::sendMainMenu(Player& player, SharedLand land) {
     });
 
     // 开启了领地传送功能，或者玩家是领地管理员
-    if (Config::cfg.land.landTp || LandRegistry::getInstance().isOperator(player.getUuid().asString())) {
+    if (Config::cfg.land.landTp || PLand::getInstance().getLandRegistry()->isOperator(player.getUuid().asString())) {
         fm.appendButton("传送到领地"_trf(player), "textures/ui/icon_recipe_nature", "path", [land](Player& pl) {
             LandTeleportGUI::impl(pl, land);
         });
@@ -194,8 +194,8 @@ void LandManagerGUI::_implRemoveWithOrdinaryOrSubLandGUI(Player& player, SharedL
                 return;
             }
 
-            auto result = ptr->isSubLand() ? LandRegistry::getInstance().removeSubLand(ptr)
-                                           : LandRegistry::getInstance().removeOrdinaryLand(ptr);
+            auto result = ptr->isSubLand() ? PLand::getInstance().getLandRegistry()->removeSubLand(ptr)
+                                           : PLand::getInstance().getLandRegistry()->removeOrdinaryLand(ptr);
             if (!result) {
                 economy->reduce(pl, price);
                 return;
@@ -251,7 +251,7 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, SharedLand const& 
             }
         }
 
-        auto result = LandRegistry::getInstance().removeLandAndSubLands(ptr);
+        auto result = PLand::getInstance().getLandRegistry()->removeLandAndSubLands(ptr);
         if (!result) {
             economy->reduce(pl, price);
             return;
@@ -279,7 +279,7 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, SharedLand const& 
             return;
         }
 
-        auto result = LandRegistry::getInstance().removeLandAndPromoteSubLands(ptr);
+        auto result = PLand::getInstance().getLandRegistry()->removeLandAndPromoteSubLands(ptr);
         if (!result) {
             economy->reduce(pl, refundPrice);
             return;
@@ -335,7 +335,7 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, SharedLand const& ptr
             }
         }
 
-        auto result = LandRegistry::getInstance().removeLandAndSubLands(ptr);
+        auto result = PLand::getInstance().getLandRegistry()->removeLandAndSubLands(ptr);
         if (!result) {
             economy->reduce(pl, price);
             return;
@@ -363,7 +363,7 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, SharedLand const& ptr
             return;
         }
 
-        auto result = LandRegistry::getInstance().removeLandAndTransferSubLands(ptr);
+        auto result = PLand::getInstance().getLandRegistry()->removeLandAndTransferSubLands(ptr);
         if (!result) {
             economy->reduce(pl, refundPrice);
             return;
@@ -511,7 +511,7 @@ void LandManagerGUI::_sendAddMemberGUI(Player& player, SharedLand ptr) {
         player,
         [ptr](Player& self, Player& target) {
             if (self.getUuid() == target.getUuid()
-                && !LandRegistry::getInstance().isOperator(self.getUuid().asString())) {
+                && !PLand::getInstance().getLandRegistry()->isOperator(self.getUuid().asString())) {
                 mc_utils::sendText(self, "不能添加自己为领地成员哦!"_trf(self));
                 return;
             }

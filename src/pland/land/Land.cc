@@ -1,6 +1,7 @@
 #include "pland/land/Land.h"
 #include "LandCreateValidator.h"
 #include "pland/Global.h"
+#include "pland/PLand.h"
 #include "pland/infra/Config.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/utils/JSON.h"
@@ -14,14 +15,16 @@ namespace land {
 Land::Land() = default;
 Land::Land(LandContext ctx) : mContext(std::move(ctx)) {}
 Land::Land(LandAABB const& pos, LandDimid dimid, bool is3D, UUIDs const& owner) {
-    mContext.mPos            = pos;
-    mContext.mLandDimid      = dimid;
-    mContext.mIs3DLand       = is3D;
-    mContext.mLandOwner      = owner;
-    mContext.mLandPermTable  = Config::cfg.land.defaultperm;
+    mContext.mPos           = pos;
+    mContext.mLandDimid     = dimid;
+    mContext.mIs3DLand      = is3D;
+    mContext.mLandOwner     = owner;
+    mContext.mLandPermTable = Config::cfg.land.defaultperm;
 }
 
-SharedLand Land::getSelfFromRegistry() const { return LandRegistry::getInstance().getLand(mContext.mLandID); }
+SharedLand Land::getSelfFromRegistry() const {
+    return PLand::getInstance().getLandRegistry()->getLand(mContext.mLandID);
+}
 
 LandAABB const& Land::getAABB() const { return mContext.mPos; }
 bool            Land::setAABB(LandAABB const& newRange) {
@@ -137,14 +140,14 @@ SharedLand Land::getParentLand() const {
     if (isParentLand() || !hasParentLand()) {
         return nullptr;
     }
-    return LandRegistry::getInstance().getLand(this->mContext.mParentLandID);
+    return PLand::getInstance().getLandRegistry()->getLand(this->mContext.mParentLandID);
 }
 
 std::vector<SharedLand> Land::getSubLands() const {
     if (!hasSubLand()) {
         return {};
     }
-    return LandRegistry::getInstance().getLands(this->mContext.mSubLandIDs);
+    return PLand::getInstance().getLandRegistry()->getLands(this->mContext.mSubLandIDs);
 }
 int Land::getNestedLevel() const {
     if (!hasParentLand()) {
@@ -258,7 +261,7 @@ void           Land::load(nlohmann::json& json) { JSON::jsonToStruct(json, mCont
 nlohmann::json Land::dump() const { return JSON::structTojson(mContext); }
 void           Land::save(bool force) {
     if (isDirty() || force) {
-        if (LandRegistry::getInstance().save(*this)) {
+        if (PLand::getInstance().getLandRegistry()->save(*this)) {
             mDirtyCounter.reset();
         }
     }

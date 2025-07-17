@@ -200,7 +200,20 @@ Result<void, StorageLayerError::Error> LandRegistry::_removeLand(SharedLand cons
 
 namespace land {
 
-void LandRegistry::init() {
+void LandRegistry::save() {
+    std::shared_lock<std::shared_mutex> lock(mMutex); // 获取锁
+    mDB->set(DB_KEY_OPERATORS(), JSON::stringify(JSON::structTojson(mLandOperators)));
+
+    mDB->set(DB_KEY_PLAYER_SETTINGS(), JSON::stringify(JSON::structTojson(mPlayerSettings)));
+
+    for (auto const& land : mLandCache | std::views::values) {
+        land->save();
+    }
+}
+
+bool LandRegistry::save(Land const& land) const { return mDB->set(std::to_string(land.getId()), land.dump().dump()); }
+
+LandRegistry::LandRegistry() {
     auto& logger = land::PLand::getInstance().getSelf().getLogger();
 
     logger.trace("打开数据库...");
@@ -239,26 +252,10 @@ void LandRegistry::init() {
         }
     });
 }
-void LandRegistry::save() {
-    std::shared_lock<std::shared_mutex> lock(mMutex); // 获取锁
-    mDB->set(DB_KEY_OPERATORS(), JSON::stringify(JSON::structTojson(mLandOperators)));
 
-    mDB->set(DB_KEY_PLAYER_SETTINGS(), JSON::stringify(JSON::structTojson(mPlayerSettings)));
-
-    for (auto const& land : mLandCache | std::views::values) {
-        land->save();
-    }
-}
-bool LandRegistry::save(Land const& land) const { return mDB->set(std::to_string(land.getId()), land.dump().dump()); }
-void LandRegistry::stopThread() {
+LandRegistry::~LandRegistry() {
     mThreadStopFlag = true;
     if (mThread.joinable()) mThread.join();
-}
-
-
-LandRegistry& LandRegistry::getInstance() {
-    static LandRegistry instance;
-    return instance;
 }
 
 bool LandRegistry::isOperator(UUIDs const& uuid) const {

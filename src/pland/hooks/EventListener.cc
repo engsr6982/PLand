@@ -107,9 +107,9 @@ inline BlockProperty operator&(BlockProperty a, BlockProperty b) {
 namespace land {
 
 inline bool PreCheckLandExistsAndPermission(SharedLand const& ptr, UUIDs const& uuid = "") {
-    if (!ptr ||                                           // 无领地
-        (LandRegistry::getInstance().isOperator(uuid)) || // 管理员
-        (ptr->getPermType(uuid) != LandPermType::Guest)   // 主人/成员
+    if (!ptr ||                                                       // 无领地
+        (PLand::getInstance().getLandRegistry()->isOperator(uuid)) || // 管理员
+        (ptr->getPermType(uuid) != LandPermType::Guest)               // 主人/成员
     ) {
         return true;
     }
@@ -175,7 +175,7 @@ static const std::unordered_map<std::string_view, bool LandPermTable::*> BlockFu
 
 
 EventListener::EventListener() {
-    auto* db     = &LandRegistry::getInstance();
+    auto* db     = PLand::getInstance().getLandRegistry();
     auto* bus    = &ll::event::EventBus::getInstance();
     auto* logger = &land::PLand::getInstance().getSelf().getLogger();
 

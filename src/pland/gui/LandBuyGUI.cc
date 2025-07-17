@@ -122,7 +122,7 @@ void LandBuyGUI::impl(Player& player, DefaultSelector* selector) {
 
             landPtr->setOriginalBuyPrice(discountedPrice);
 
-            if (auto res = LandRegistry::getInstance().addOrdinaryLand(landPtr); !res) {
+            if (auto res = PLand::getInstance().getLandRegistry()->addOrdinaryLand(landPtr); !res) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "购买领地失败"_trf(pl));
                 StorageLayerError::sendErrorMessage(pl, res.error());
                 (void)economy->add(pl, discountedPrice); // 补回经济
@@ -232,7 +232,7 @@ void LandBuyGUI::impl(Player& player, ChangeLandRangeSelector* reSelector) {
             }
 
             landPtr->setOriginalBuyPrice(discountedPrice);
-            LandRegistry::getInstance().refreshLandRange(landPtr); // 刷新领地范围
+            PLand::getInstance().getLandRegistry()->refreshLandRange(landPtr); // 刷新领地范围
 
             land::PLand::getInstance().getSelectorManager()->stopSelection(pl);
             ll::event::EventBus::getInstance().publish(LandRangeChangeAfterEvent{pl, landPtr, *aabb, needPay, refund});
@@ -331,7 +331,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
             SharedLand subLand = subSelector->newSubLand();
             subLand->setOriginalBuyPrice(discountedPrice); // 保存购买价格
 
-            if (!LandRegistry::getInstance().addSubLand(subSelector->getParentLand(), subLand)) {
+            if (!PLand::getInstance().getLandRegistry()->addSubLand(subSelector->getParentLand(), subLand)) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地创建失败，请重试"_trf(pl));
                 (void)economy->add(pl, discountedPrice); // 补回经济
                 return;

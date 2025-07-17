@@ -20,6 +20,11 @@ class ChunkSource;
 
 namespace land {
 
+
+/**
+ * @brief 安全传送
+ * @note RAII 由 PLand 管理
+ */
 class SafeTeleport {
 public:
     using TaskId       = std::uint64_t;
@@ -109,8 +114,6 @@ public:
 
     LDAPI explicit SafeTeleport();
     LDAPI ~SafeTeleport();
-
-    LDNDAPI static SafeTeleport* getInstance();
 
     LDAPI void launchTask(Player& player, DimensionPos targetPos);
 

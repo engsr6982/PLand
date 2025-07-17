@@ -61,7 +61,7 @@ bool PLand::load() {
     land::Config::tryLoad();
     logger.setLevel(land::Config::cfg.logLevel);
 
-    land::LandRegistry::getInstance().init();
+    this->mLandRegistry = std::make_unique<land::LandRegistry>();
     land::EconomySystem::getInstance().initEconomySystem();
 
 #ifdef DEBUG
@@ -98,19 +98,20 @@ bool PLand::disable() {
 #endif
 
     auto& logger = getSelf().getLogger();
-    logger.info("Stopping thread and saving data...");
-    land::LandRegistry::getInstance().stopThread(); // 请求关闭线程
-    logger.debug("[Main] Saving land data...");
-    land::LandRegistry::getInstance().save();
-    logger.debug("[Main] Land data saved.");
 
-    logger.debug("Stopping coroutine...");
+    logger.trace("Stopping coroutine...");
     land::GlobalRepeatCoroTaskRunning.store(false);
 
+    logger.trace("[Main thread] Saving land registry data...");
+    mLandRegistry->save();
+    logger.trace("[Main thread] Land registry data saved.");
+
+    logger.trace("Destroying resources...");
     mLandScheduler.reset();
     mEventListener.reset();
     mSafeTeleport.reset();
     mSelectorManager.reset();
+    mLandRegistry.reset();
 
     return true;
 }
@@ -137,10 +138,11 @@ void PLand::onConfigReload() {
 }
 
 PLand::PLand() : mSelf(*ll::mod::NativeMod::current()) {}
-ll::mod::NativeMod&    PLand::getSelf() const { return mSelf; }
-land::SafeTeleport*    PLand::getSafeTeleport() const { return mSafeTeleport.get(); }
-land::LandScheduler*   PLand::getLandScheduler() const { return mLandScheduler.get(); }
-land::SelectorManager* PLand::getSelectorManager() const { return mSelectorManager.get(); }
+ll::mod::NativeMod& PLand::getSelf() const { return mSelf; }
+SafeTeleport*       PLand::getSafeTeleport() const { return mSafeTeleport.get(); }
+LandScheduler*      PLand::getLandScheduler() const { return mLandScheduler.get(); }
+SelectorManager*    PLand::getSelectorManager() const { return mSelectorManager.get(); }
+LandRegistry*       PLand::getLandRegistry() const { return mLandRegistry.get(); }
 
 
 } // namespace land

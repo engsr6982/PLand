@@ -33,7 +33,7 @@ LD_IMPL_REQUIRE(LandScheduler) {
 
 LandScheduler::LandScheduler() {
     auto* bus = &ll::event::EventBus::getInstance();
-    auto* db  = &LandRegistry::getInstance();
+    auto* db  = PLand::getInstance().getLandRegistry();
 
     ll::coro::keepThis([bus, db, this]() -> ll::coro::CoroTask<> {
         while (GlobalRepeatCoroTaskRunning.load()) {

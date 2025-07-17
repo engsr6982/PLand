@@ -111,7 +111,7 @@ struct OperatorParam {
 };
 static auto const Operator = [](CommandOrigin const& ori, CommandOutput& out, OperatorParam const& param) {
     CHECK_TYPE(ori, out, CommandOriginType::DedicatedServer);
-    auto& db  = LandRegistry::getInstance();
+    auto& db  = *PLand::getInstance().getLandRegistry();
     auto  pls = param.player.results(ori).data;
 
     if (pls->empty()) {
@@ -143,7 +143,7 @@ static auto const Operator = [](CommandOrigin const& ori, CommandOutput& out, Op
 
 static auto const ListOperator = [](CommandOrigin const& ori, CommandOutput& out) {
     CHECK_TYPE(ori, out, CommandOriginType::DedicatedServer);
-    auto pls = LandRegistry::getInstance().getOperators();
+    auto pls = PLand::getInstance().getLandRegistry()->getOperators();
     if (pls.empty()) {
         mc_utils::sendText(out, "当前没有管理员"_tr());
         return;
@@ -186,7 +186,7 @@ static auto const New = [](CommandOrigin const& ori, CommandOutput& out, NewPara
             return;
         }
 
-        auto land = LandRegistry::getInstance().getLandAt(player.getPosition(), player.getDimensionId());
+        auto land = PLand::getInstance().getLandRegistry()->getLandAt(player.getPosition(), player.getDimensionId());
         if (!land) {
             mc_utils::sendText(out, "当前位置没有领地"_trf(player));
             return;
@@ -281,7 +281,7 @@ static auto const Draw = [](CommandOrigin const& ori, CommandOutput& out, DrawPa
     CHECK_TYPE(ori, out, CommandOriginType::Player);
 
     auto& player = *static_cast<Player*>(ori.getEntity());
-    auto& db     = LandRegistry::getInstance();
+    auto& db     = *PLand::getInstance().getLandRegistry();
     auto  handle = DrawHandleManager::getInstance().getOrCreateHandle(player);
 
     switch (param.type) {
@@ -344,7 +344,7 @@ static auto const SetLandTeleportPos = [](CommandOrigin const& ori, CommandOutpu
     CHECK_TYPE(ori, out, CommandOriginType::Player);
     auto& player = *static_cast<Player*>(ori.getEntity());
 
-    auto& db   = LandRegistry::getInstance();
+    auto& db   = *PLand::getInstance().getLandRegistry();
     auto  land = db.getLandAt(player.getPosition(), player.getDimensionId().id);
     if (!land) {
         mc_utils::sendText<mc_utils::LogLevel::Error>(out, "您当前不在领地内"_trf(player));
@@ -392,7 +392,7 @@ static auto const SetLanguage = [](CommandOrigin const& ori, CommandOutput& out)
         auto lang = std::get<std::string>(res->at("lang"));
 
         auto  uuid     = pl.getUuid().asString();
-        auto& db       = LandRegistry::getInstance();
+        auto& db       = *PLand::getInstance().getLandRegistry();
         auto  settings = db.getPlayerSettings(uuid);
         if (!settings) {
             db.setPlayerSettings(uuid, PlayerSettings{});
@@ -409,14 +409,14 @@ static auto const This = [](CommandOrigin const& ori, CommandOutput& out) {
     CHECK_TYPE(ori, out, CommandOriginType::Player);
     auto& player = *static_cast<Player*>(ori.getEntity());
 
-    auto land = LandRegistry::getInstance().getLandAt(player.getPosition(), player.getDimensionId());
+    auto land = PLand::getInstance().getLandRegistry()->getLandAt(player.getPosition(), player.getDimensionId());
     if (!land) {
         mc_utils::sendText<mc_utils::LogLevel::Info>(player, "当前位置没有领地"_trf(player));
         return;
     }
 
     auto uuidStr = player.getUuid().asString();
-    if (!land->isOwner(uuidStr) && !LandRegistry::getInstance().isOperator(uuidStr)) {
+    if (!land->isOwner(uuidStr) && !PLand::getInstance().getLandRegistry()->isOperator(uuidStr)) {
         mc_utils::sendText<mc_utils::LogLevel::Info>(player, "当前位置不是你的领地"_trf(player));
         return;
     }

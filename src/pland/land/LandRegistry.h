@@ -30,8 +30,6 @@ struct PlayerSettings {
 
 
 class LandRegistry final {
-    LandRegistry() = default;
-
     std::unique_ptr<ll::data::KeyValueDB>     mDB;                       // 领地数据库
     std::vector<UUIDs>                        mLandOperators;            // 领地操作员
     std::unordered_map<UUIDs, PlayerSettings> mPlayerSettings;           // 玩家设置
@@ -62,13 +60,10 @@ private: //! private 方法非线程安全
 
 public:
     LD_DISALLOW_COPY_AND_MOVE(LandRegistry);
+    explicit LandRegistry();
+    ~LandRegistry();
 
-    LDNDAPI static LandRegistry& getInstance();
-
-    LDAPI void init();
     LDAPI void save();
-    LDAPI void stopThread();
-
     LDAPI bool save(Land const& land) const;
 
 public:

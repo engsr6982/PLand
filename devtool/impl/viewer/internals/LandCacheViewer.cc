@@ -54,7 +54,7 @@ void LandCacheViewerWindow::handleExportLand(land::SharedLand land) {
 }
 
 void LandCacheViewerWindow::preBuildData() {
-    lands_ = std::move(land::LandRegistry::getInstance().getLandsByOwner());
+    lands_ = land::PLand::getInstance().getLandRegistry()->getLandsByOwner();
 
     auto& playerInfo = ll::service::PlayerInfo::getInstance();
     for (const auto& owner : lands_ | std::views::keys) {
