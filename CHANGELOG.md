@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 领地转让和添加领地成员支持离线玩家添加，添加需要手动输入名称 #77 @yangyangzhong82
 - 实现脏数据计数 #95 @engsr6982
 - 重构经济系统，LegacyMoney 更改为可选依赖 @engsr6982
+- 重构绘制系统，BedrockServerClientInterface 更改为可选依赖 #114 @engsr6982
 - 选择领地表单支持**分页、搜索、过滤** #107 #101 @engsr6982
 - 新增配置项 `land.minSpacingIncludeY` #115 @engsr6982
 - 新增修改默认领地权限的配置选项，由配置项 `defaultperm` 决定 #110 @yangyangzhong82
