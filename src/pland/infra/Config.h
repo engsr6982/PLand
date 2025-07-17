@@ -3,6 +3,7 @@
 #include "pland/Global.h"
 #include "pland/aabb/LandAABB.h"
 #include "pland/economy/EconomySystem.h"
+#include "pland/land/LandPerm.h"
 #include <unordered_set>
 #include <vector>
 
@@ -17,7 +18,7 @@ struct ForbiddenRange {
 };
 
 struct Config {
-    int              version{20};
+    int              version{21};
     ll::io::LogLevel logLevel{ll::io::LogLevel::Info};
 
     EconomyConfig economy;
@@ -70,6 +71,8 @@ struct Config {
             std::vector<ForbiddenRange>   forbiddenRanges;            // 禁止创建领地的区域
             std::map<std::string, double> dimensionPriceCoefficients; // 维度价格系数，例如维度id的1 是1.2倍 2是1.5倍
         } bought;
+
+        LandPermTable defaultperm; // 默认权限
     } land;
 
     struct {
