@@ -34,6 +34,7 @@
 #include "pland/infra/Config.h"
 #include "pland/infra/DataConverter.h"
 #include "pland/infra/DrawHandleManager.h"
+#include "pland/infra/draw/IDrawHandle.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/selector/SelectorManager.h"
 #include "pland/selector/SubLandSelector.h"
@@ -285,7 +286,7 @@ static auto const Draw = [](CommandOrigin const& ori, CommandOutput& out, DrawPa
 
     switch (param.type) {
     case DrawType::Disable: {
-        handle->removeLands();
+        handle->clearLand();
         mc_utils::sendText(out, "领地绘制已关闭"_trf(player));
         break;
     }

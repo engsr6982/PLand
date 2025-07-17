@@ -17,6 +17,7 @@
 #include "pland/gui/form/BackSimpleForm.h"
 #include "pland/infra/Config.h"
 #include "pland/infra/DrawHandleManager.h"
+#include "pland/infra/draw/IDrawHandle.h"
 #include "pland/land/Land.h"
 #include "pland/land/LandEvent.h"
 #include "pland/land/LandRegistry.h"
@@ -202,7 +203,7 @@ void LandManagerGUI::_implRemoveWithOrdinaryOrSubLandGUI(Player& player, SharedL
             }
 
             auto handle = DrawHandleManager::getInstance().getOrCreateHandle(pl);
-            handle->remove(ptr->getId());
+            handle->remove(ptr);
 
             ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, ptr->getId()});
         });
@@ -234,32 +235,16 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, SharedLand const& 
             return;
         }
 
-        std::vector<LandID> drawId;
-        {
-            std::stack<SharedLand> stack;
-            stack.push(ptr);
-            while (!stack.empty()) {
-                SharedLand current = stack.top();
-                stack.pop();
-
-                drawId.push_back(current->getId());
-                if (current->hasSubLand()) {
-                    for (auto& subLand : current->getSubLands()) {
-                        if (subLand) stack.push(subLand);
-                    }
-                }
-            }
-        }
-
         auto result = PLand::getInstance().getLandRegistry()->removeLandAndSubLands(ptr);
         if (!result) {
             economy->reduce(pl, price);
             return;
         }
 
-        auto handle = DrawHandleManager::getInstance().getOrCreateHandle(pl);
-        for (const auto& idToRemove : drawId) {
-            handle->remove(idToRemove);
+        auto subLands = ptr->getSelfAndDescendants();
+        auto handle   = DrawHandleManager::getInstance().getOrCreateHandle(pl);
+        for (const auto& ld : subLands) {
+            handle->remove(ld);
         }
 
         ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, mainLandId});
@@ -285,9 +270,9 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, SharedLand const& 
             return;
         }
 
-        auto landId = ptr->getId();
-        DrawHandleManager::getInstance().getOrCreateHandle(pl)->remove(landId);
-        ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, landId});
+
+        DrawHandleManager::getInstance().getOrCreateHandle(pl)->remove(ptr);
+        ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, ptr->getId()});
     });
 
     fm.sendTo(player);
@@ -318,32 +303,16 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, SharedLand const& ptr
             return;
         }
 
-        std::vector<LandID> drawId;
-        {
-            std::stack<SharedLand> stack;
-            stack.push(ptr);
-            while (!stack.empty()) {
-                SharedLand current = stack.top();
-                stack.pop();
-
-                drawId.push_back(current->getId());
-                if (current->hasSubLand()) {
-                    for (auto& subLand : current->getSubLands()) {
-                        if (subLand) stack.push(subLand);
-                    }
-                }
-            }
-        }
-
         auto result = PLand::getInstance().getLandRegistry()->removeLandAndSubLands(ptr);
         if (!result) {
             economy->reduce(pl, price);
             return;
         }
 
-        auto handle = DrawHandleManager::getInstance().getOrCreateHandle(pl);
-        for (const auto& idToRemove : drawId) {
-            handle->remove(idToRemove);
+        auto subLands = ptr->getSelfAndDescendants();
+        auto handle   = DrawHandleManager::getInstance().getOrCreateHandle(pl);
+        for (const auto& ld : subLands) {
+            handle->remove(ld);
         }
 
         ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, mainLandId});
@@ -369,9 +338,8 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, SharedLand const& ptr
             return;
         }
 
-        auto landId = ptr->getId();
-        DrawHandleManager::getInstance().getOrCreateHandle(pl)->remove(landId);
-        ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, landId});
+        DrawHandleManager::getInstance().getOrCreateHandle(pl)->remove(ptr);
+        ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, ptr->getId()});
     });
 
     fm.sendTo(player);

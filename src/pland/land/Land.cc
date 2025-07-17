@@ -223,6 +223,26 @@ std::unordered_set<SharedLand> Land::getSelfAndAncestors() const {
 
     return parentLands;
 }
+std::unordered_set<SharedLand> Land::getSelfAndDescendants() const {
+    std::unordered_set<SharedLand> descendants;
+
+    std::stack<SharedLand> stack;
+    stack.push(getSelfFromRegistry());
+
+    while (!stack.empty()) {
+        auto current = stack.top();
+        stack.pop();
+
+        descendants.insert(current);
+
+        if (current->hasSubLand()) {
+            for (auto& land : current->getSubLands()) {
+                stack.push(land);
+            }
+        }
+    }
+    return descendants;
+}
 
 
 bool Land::isCollision(BlockPos const& pos, int radius) const {

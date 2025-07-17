@@ -10,9 +10,6 @@ add_repositories("OTOTYAN https://github.com/OEOTYAN/xmake-repo.git")
 add_requires("levilamina 1.3.1", {configs = {target_type = "server"}})
 add_requires("levibuildscript 0.4.0")
 
--- OTOTYAN
-add_requires("bsci 0.1.6")
-
 -- MiracleForest
 add_requires("ilistenattentively 0.6.0")
 
@@ -68,8 +65,7 @@ target("PLand") -- Change this to your mod name.
     add_packages(
         "levilamina",
         "exprtk",
-        "ilistenattentively",
-        "bsci"
+        "ilistenattentively"
     )
 
     set_exceptions("none") -- To avoid conflicts with /EHa.

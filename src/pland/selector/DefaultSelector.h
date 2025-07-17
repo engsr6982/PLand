@@ -1,16 +1,16 @@
 #pragma once
-#include "pland/land/Land.h"
 #include "pland/selector/ISelector.h"
 
 
 namespace land {
 
+class Land;
 
 class DefaultSelector final : public ISelector {
 public:
     LDAPI explicit DefaultSelector(Player& player, bool is3D = false);
 
-    LDNDAPI SharedLand newLand() const;
+    LDNDAPI std::shared_ptr<Land> newLand() const;
 };
 
 

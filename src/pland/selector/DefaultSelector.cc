@@ -1,5 +1,6 @@
 #pragma once
 #include "DefaultSelector.h"
+#include "mc/world/actor/player/Player.h"
 #include "pland/land/Land.h"
 #include "pland/selector/DefaultSelector.h"
 #include "pland/selector/ISelector.h"
