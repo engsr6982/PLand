@@ -46,3 +46,12 @@ public:
 
 
 } // namespace land
+
+
+// Fix std::unordered_map<land::GeoId, ...>
+namespace std {
+template <>
+struct hash<land::GeoId> {
+    size_t operator()(land::GeoId const& id) const { return std::hash<uint64>()(id.value); }
+};
+} // namespace std

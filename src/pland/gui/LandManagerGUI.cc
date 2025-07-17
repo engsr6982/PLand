@@ -202,7 +202,7 @@ void LandManagerGUI::_implRemoveWithOrdinaryOrSubLandGUI(Player& player, SharedL
                 return;
             }
 
-            auto handle = DrawHandleManager::getInstance().getOrCreateHandle(pl);
+            auto handle = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(pl);
             handle->remove(ptr);
 
             ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, ptr->getId()});
@@ -242,7 +242,7 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, SharedLand const& 
         }
 
         auto subLands = ptr->getSelfAndDescendants();
-        auto handle   = DrawHandleManager::getInstance().getOrCreateHandle(pl);
+        auto handle   = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(pl);
         for (const auto& ld : subLands) {
             handle->remove(ld);
         }
@@ -271,7 +271,7 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, SharedLand const& 
         }
 
 
-        DrawHandleManager::getInstance().getOrCreateHandle(pl)->remove(ptr);
+        PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(pl)->remove(ptr);
         ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, ptr->getId()});
     });
 
@@ -310,7 +310,7 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, SharedLand const& ptr
         }
 
         auto subLands = ptr->getSelfAndDescendants();
-        auto handle   = DrawHandleManager::getInstance().getOrCreateHandle(pl);
+        auto handle   = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(pl);
         for (const auto& ld : subLands) {
             handle->remove(ld);
         }
@@ -338,7 +338,7 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, SharedLand const& ptr
             return;
         }
 
-        DrawHandleManager::getInstance().getOrCreateHandle(pl)->remove(ptr);
+        PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(pl)->remove(ptr);
         ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, ptr->getId()});
     });
 

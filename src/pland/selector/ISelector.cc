@@ -3,6 +3,7 @@
 #include "mc/world/level/Level.h"
 #include "mc/world/level/dimension/Dimension.h"
 #include "pland/Global.h"
+#include "pland/PLand.h"
 #include "pland/aabb/LandAABB.h"
 #include "pland/gui/NewLandGUI.h"
 #include "pland/infra/Config.h"
@@ -35,7 +36,7 @@ ISelector::~ISelector() {
         return;
     }
     if (mDrawedRange) {
-        DrawHandleManager::getInstance().getOrCreateHandle(*player)->remove(mDrawedRange);
+        PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(*player)->remove(mDrawedRange);
     }
 }
 
@@ -185,7 +186,7 @@ void ISelector::onPointConfirmed() {
         return;
     }
 
-    auto handle = DrawHandleManager::getInstance().getOrCreateHandle(*player);
+    auto handle = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(*player);
 
     if (mDrawedRange) {
         handle->remove(mDrawedRange);

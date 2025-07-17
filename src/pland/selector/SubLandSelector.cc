@@ -1,5 +1,6 @@
 #include "SubLandSelector.h"
 #include "mc/deps/core/math/Color.h"
+#include "pland/PLand.h"
 #include "pland/infra/DrawHandleManager.h"
 #include "pland/infra/draw/IDrawHandle.h"
 #include "pland/land/Land.h"
@@ -12,7 +13,7 @@ namespace land {
 SubLandSelector::SubLandSelector(Player& player, SharedLand parent)
 : ISelector(player, parent->getDimensionId(), true) {
     mParentLand        = parent;
-    mParentRangeDrawId = DrawHandleManager::getInstance().getOrCreateHandle(player)->draw(
+    mParentRangeDrawId = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(player)->draw(
         parent->getAABB(),
         parent->getDimensionId(),
         mce::Color::RED()
@@ -26,7 +27,7 @@ SubLandSelector::~SubLandSelector() {
     }
 
     if (mParentRangeDrawId) {
-        DrawHandleManager::getInstance().getOrCreateHandle(*player)->remove(mParentRangeDrawId);
+        PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(*player)->remove(mParentRangeDrawId);
     }
 }
 

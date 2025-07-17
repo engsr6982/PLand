@@ -4,6 +4,7 @@
 #include "ll/api/mod/NativeMod.h"
 
 #include "pland/hooks/EventListener.h"
+#include "pland/infra/DrawHandleManager.h"
 #include "pland/infra/SafeTeleport.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/land/LandScheduler.h"
@@ -35,19 +36,21 @@ public: /* public */
 
     LDAPI void onConfigReload();
 
-    LDNDAPI SafeTeleport*    getSafeTeleport() const;
-    LDNDAPI LandScheduler*   getLandScheduler() const;
-    LDNDAPI SelectorManager* getSelectorManager() const;
-    LDNDAPI LandRegistry*    getLandRegistry() const;
+    LDNDAPI SafeTeleport*      getSafeTeleport() const;
+    LDNDAPI LandScheduler*     getLandScheduler() const;
+    LDNDAPI SelectorManager*   getSelectorManager() const;
+    LDNDAPI LandRegistry*      getLandRegistry() const;
+    LDNDAPI DrawHandleManager* getDrawHandleManager() const;
 
 private:
     ll::mod::NativeMod& mSelf;
 
-    std::unique_ptr<LandRegistry>    mLandRegistry;
-    std::unique_ptr<EventListener>   mEventListener;
-    std::unique_ptr<LandScheduler>   mLandScheduler;
-    std::unique_ptr<SafeTeleport>    mSafeTeleport;
-    std::unique_ptr<SelectorManager> mSelectorManager;
+    std::unique_ptr<LandRegistry>      mLandRegistry;
+    std::unique_ptr<EventListener>     mEventListener;
+    std::unique_ptr<LandScheduler>     mLandScheduler;
+    std::unique_ptr<SafeTeleport>      mSafeTeleport;
+    std::unique_ptr<SelectorManager>   mSelectorManager;
+    std::unique_ptr<DrawHandleManager> mDrawHandleManager;
 };
 
 } // namespace land

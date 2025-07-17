@@ -282,7 +282,7 @@ static auto const Draw = [](CommandOrigin const& ori, CommandOutput& out, DrawPa
 
     auto& player = *static_cast<Player*>(ori.getEntity());
     auto& db     = *PLand::getInstance().getLandRegistry();
-    auto  handle = DrawHandleManager::getInstance().getOrCreateHandle(player);
+    auto  handle = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(player);
 
     switch (param.type) {
     case DrawType::Disable: {

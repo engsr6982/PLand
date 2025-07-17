@@ -1,5 +1,6 @@
 #include "ChangeLandRangeSelector.h"
 #include "mc/deps/core/math/Color.h"
+#include "pland/PLand.h"
 #include "pland/infra/DrawHandleManager.h"
 #include "pland/infra/draw/IDrawHandle.h"
 #include "pland/land/Land.h"
@@ -11,7 +12,7 @@ namespace land {
 
 ChangeLandRangeSelector::ChangeLandRangeSelector(Player& player, SharedLand land)
 : ISelector(player, land->getDimensionId(), land->is3D()) {
-    mOldRangeDrawId = DrawHandleManager::getInstance().getOrCreateHandle(player)->draw(
+    mOldRangeDrawId = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(player)->draw(
         land->getAABB(),
         land->getDimensionId(),
         mce::Color::ORANGE()
@@ -25,7 +26,7 @@ ChangeLandRangeSelector::~ChangeLandRangeSelector() {
     }
 
     if (mOldRangeDrawId) {
-        DrawHandleManager::getInstance().getOrCreateHandle(*player)->remove(mOldRangeDrawId);
+        PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(*player)->remove(mOldRangeDrawId);
     }
 }
 

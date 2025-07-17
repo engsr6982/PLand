@@ -50,7 +50,7 @@ void EventListener::registerLLSessionListeners() {
 
             GlobalPlayerLocaleCodeCached.erase(uuidStr);
             land::PLand::getInstance().getSelectorManager()->stopSelection(uuid);
-            DrawHandleManager::getInstance().removeHandle(player);
+            PLand::getInstance().getDrawHandleManager()->removeHandle(player);
         })
     );
 }

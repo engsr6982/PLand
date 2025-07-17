@@ -11,17 +11,17 @@ class IDrawHandle;
 
 
 class DrawHandleManager final {
+    std::unordered_map<UUIDm, std::unique_ptr<IDrawHandle>> mDrawHandles;
+    bool const                                              mBsciAvailable{false};
+
+    std::unique_ptr<IDrawHandle> createHandle() const;
+
 public:
     LD_DISALLOW_COPY_AND_MOVE(DrawHandleManager);
-
-private:
     explicit DrawHandleManager();
-
-    std::unordered_map<UUIDm, std::unique_ptr<IDrawHandle>> mDrawHandles;
+    ~DrawHandleManager();
 
 public:
-    LDNDAPI static DrawHandleManager& getInstance();
-
     LDNDAPI IDrawHandle* getOrCreateHandle(Player& player);
 
     LDAPI void removeHandle(Player& player);

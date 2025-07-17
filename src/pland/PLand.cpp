@@ -13,6 +13,7 @@
 #include "pland/economy/EconomySystem.h"
 #include "pland/hooks/EventListener.h"
 #include "pland/infra/Config.h"
+#include "pland/infra/DrawHandleManager.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/land/LandScheduler.h"
 #include "pland/selector/SelectorManager.h"
@@ -75,10 +76,11 @@ bool PLand::load() {
 bool PLand::enable() {
     land::LandCommand::setup();
 
-    this->mLandScheduler   = std::make_unique<land::LandScheduler>();
-    this->mEventListener   = std::make_unique<land::EventListener>();
-    this->mSafeTeleport    = std::make_unique<land::SafeTeleport>();
-    this->mSelectorManager = std::make_unique<land::SelectorManager>();
+    this->mLandScheduler     = std::make_unique<land::LandScheduler>();
+    this->mEventListener     = std::make_unique<land::EventListener>();
+    this->mSafeTeleport      = std::make_unique<land::SafeTeleport>();
+    this->mSelectorManager   = std::make_unique<land::SelectorManager>();
+    this->mDrawHandleManager = std::make_unique<land::DrawHandleManager>();
 
 
 #ifdef LD_TEST
@@ -109,6 +111,7 @@ bool PLand::disable() {
     mSafeTeleport.reset();
     mSelectorManager.reset();
     mLandRegistry.reset();
+    mDrawHandleManager.reset();
 
     return true;
 }
@@ -140,6 +143,7 @@ SafeTeleport*       PLand::getSafeTeleport() const { return mSafeTeleport.get();
 LandScheduler*      PLand::getLandScheduler() const { return mLandScheduler.get(); }
 SelectorManager*    PLand::getSelectorManager() const { return mSelectorManager.get(); }
 LandRegistry*       PLand::getLandRegistry() const { return mLandRegistry.get(); }
+DrawHandleManager*  PLand::getDrawHandleManager() const { return mDrawHandleManager.get(); }
 
 
 } // namespace land
