@@ -895,15 +895,25 @@ EventListener::EventListener() {
 
             auto pistonLand = db->getLandAt(piston, dimid);
             auto pushLand   = db->getLandAt(push, dimid);
-            if ((!pistonLand &&                                      // 活塞所在位置没有领地
-                 pushLand &&                                         // 被推动的位置有领地
-                 !pushLand->getPermTable().allowPistonPushOnBoundary // 被推动的位置领地不允许活塞在边界推动
-                 && (pushLand->getAABB().isOnOuterBoundary(piston) || pushLand->getAABB().isOnInnerBoundary(push))
-                ) // 被推动的位置领地在边界上 (活塞在边界或边界外，被推的方块在边界内)
-                || (pistonLand && pushLand && pistonLand != pushLand
-                ) // 活塞和被推动的位置不在同一个领地 (例如：父子领地/无间距领地)
-            ) {
+
+            // 活塞和被推动的方块都在领地内
+            if (pistonLand && pushLand) {
+                // 如果是同一个领地，或者两个相邻领地都允许活塞推动，则放行
+                if (pistonLand == pushLand || (pistonLand->getPermTable().allowPistonPushOnBoundary && pushLand->getPermTable().allowPistonPushOnBoundary)) {
+                    return;
+                }
+                // 否则，取消事件
                 ev.cancel();
+                return;
+            }
+
+            // 活塞在领地外，被推动的方块在领地内
+            if (!pistonLand && pushLand) {
+                // 如果被推动的领地不允许活塞在边界推动，并且活塞或被推动的方块在领地边界上，则取消事件
+                if (!pushLand->getPermTable().allowPistonPushOnBoundary && (pushLand->getAABB().isOnOuterBoundary(piston) || pushLand->getAABB().isOnInnerBoundary(push))) {
+                    ev.cancel();
+                    return;
+                }
             }
         });
     });
