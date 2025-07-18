@@ -48,10 +48,9 @@ enum class LandPermType : int {
     Guest,        // 访客
 };
 
-extern std::atomic<bool> GlobalRepeatCoroTaskRunning;
-
 extern std::unordered_map<std::string, std::string> GlobalPlayerLocaleCodeCached;
-LDNDAPI extern std::string GetPlayerLocaleCodeFromSettings(Player& player); // PLand::getInstance().getPlayerLocaleCode
+LDNDAPI extern std::string                          GetPlayerLocaleCodeFromSettings(Player& player
+                         ); // PLand::getInstance().getLandRegistry()->getPlayerLocaleCode
 
 
 inline int constexpr GlobalSubLandMaxNestedLevel = 16; // 子领地最大嵌套层数
@@ -63,7 +62,7 @@ using Result = std::expected<T, E>;
 } // namespace land
 
 
-// ""_trf(Player) => GetPlayerLocaleCodeFromSettings => PLand::getPlayerSettings
+// ""_trf(Player) => GetPlayerLocaleCodeFromSettings => LandRegistry::getPlayerSettings
 namespace ll::inline literals::inline i18n_literals {
 template <LL_I18N_STRING_LITERAL_TYPE Fmt>
 [[nodiscard]] constexpr auto operator""_trf() {

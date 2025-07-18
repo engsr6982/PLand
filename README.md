@@ -26,6 +26,44 @@
 
 > 更多内容，请移步文档站：https://engsr6982.github.io/PLand/
 
+## 工程结构
+
+```bash
+C:\PLand
+├─assets                      # 插件资源文件（语言、文本）
+│  └─lang                     # 多语言支持的 JSON 语言包
+│
+├─devtool                     # 开发者工具模块
+│  ├─components               # 封装的 ImGUI 可复用组件
+│  ├─deps                     # 工具内部使用的第三方库
+│  └─impl                     # 工具功能实现
+│      ├─helper               # 辅助功能页面
+│      └─viewer               # 领地可视化查看界面
+│          └─internals        # Viewer 的内部状态/数据模型
+│
+├─docs                        # 项目文档
+│  ├─dev                      # 开发者文档
+│  └─md                       # 用户文档
+│
+├─scripts                     # 构建辅助脚本
+│
+├─src
+│  └─pland
+│      ├─aabb                 # 领地空间计算（AABB、坐标等）
+│      ├─command              # Minecraft 命令注册与处理逻辑
+│      ├─economy              # 经济系统整合（价格逻辑、支付对接）
+│      ├─gui                  # 表单式玩家交互界面
+│      │  └─form              # 通用表单组件封装（分页、返回等）
+│      ├─hooks                # 权限钩子/事件拦截
+│      ├─infra                # 基础设施（配置、工具类、绘制支持等）
+│      ├─land                 # 核心业务：Land 实体、事件、注册表等
+│      ├─mod                  # 插件入口
+│      ├─selector             # 区域选择器
+│      └─utils                # 通用工具模块
+│
+└─test                        # 测试代码
+```
+
 ## 开源协议
 
 本项目采用 [AGPL-3.0](LICENSE) 开源协议。
@@ -48,3 +86,7 @@
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request，共同完善 PLand。
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=engsr6982/PLand&type=Date)](https://star-history.com/#engsr6982/PLand&Date)

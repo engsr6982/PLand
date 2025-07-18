@@ -9,10 +9,6 @@ add_repositories("OTOTYAN https://github.com/OEOTYAN/xmake-repo.git")
 -- LeviMc(LiteLDev)
 add_requires("levilamina 1.3.1", {configs = {target_type = "server"}})
 add_requires("levibuildscript 0.4.0")
-add_requires("legacymoney 0.9.0-rc.1")
-
--- OTOTYAN
-add_requires("bsci 0.1.6")
 
 -- MiracleForest
 add_requires("ilistenattentively 0.6.0")
@@ -65,13 +61,11 @@ target("PLand") -- Change this to your mod name.
     add_defines("NOMINMAX", "UNICODE", "LDAPI_EXPORT", "_HAS_CXX23=1")
     add_files("src/**.cpp", "src/**.cc")
     add_includedirs("src")
-    add_headerfiles("src/pland/(**.hpp)", "src/pland/(**.h)")
+    add_headerfiles("src/pland/(**.h)")
     add_packages(
         "levilamina",
         "exprtk",
-        "ilistenattentively",
-        "legacymoney",
-        "bsci"
+        "ilistenattentively"
     )
 
     set_exceptions("none") -- To avoid conflicts with /EHa.

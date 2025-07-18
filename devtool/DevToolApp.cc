@@ -1,5 +1,5 @@
 #include "DevToolApp.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/PLand.h"
 #include <GL/glew.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -23,7 +23,7 @@ void DevToolApp::show() const {
     if (glfwWindow_) {
         glfwShowWindow(glfwWindow_);
     } else {
-        mod::ModEntry::getInstance().getSelf().getLogger().error("DevTools window not initialized");
+        land::PLand::getInstance().getSelf().getLogger().error("DevTools window not initialized");
     }
 }
 
@@ -87,7 +87,7 @@ void DevToolApp::checkAndUpdateScale() {
         prevScale   = xScale;
         ImGuiIO& io = ImGui::GetIO();
 
-        auto fontPath = mod::ModEntry::getInstance().getSelf().getDataDir() / "fonts" / "font.ttf";
+        auto fontPath = land::PLand::getInstance().getSelf().getDataDir() / "fonts" / "font.ttf";
         if (!std::filesystem::exists(fontPath)) {
             this->appendError(fmt::format(
                 "由于字体文件 ( {} ) 不存在\n这可能导致部分模块字体显示异常\n\n建议下载 maple-font 字体的 "
@@ -126,7 +126,8 @@ void DevToolApp::initImGuiAndOpenGlWithGLFW() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     // 设置窗口默认是否可见
 #ifdef DEBUG
-    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+    // glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 #else
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 #endif
@@ -135,7 +136,7 @@ void DevToolApp::initImGuiAndOpenGlWithGLFW() {
         float        xScale, yScale;
         GLFWmonitor* monitor = glfwGetPrimaryMonitor(); // 获取主显示器
         if (!monitor) {
-            mod::ModEntry::getInstance().getSelf().getLogger().error("Failed to get primary monitor");
+            land::PLand::getInstance().getSelf().getLogger().error("Failed to get primary monitor");
             return;
         }
         glfwGetMonitorContentScale(monitor, &xScale, &yScale); // 获取主显示器缩放比例
@@ -147,7 +148,7 @@ void DevToolApp::initImGuiAndOpenGlWithGLFW() {
             nullptr
         );
         if (!this->glfwWindow_) {
-            mod::ModEntry::getInstance().getSelf().getLogger().error("Failed to create GLFW window");
+            land::PLand::getInstance().getSelf().getLogger().error("Failed to create GLFW window");
             return;
         }
 
@@ -156,7 +157,7 @@ void DevToolApp::initImGuiAndOpenGlWithGLFW() {
         glfwSwapInterval(1);                                                         // 设置垂直同步
 
         if (glewInit() != GLEW_OK) {
-            mod::ModEntry::getInstance().getSelf().getLogger().error("Failed to initialize GLEW");
+            land::PLand::getInstance().getSelf().getLogger().error("Failed to initialize GLEW");
 
             glfwDestroyWindow(this->glfwWindow_);
             glfwTerminate(); // 终止GLFW
@@ -257,7 +258,7 @@ void DevToolApp::postTick() const {
 namespace internals {
 
 void handleGlfwError(int error, const char* description) {
-    mod::ModEntry::getInstance().getSelf().getLogger().error("GLFW Error: {}: {}", error, description);
+    land::PLand::getInstance().getSelf().getLogger().error("GLFW Error: {}: {}", error, description);
 }
 
 void handleWindowClose(GLFWwindow* window) {

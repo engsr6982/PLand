@@ -2,26 +2,26 @@
 #include "components/CodeEditor.h"
 #include "components/IComponent.h"
 #include "pland/Global.h"
-#include "pland/LandData.h"
+#include "pland/land/Land.h"
 
 namespace devtool::internals {
 
-class LandDataEditor : public CodeEditor {
-    land::LandData_wptr land_;
+class LandEditor : public CodeEditor {
+    land::WeakLand land_;
 
     friend class LandCacheViewerWindow;
 
 public:
-    explicit LandDataEditor(land::LandData_sptr land);
+    explicit LandEditor(land::SharedLand land);
 
     void renderMenuElement() override;
 };
 
 class LandCacheViewerWindow : public IWindow {
-    std::unordered_map<land::UUIDs, std::unordered_set<land::LandData_sptr>> lands_;     // 领地缓存
-    std::unordered_map<land::UUIDs, std::string>                             realNames_; // 玩家名缓存
-    std::unordered_map<land::UUIDs, bool>                                    isShow_;    // 是否显示该玩家的领地
-    std::unordered_map<land::LandID, std::unique_ptr<LandDataEditor>>        editors_;   // 领地数据编辑器
+    std::unordered_map<land::UUIDs, std::unordered_set<land::SharedLand>> lands_;     // 领地缓存
+    std::unordered_map<land::UUIDs, std::string>                          realNames_; // 玩家名缓存
+    std::unordered_map<land::UUIDs, bool>                                 isShow_;    // 是否显示该玩家的领地
+    std::unordered_map<land::LandID, std::unique_ptr<LandEditor>>         editors_;   // 领地数据编辑器
 
     bool showAllPlayerLand_{true}; // 是否显示所有玩家的领地
     bool showOrdinaryLand_{true};  // 是否显示普通领地
@@ -35,13 +35,13 @@ public:
     explicit LandCacheViewerWindow();
 
     enum Buttons {
-        EditLandData,  // 编辑领地数据
-        ExportLandData // 导出领地数据
+        EditLand,  // 编辑领地数据
+        ExportLand // 导出领地数据
     };
-    void handleButtonClicked(Buttons bt, land::LandData_sptr land);
+    void handleButtonClicked(Buttons bt, land::SharedLand land);
 
-    void handleEditLandData(land::LandData_sptr land);
-    void handleExportLandData(land::LandData_sptr land);
+    void handleEditLand(land::SharedLand land);
+    void handleExportLand(land::SharedLand land);
 
     void renderCacheLand(); // 渲染缓存的领地
 

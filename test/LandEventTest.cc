@@ -1,17 +1,16 @@
-#include "pland/LandEvent.h"
+#include "pland/land/LandEvent.h"
+#include "TestMain.h"
 #include "ll/api/event/EventBus.h"
 #include "ll/api/event/ListenerBase.h"
-#include "pland/mod/ModEntry.h"
-
-#include "LandEventTest.h"
+#include "pland/PLand.h"
 
 namespace test {
 
 std::vector<ll::event::ListenerPtr> mLandEventListeners;
 
-void SetupEventListener() {
+void TestMain::_setupLandEventTest() {
     auto& bus    = ll::event::EventBus::getInstance();
-    auto  logger = &mod::ModEntry::getInstance().getSelf().getLogger();
+    auto  logger = &land::PLand::getInstance().getSelf().getLogger();
 
     mLandEventListeners = {
         bus.emplaceListener<land::PlayerAskCreateLandBeforeEvent>([logger](land::PlayerAskCreateLandBeforeEvent& ev) {
@@ -35,7 +34,7 @@ void SetupEventListener() {
             logger->debug(
                 "[Test] PlayerBuyLandAfterEvent - Player: {}, LandID: {}",
                 ev.getPlayer().getRealName(),
-                ev.getLandData()->getLandID()
+                ev.getLand()->getId()
             );
         }),
         bus.emplaceListener<land::PlayerEnterLandEvent>([logger](land::PlayerEnterLandEvent& ev) {
@@ -87,7 +86,7 @@ void SetupEventListener() {
             logger->debug(
                 "[Test] LandOwnerChangeBeforeEvent - Player: {}, NewOwner: {}, LandID: {}",
                 ev.getPlayer().getRealName(),
-                ev.getNewOwner().getRealName(),
+                ev.getNewOwner(),
                 ev.getLandID()
             );
         }),
@@ -95,7 +94,7 @@ void SetupEventListener() {
             logger->debug(
                 "[Test] LandOwnerChangeAfterEvent - Player: {}, NewOwner: {}, LandID: {}",
                 ev.getPlayer().getRealName(),
-                ev.getNewOwner().getRealName(),
+                ev.getNewOwner(),
                 ev.getLandID()
             );
         }),
@@ -103,7 +102,7 @@ void SetupEventListener() {
             logger->debug(
                 "[Test] LandRangeChangeBeforeEvent - Player: {}, LandID: {}, NeedPay: {}, RefundPrice: {}",
                 ev.getPlayer().getRealName(),
-                ev.getLandData()->getLandID(),
+                ev.getLand()->getId(),
                 ev.getNeedPay(),
                 ev.getRefundPrice()
             );
@@ -112,7 +111,7 @@ void SetupEventListener() {
             logger->debug(
                 "[Test] LandRangeChangeAfterEvent - Player: {}, LandID: {}, NeedPay: {}, RefundPrice: {}",
                 ev.getPlayer().getRealName(),
-                ev.getLandData()->getLandID(),
+                ev.getLand()->getId(),
                 ev.getNeedPay(),
                 ev.getRefundPrice()
             );

@@ -7,11 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.10.1]
+## [0.11.0]
 
 ### 🐛 问题修复
 
 - 修复领地重新选区购买表单价格显示错误 @engsr6982
+- 修复未设置领地传送点进行跨纬度传送失败 #106 @engsr6982
+- 修复领地最小间距未生效问题 #115 @engsr6982
+- 修复领地边界活塞权限的判断问题 #119 @yangyangzhong82
+- 修复子领地创建时高度判断的错误 #117 @yangyangzhong82
+
+### ✨ 新增功能
+
+- 管理 GUI 支持分页 #107 @engsr6982
+- 领地转让和添加领地成员支持离线玩家添加，添加需要手动输入名称 #77 @yangyangzhong82
+- 实现脏数据计数 #95 @engsr6982
+- 重构经济系统，LegacyMoney 更改为可选依赖 @engsr6982
+- 重构绘制系统，BedrockServerClientInterface 更改为可选依赖 #114 @engsr6982
+- 选择领地表单支持**分页、搜索、过滤** #107 #101 @engsr6982
+- 新增配置项 `land.minSpacingIncludeY` #115 @engsr6982
+- 新增修改默认领地权限的配置选项，由配置项 `defaultperm` 决定 #110 @yangyangzhong82
+
+### 🧹 其他改动
+
+- 调整工程结构并重构代码 #111 @engsr6982
+- 调整默认配置文件 #104 @yangyangzhong82
+- 抽离领地创建逻辑，并改进错误提示 #102 @engsr6982
 
 ## [0.10.0] - 2025-6-18
 
@@ -239,7 +260,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- 修复 `ActorHurtEvent` `ActorRideEvent` `FarmDecayEvent` `MobHurtEffectEvent` `PressurePlateTriggerEvent` `ProjectileSpawnEvent` `RedstoneUpdateEvent` 事件意外拦截领地外事件。
+- 修复 `ActorHurtEvent` `ActorRideEvent` `FarmDecayEvent` `MobHurtEffectEvent` `PressurePlateTriggerEvent`
+  `ProjectileSpawnEvent` `RedstoneUpdateEvent` 事件意外拦截领地外事件。
 
 ## [0.3.0] - 2024-12-15
 

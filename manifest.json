@@ -6,7 +6,9 @@
     "dependencies": [
         {
             "name": "iListenAttentively"
-        },
+        }
+    ],
+    "optionalDependencies": [
         {
             "name": "LegacyMoney"
         },

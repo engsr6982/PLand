@@ -1,7 +1,7 @@
 #include "LandCacheViewer.h"
 #include "ll/api/service/PlayerInfo.h"
 #include "pland/PLand.h"
-#include "pland/mod/ModEntry.h"
+#include "pland/land/LandRegistry.h"
 
 
 #include <imgui_internal.h>
@@ -23,38 +23,38 @@ void LandCacheViewer::tick() { window_->tick(); }
 // LandCacheViewerWindow
 LandCacheViewerWindow::LandCacheViewerWindow() { this->setOpenFlag(true); }
 
-void LandCacheViewerWindow::handleButtonClicked(Buttons bt, land::LandData_sptr land) {
+void LandCacheViewerWindow::handleButtonClicked(Buttons bt, land::SharedLand land) {
     switch (bt) {
-    case EditLandData:
-        handleEditLandData(land);
+    case EditLand:
+        handleEditLand(land);
         break;
-    case ExportLandData:
-        handleExportLandData(land);
+    case ExportLand:
+        handleExportLand(land);
         break;
     }
 }
-void LandCacheViewerWindow::handleEditLandData(land::LandData_sptr land) {
-    auto id = land->getLandID();
+void LandCacheViewerWindow::handleEditLand(land::SharedLand land) {
+    auto id = land->getId();
     if (!editors_.contains(id)) {
-        editors_.emplace(id, std::make_unique<LandDataEditor>(land));
+        editors_.emplace(id, std::make_unique<LandEditor>(land));
     }
     auto const& editor = editors_[id];
     editor->setOpenFlag(!editor->isOpen());
 }
-void LandCacheViewerWindow::handleExportLandData(land::LandData_sptr land) {
+void LandCacheViewerWindow::handleExportLand(land::SharedLand land) {
     namespace fs = std::filesystem;
-    auto dir     = mod::ModEntry::getInstance().getSelf().getModDir() / "devtool_exports";
+    auto dir     = land::PLand::getInstance().getSelf().getModDir() / "devtool_exports";
     if (!fs::exists(dir)) {
         fs::create_directory(dir);
     }
-    auto          file = dir / fmt::format("land_{}.json", land->mLandID);
+    auto          file = dir / fmt::format("land_{}.json", land->getId());
     std::ofstream ofs(file);
-    ofs << land->toJSON().dump(2);
+    ofs << land->dump().dump(2);
     ofs.close();
 }
 
 void LandCacheViewerWindow::preBuildData() {
-    lands_ = std::move(land::PLand::getInstance().getLandsByOwner());
+    lands_ = land::PLand::getInstance().getLandRegistry()->getLandsByOwner();
 
     auto& playerInfo = ll::service::PlayerInfo::getInstance();
     for (const auto& owner : lands_ | std::views::keys) {
@@ -164,19 +164,19 @@ void LandCacheViewerWindow::renderCacheLand() {
                 || (!showMixLand_ && ld->isMixLand()) || (!showSubLand_ && ld->isSubLand())) {
                 continue;
             }
-            if ((dimensionFilter_ != -1 && ld->mLandDimid != dimensionFilter_)
-                || (idFilter_ != -1 && ld->mLandID != idFilter_)) {
+            if ((dimensionFilter_ != -1 && ld->getDimensionId() != dimensionFilter_)
+                || (idFilter_ != -1 && ld->getId() != idFilter_)) {
                 continue;
             }
 
             // 渲染表行
             ImGui::TableNextRow();
             ImGui::TableNextColumn(); // ID
-            ImGui::Text("%llu", ld->mLandID);
+            ImGui::Text("%llu", ld->getId());
             ImGui::TableNextColumn(); // 玩家名
             ImGui::Text("%s", name.c_str());
             ImGui::TableNextColumn(); // 名称
-            ImGui::Text("%s", ld->getLandName().c_str());
+            ImGui::Text("%s", ld->getName().c_str());
             ImGui::TableNextColumn(); // 类别
             ImGui::Text(
                 "%s",
@@ -187,20 +187,20 @@ void LandCacheViewerWindow::renderCacheLand() {
                                      : "未知"
             );
             ImGui::TableNextColumn(); // 维度
-            ImGui::Text("%i", ld->mLandDimid);
+            ImGui::Text("%i", ld->getDimensionId());
             ImGui::TableNextColumn(); // 坐标
-            ImGui::Text("%s", ld->mPos.toString().c_str());
+            ImGui::Text("%s", ld->getAABB().toString().c_str());
             ImGui::TableNextColumn(); // 操作
-            if (ImGui::Button(fmt::format("编辑数据##{}", ld->mLandID).c_str())) {
-                handleButtonClicked(EditLandData, ld);
+            if (ImGui::Button(fmt::format("编辑数据##{}", ld->getId()).c_str())) {
+                handleButtonClicked(EditLand, ld);
             }
             ImGui::SameLine();
-            if (ImGui::Button(fmt::format("复制##{}", ld->mLandID).c_str())) {
-                ImGui::SetClipboardText(ld->toJSON().dump().c_str());
+            if (ImGui::Button(fmt::format("复制##{}", ld->getId()).c_str())) {
+                ImGui::SetClipboardText(ld->dump().dump().c_str());
             }
             ImGui::SameLine();
-            if (ImGui::Button(fmt::format("导出##{}", ld->mLandID).c_str())) {
-                handleButtonClicked(ExportLandData, ld);
+            if (ImGui::Button(fmt::format("导出##{}", ld->getId()).c_str())) {
+                handleButtonClicked(ExportLand, ld);
             }
             if (ImGui::IsItemHovered()) ImGui::SetItemTooltip("将当前领地数据导出到 pland/devtool_exports 下");
         }
@@ -230,24 +230,24 @@ void LandCacheViewerWindow::tick() {
 }
 
 
-// LandDataEditor
-LandDataEditor::LandDataEditor(land::LandData_sptr land) : CodeEditor(land->toJSON().dump(4)), land_(land) {}
+// LandEditor
+LandEditor::LandEditor(land::SharedLand land) : CodeEditor(land->dump().dump(4)), land_(land) {}
 
-void LandDataEditor::renderMenuElement() {
+void LandEditor::renderMenuElement() {
     CodeEditor::renderMenuElement();
-    if (ImGui::BeginMenu("LandData")) {
+    if (ImGui::BeginMenu("Land")) {
         if (ImGui::Button("写入")) {
             auto land = land_.lock();
             if (!land) {
                 return;
             }
-            auto backup = land->toJSON();
+            auto backup = land->dump();
             try {
                 auto json = nlohmann::json::parse(editor_.GetText());
                 land->load(json);
             } catch (...) {
                 land->load(backup);
-                mod::ModEntry::getInstance().getSelf().getLogger().error("Failed to parse json");
+                land::PLand::getInstance().getSelf().getLogger().error("Failed to parse json");
             }
         }
         if (ImGui::IsItemHovered()) {
@@ -259,7 +259,7 @@ void LandDataEditor::renderMenuElement() {
             if (!land) {
                 return;
             }
-            auto json = land->toJSON();
+            auto json = land->dump();
             this->editor_.SetText(json.dump(4));
         }
         if (ImGui::IsItemHovered()) {
