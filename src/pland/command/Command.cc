@@ -10,6 +10,7 @@
 #include "mc/nbt/CompoundTag.h"
 #include "mc/network/ServerNetworkHandler.h"
 #include "mc/network/packet/SetTimePacket.h"
+#include "mc/platform/UUID.h"
 #include "mc/server/commands/CommandOriginType.h"
 #include "mc/server/commands/CommandPositionFloat.h"
 #include "mc/server/commands/CommandSelector.h"
@@ -40,6 +41,7 @@
 #include "pland/selector/SubLandSelector.h"
 #include "pland/utils/McUtils.h"
 #include "pland/utils/Utils.h"
+#include <algorithm>
 #include <filesystem>
 #include <ll/api/command/Command.h>
 #include <ll/api/command/CommandHandle.h>
@@ -67,6 +69,7 @@
 #include <mc/world/level/GameType.h>
 #include <memory>
 #include <sstream>
+#include <vector>
 
 
 #ifdef LD_DEVTOOL
@@ -143,7 +146,7 @@ static auto const Operator = [](CommandOrigin const& ori, CommandOutput& out, Op
 
 static auto const ListOperator = [](CommandOrigin const& ori, CommandOutput& out) {
     CHECK_TYPE(ori, out, CommandOriginType::DedicatedServer);
-    auto pls = PLand::getInstance().getLandRegistry()->getOperators();
+    auto& pls = PLand::getInstance().getLandRegistry()->getOperators();
     if (pls.empty()) {
         mc_utils::sendText(out, "当前没有管理员"_tr());
         return;
@@ -153,7 +156,7 @@ static auto const ListOperator = [](CommandOrigin const& ori, CommandOutput& out
     oss << "管理员: "_tr();
     auto& infoDb = ll::service::PlayerInfo::getInstance();
     for (auto& pl : pls) {
-        auto info = infoDb.fromUuid(pl);
+        auto info = infoDb.fromUuid(mce::UUID::fromString(pl));
         if (info) {
             oss << info->name;
         } else {

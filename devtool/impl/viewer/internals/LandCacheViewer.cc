@@ -1,5 +1,6 @@
 #include "LandCacheViewer.h"
 #include "ll/api/service/PlayerInfo.h"
+#include "mc/platform/UUID.h"
 #include "pland/PLand.h"
 #include "pland/land/LandRegistry.h"
 
@@ -60,7 +61,7 @@ void LandCacheViewerWindow::preBuildData() {
     for (const auto& owner : lands_ | std::views::keys) {
         // 更新玩家名缓存
         if (!realNames_.contains(owner)) {
-            auto info         = playerInfo.fromUuid(owner);
+            auto info         = playerInfo.fromUuid(mce::UUID::fromString(owner));
             realNames_[owner] = info.has_value() ? info->name : owner;
         }
         // 更新 CheckBox
