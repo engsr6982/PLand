@@ -87,3 +87,44 @@ using ll::i18n_literals::operator""_trf;    // 自定义 i18n 字符串格式化
 using ll::chrono_literals::operator""_tick; // 1s = 20_tick
 namespace fs = std::filesystem;
 } // namespace land
+
+
+#if defined(PLAND_I18N_COLLECT_STRINGS) && defined(LL_I18N_COLLECT_STRINGS) && defined(LL_I18N_COLLECT_STRINGS_CUSTOM)
+namespace ll::i18n::detail {
+template <LL_I18N_STRING_LITERAL_TYPE str>
+struct TrStrOut {
+    static inline std::string escape_for_print(std::string_view input) {
+        std::string output;
+        output.reserve(input.size() * 2);
+        for (char c : input) {
+            switch (c) {
+            case '\\':
+                output += "\\\\";
+                break;
+            case '\n':
+                output += "\\n";
+                break;
+            case '\r':
+                output += "\\r";
+                break;
+            case '\t':
+                output += "\\t";
+                break;
+            case '"':
+                output += "\\\"";
+                break;
+            default:
+                output += c;
+                break;
+            }
+        }
+        return output;
+    }
+
+    static inline int _ = [] {
+        fmt::print("\"{0}\": \"{0}\",\n", escape_for_print(str.sv()));
+        return 0;
+    }();
+};
+} // namespace ll::i18n::detail
+#endif

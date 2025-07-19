@@ -6,11 +6,11 @@ add_repositories("miracleforest-repo https://github.com/MiracleForest/xmake-repo
 
 
 -- LeviMc(LiteLDev)
-add_requires("levilamina 1.3.1", {configs = {target_type = "server"}})
+add_requires("levilamina 1.4.1", {configs = {target_type = "server"}})
 add_requires("levibuildscript")
 
 -- MiracleForest
-add_requires("ilistenattentively 0.6.0")
+add_requires("ilistenattentively 0.7.0")
 
 -- xmake
 add_requires("exprtk 0.0.3")
@@ -76,7 +76,7 @@ target("PLand") -- Change this to your mod name.
 
     if is_mode("debug") then
         add_defines("DEBUG")
-        -- add_defines("LL_I18N_COLLECT_STRINGS")
+        -- add_defines("PLAND_I18N_COLLECT_STRINGS", "LL_I18N_COLLECT_STRINGS", "LL_I18N_COLLECT_STRINGS_CUSTOM")
     end 
 
     if has_config("test") then

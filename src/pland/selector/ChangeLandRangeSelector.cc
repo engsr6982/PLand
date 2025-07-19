@@ -15,7 +15,7 @@ ChangeLandRangeSelector::ChangeLandRangeSelector(Player& player, SharedLand land
     mOldRangeDrawId = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(player)->draw(
         land->getAABB(),
         land->getDimensionId(),
-        mce::Color::ORANGE()
+        mce::Color::BLUE()
     );
 }
 

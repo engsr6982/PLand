@@ -3,6 +3,7 @@
 #include "mc/world/level/Level.h"
 #include "mc/world/scores/PlayerScoreSetFunction.h"
 #include "mc/world/scores/ScoreInfo.h"
+#include "mc/world/scores/ScoreboardOperationResult.h"
 #include "pland/PLand.h"
 #include <mc/world/actor/player/Player.h>
 #include <mc/world/scores/Objective.h>
@@ -62,9 +63,9 @@ bool ScoreBoardInterface::set(Player& player, llong amount) const {
     if (id.mRawID == ScoreboardId::INVALID().mRawID) {
         scoreboard.createScoreboardId(player);
     }
-    bool isSuccess = false;
-    scoreboard.modifyPlayerScore(isSuccess, id, *obj, static_cast<int>(amount), PlayerScoreSetFunction::Set);
-    return isSuccess;
+    ScoreboardOperationResult result;
+    scoreboard.modifyPlayerScore(result, id, *obj, static_cast<int>(amount), PlayerScoreSetFunction::Set);
+    return result == ScoreboardOperationResult::Success;
 }
 bool ScoreBoardInterface::set(mce::UUID const& uuid, llong amount) const {
     auto player = ll::service::getLevel()->getPlayer(uuid);
@@ -93,9 +94,9 @@ bool ScoreBoardInterface::add(Player& player, llong amount) const {
     if (id.mRawID == ScoreboardId::INVALID().mRawID) {
         scoreboard.createScoreboardId(player);
     }
-    bool isSuccess = false;
-    scoreboard.modifyPlayerScore(isSuccess, id, *obj, static_cast<int>(amount), PlayerScoreSetFunction::Add);
-    return isSuccess;
+    ScoreboardOperationResult result;
+    scoreboard.modifyPlayerScore(result, id, *obj, static_cast<int>(amount), PlayerScoreSetFunction::Add);
+    return result == ScoreboardOperationResult::Success;
 }
 bool ScoreBoardInterface::add(mce::UUID const& uuid, llong amount) const {
     auto player = ll::service::getLevel()->getPlayer(uuid);
@@ -124,9 +125,9 @@ bool ScoreBoardInterface::reduce(Player& player, llong amount) const {
     if (id.mRawID == ScoreboardId::INVALID().mRawID) {
         scoreboard.createScoreboardId(player);
     }
-    bool isSuccess = false;
-    scoreboard.modifyPlayerScore(isSuccess, id, *obj, static_cast<int>(amount), PlayerScoreSetFunction::Subtract);
-    return isSuccess;
+    ScoreboardOperationResult result;
+    scoreboard.modifyPlayerScore(result, id, *obj, static_cast<int>(amount), PlayerScoreSetFunction::Subtract);
+    return result == ScoreboardOperationResult::Success;
 }
 bool ScoreBoardInterface::reduce(mce::UUID const& uuid, llong amount) const {
     auto player = ll::service::getLevel()->getPlayer(uuid);

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0-rc.1] - 2025-7-19
+
+> 基于 0.11.0-rc.1，适配 LeviLamina、iListenAttentively
+
+### 🧹 其他改动
+
+- 适配 LeviLamina v1.4.1 @engsr6982
+- 适配 iListenAttentively v0.7.0 @engsr6982
+
 ## [0.11.0-rc.1] - 2025-7-19
 
 ### 🐛 问题修复
