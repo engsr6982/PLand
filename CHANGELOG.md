@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.11.0] - 2025-7-18
+## [0.11.0-rc.1] - 2025-7-19
 
 ### 🐛 问题修复
 
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 重构绘制系统，BedrockServerClientInterface 更改为可选依赖 #114 @engsr6982
 - 选择领地表单支持**分页、搜索、过滤** #107 #101 @engsr6982
 - 新增配置项 `land.minSpacingIncludeY` #115 @engsr6982
-- 新增修改默认领地权限的配置选项，由配置项 `defaultperm` 决定 #110 @yangyangzhong82
+- 支持领地管理员修改默认权限配置 #110 @yangyangzhong82 @engsr6982
 
 ### 🧹 其他改动
 
