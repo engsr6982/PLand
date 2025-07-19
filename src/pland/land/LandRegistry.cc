@@ -5,10 +5,13 @@
 #include "ll/api/i18n/I18n.h"
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/level/BlockPos.h"
+#include "nlohmann/json_fwd.hpp"
 #include "pland/Global.h"
 #include "pland/PLand.h"
 #include "pland/aabb/LandAABB.h"
 #include "pland/land/Land.h"
+#include "pland/land/LandContext.h"
+#include "pland/land/LandTemplatePermTable.h"
 #include "pland/utils/JSON.h"
 #include "pland/utils/Utils.h"
 #include <algorithm>
@@ -144,7 +147,7 @@ void LandRegistry::_checkVersionAndTryAdaptBreakingChanges(nlohmann::json& landD
 }
 
 bool LandRegistry::isLandData(std::string_view key) {
-    return key != DbVersionKey && key != DbOperatorDataKey && key != DbPlayerSettingDataKey;
+    return key != DbVersionKey && key != DbOperatorDataKey && key != DbPlayerSettingDataKey && key != DbTemplatePermKey;
 }
 void LandRegistry::_loadLands() {
     ll::coro::Generator<std::pair<std::string_view, std::string_view>> iter = mDB->iter();
@@ -168,6 +171,30 @@ void LandRegistry::_loadLands() {
     }
 
     mLandIdAllocator = std::make_unique<LandIdAllocator>(safeId); // 初始化ID分配器
+}
+void LandRegistry::_loadLandTemplatePermTable() {
+    if (!mDB->has(DbTemplatePermKey)) {
+        auto t = LandPermTable{};
+        mDB->set(DbTemplatePermKey, JSON::structTojson(t).dump());
+    }
+
+    auto rawJson = mDB->get(DbTemplatePermKey);
+    try {
+        auto json = nlohmann::json::parse(*rawJson);
+        if (!json.is_object()) {
+            throw std::runtime_error("Template perm table is not an object");
+        }
+
+        auto t = LandPermTable{};
+        JSON::jsonToStructTryPatch(json, t); // 反射并补丁
+
+        mLandTemplatePermTable = std::make_unique<LandTemplatePermTable>(t);
+    } catch (...) {
+        mLandTemplatePermTable = std::make_unique<LandTemplatePermTable>(LandPermTable{});
+        PLand::getInstance().getSelf().getLogger().error(
+            "Failed to load template perm table, using default perm table instead"
+        );
+    }
 }
 
 void LandRegistry::_buildDimensionChunkMap() {
@@ -204,6 +231,12 @@ void LandRegistry::save() {
 
     mDB->set(DbPlayerSettingDataKey, JSON::stringify(JSON::structTojson(mPlayerSettings)));
 
+    if (mLandTemplatePermTable->mDirtyCounter.isDirty()) {
+        if (mDB->set(DbTemplatePermKey, JSON::structTojson(mLandTemplatePermTable->mTemplatePermTable).dump())) {
+            mLandTemplatePermTable->mDirtyCounter.reset();
+        }
+    }
+
     for (auto const& land : mLandCache | std::views::values) {
         land->save();
     }
@@ -229,6 +262,10 @@ LandRegistry::LandRegistry() {
     logger.trace("加载领地数据...");
     _loadLands();
     logger.info("已加载 {} 块领地数据", mLandCache.size());
+
+    logger.trace("加载模板权限表...");
+    _loadLandTemplatePermTable();
+    logger.info("已加载模板权限表");
 
     logger.trace("构建维度区块映射...");
     _buildDimensionChunkMap();
@@ -303,6 +340,7 @@ bool LandRegistry::hasPlayerSettings(UUIDs const& uuid) const {
     return mPlayerSettings.find(uuid) != mPlayerSettings.end();
 }
 
+LandTemplatePermTable& LandRegistry::getLandTemplatePermTable() const { return *mLandTemplatePermTable; }
 
 bool LandRegistry::hasLand(LandID id) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);

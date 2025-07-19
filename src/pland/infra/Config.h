@@ -17,7 +17,7 @@ struct ForbiddenRange {
 };
 
 struct Config {
-    int              version{20};
+    int              version{22};
     ll::io::LogLevel logLevel{ll::io::LogLevel::Info};
 
     EconomyConfig economy;

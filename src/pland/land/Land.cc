@@ -1,5 +1,6 @@
 #include "pland/land/Land.h"
 #include "LandCreateValidator.h"
+#include "LandTemplatePermTable.h"
 #include "pland/Global.h"
 #include "pland/PLand.h"
 #include "pland/infra/Config.h"
@@ -15,10 +16,11 @@ namespace land {
 Land::Land() = default;
 Land::Land(LandContext ctx) : mContext(std::move(ctx)) {}
 Land::Land(LandAABB const& pos, LandDimid dimid, bool is3D, UUIDs const& owner) {
-    mContext.mPos       = pos;
-    mContext.mLandDimid = dimid;
-    mContext.mIs3DLand  = is3D;
-    mContext.mLandOwner = owner;
+    mContext.mPos           = pos;
+    mContext.mLandDimid     = dimid;
+    mContext.mIs3DLand      = is3D;
+    mContext.mLandOwner     = owner;
+    mContext.mLandPermTable = PLand::getInstance().getLandRegistry()->getLandTemplatePermTable().get();
 }
 
 SharedLand Land::getSelfFromRegistry() const {
