@@ -82,7 +82,11 @@ void SafeTeleport::Task::commit() const {
 }
 
 bool SafeTeleport::Task::isTargetChunkFullyLoaded() const {
-    auto& chunkSource = *mTargetDimension.lock()->mChunkSource.get();
+    auto dim = mTargetDimension.lock();
+    if (!dim) {
+        return false;
+    }
+    auto& chunkSource = dim->getChunkSource();
     if (!chunkSource.isWithinWorldLimit(mTargetChunkPos)) return true;
     auto chunk = chunkSource.getOrLoadChunk(mTargetChunkPos, ::ChunkSource::LoadMode::None, true);
     return chunk && static_cast<int>(chunk->mLoadState->load()) >= static_cast<int>(ChunkState::Loaded)

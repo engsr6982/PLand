@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🐛 问题修复
+
+- 对 `isTargetChunkFullyLoaded` 添加空指针检查
+
 ## [0.12.0-rc.1] - 2025-7-19
 
 > 基于 0.11.0-rc.1，适配 LeviLamina、iListenAttentively
