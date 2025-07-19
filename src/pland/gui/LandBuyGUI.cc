@@ -50,10 +50,10 @@ void LandBuyGUI::impl(Player& player, DefaultSelector* selector) {
     auto        aabb = selector->newLandAABB();
 
     aabb->fix();
-    int const volume = aabb->getVolume();
-    int const length = aabb->getDepth();
-    int const width  = aabb->getWidth();
-    int const height = aabb->getHeight();
+    auto const volume = aabb->getVolume();
+    int const  length = aabb->getDepth();
+    int const  width  = aabb->getWidth();
+    int const  height = aabb->getHeight();
 
     auto   _variables    = PriceCalculate::Variable::make(*aabb, selector->getDimensionId()); // 传入维度ID
     double originalPrice = PriceCalculate::eval(
@@ -147,10 +147,10 @@ void LandBuyGUI::impl(Player& player, ChangeLandRangeSelector* reSelector) {
     auto aabb = reSelector->newLandAABB();
 
     aabb->fix();
-    int const volume = aabb->getVolume();
-    int const length = aabb->getDepth();
-    int const width  = aabb->getWidth();
-    int const height = aabb->getHeight();
+    auto const volume = aabb->getVolume();
+    int const  length = aabb->getDepth();
+    int const  width  = aabb->getWidth();
+    int const  height = aabb->getHeight();
 
     auto       landPtr       = reSelector->getLand();
     int const& originalPrice = landPtr->getOriginalBuyPrice(); // 原始购买价格
@@ -201,7 +201,7 @@ void LandBuyGUI::impl(Player& player, ChangeLandRangeSelector* reSelector) {
         "确认购买"_trf(player),
         "textures/ui/realms_green_check",
         "path",
-        [needPay, refund, discountedPrice, aabb, reSelector, landPtr](Player& pl) {
+        [needPay, refund, discountedPrice, aabb, landPtr](Player& pl) {
             auto& eco = EconomySystem::getInstance();
             if ((needPay > 0 && eco->get(pl) < needPay) && Config::cfg.economy.enabled) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您的余额不足，无法购买"_trf(pl));
@@ -248,15 +248,15 @@ void LandBuyGUI::impl(Player& player, ChangeLandRangeSelector* reSelector) {
 }
 
 void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
-    auto aabb = subSelector->newLandAABB();
+    auto subLandRange = subSelector->newLandAABB();
 
-    aabb->fix();
-    int const volume = aabb->getVolume();
-    int const length = aabb->getDepth();
-    int const width  = aabb->getWidth();
-    int const height = aabb->getHeight();
+    subLandRange->fix();
+    auto const volume = subLandRange->getVolume();
+    int const  length = subLandRange->getDepth();
+    int const  width  = subLandRange->getWidth();
+    int const  height = subLandRange->getHeight();
 
-    auto   _variables    = PriceCalculate::Variable::make(*aabb, subSelector->getDimensionId()); // 传入维度ID
+    auto   _variables    = PriceCalculate::Variable::make(*subLandRange, subSelector->getDimensionId()); // 传入维度ID
     double originalPrice = PriceCalculate::eval(Config::cfg.land.subLand.calculate, _variables);
 
     // 应用维度价格系数
@@ -297,7 +297,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
             width,
             height,
             volume,
-            aabb->toString(),
+            subLandRange->toString(),
             // 价格
             originalPrice,
             discountedPrice,
@@ -309,14 +309,15 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
         "确认购买"_trf(player),
         "textures/ui/realms_green_check",
         "path",
-        [discountedPrice, aabb, subSelector, &parentPos](Player& pl) {
+        [discountedPrice, subLandRange, subSelector](Player& pl) {
             auto& economy = EconomySystem::getInstance();
             if (economy->get(pl) < discountedPrice && Config::cfg.economy.enabled) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "您的余额不足，无法购买"_trf(pl));
                 return; // 预检查经济
             }
 
-            if (auto res = LandCreateValidator::validateCreateSubLand(pl, subSelector->getParentLand(), *aabb); !res) {
+            if (auto res = LandCreateValidator::validateCreateSubLand(pl, subSelector->getParentLand(), *subLandRange);
+                !res) {
                 LandCreateValidator::sendErrorMessage(pl, res.error());
                 return;
             }
