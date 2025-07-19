@@ -8,7 +8,7 @@ class Land;
 
 class DefaultSelector final : public ISelector {
 public:
-    LDAPI explicit DefaultSelector(Player& player, bool is3D = false);
+    LDAPI explicit DefaultSelector(Player& player, bool is3D);
 
     LDNDAPI std::shared_ptr<Land> newLand() const;
 };

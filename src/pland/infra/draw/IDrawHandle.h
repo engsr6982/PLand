@@ -13,7 +13,7 @@ class Land;
 
 
 struct GeoId {
-    uint64 value;
+    uint64 value{0};
 
     operator bool() const { return value != 0; }
     bool operator==(GeoId const& other) const { return value == other.value; }

@@ -11,7 +11,8 @@ namespace land {
 
 
 ChangeLandRangeSelector::ChangeLandRangeSelector(Player& player, SharedLand land)
-: ISelector(player, land->getDimensionId(), land->is3D()) {
+: ISelector(player, land->getDimensionId(), land->is3D()),
+  mLand(land) {
     mOldRangeDrawId = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(player)->draw(
         land->getAABB(),
         land->getDimensionId(),
@@ -21,7 +22,7 @@ ChangeLandRangeSelector::ChangeLandRangeSelector(Player& player, SharedLand land
 
 ChangeLandRangeSelector::~ChangeLandRangeSelector() {
     auto player = getPlayer();
-    if (player) {
+    if (!player) {
         return;
     }
 

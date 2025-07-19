@@ -25,11 +25,8 @@ class ISelector {
     SetTitlePacket          mTitlePacket{SetTitlePacket::TitleType::Title};
     SetTitlePacket          mSubTitlePacket{SetTitlePacket::TitleType::Subtitle};
 
-    void initTitlePacket(Player& player);
-
 public:
-    LDAPI explicit ISelector(Player& player);
-    LDAPI explicit ISelector(Player& player, LandDimid dimid, bool is3D = false);
+    LDAPI explicit ISelector(Player& player, LandDimid dimid, bool is3D);
     LDAPI virtual ~ISelector();
 
 public:

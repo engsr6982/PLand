@@ -14,20 +14,12 @@
 
 namespace land {
 
-void ISelector::initTitlePacket(Player& player) {
-    mTitlePacket.mTitleText    = "[ {}选区 ]"_trf(player, is3D() ? "3D" : "2D");
-    mSubTitlePacket.mTitleText = "输入 /pland set a 或使用 '{}' 选择点 A"_trf(player, Config::cfg.selector.alias);
-}
-
-ISelector::ISelector(Player& player) : mPlayer(player.getWeakEntity()), mDimid(player.getDimensionId()) {
-    initTitlePacket(player);
-}
-
 ISelector::ISelector(Player& player, LandDimid dimid, bool is3D)
 : mPlayer(player.getWeakEntity()),
   mDimid(dimid),
   m3D(is3D) {
-    initTitlePacket(player);
+    mTitlePacket.mTitleText    = "[ {}选区 ]"_trf(player, m3D ? "3D" : "2D");
+    mSubTitlePacket.mTitleText = "输入 /pland set a 或使用 '{}' 选择点 A"_trf(player, Config::cfg.selector.alias);
 }
 
 ISelector::~ISelector() {
@@ -161,7 +153,7 @@ void ISelector::onPointABSet() {
     mSubTitlePacket.mTitleText = "输入 /pland buy 呼出购买菜单"_trf(*player, Config::cfg.selector.alias);
 
 
-    if (is3D()) {
+    if (!is3D()) {
         auto dimension = player->getLevel().getDimension(getDimensionId()).lock();
         if (dimension) {
             auto& range = dimension->mHeightRange;
