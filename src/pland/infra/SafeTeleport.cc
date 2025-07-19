@@ -86,7 +86,7 @@ bool SafeTeleport::Task::isTargetChunkFullyLoaded() const {
     if (!dim) {
         return false;
     }
-    auto& chunkSource = dim->getChunkSource();
+    auto& chunkSource = dim->getBlockSourceFromMainChunkSource().getChunkSource();
     if (!chunkSource.isWithinWorldLimit(mTargetChunkPos)) return true;
     auto chunk = chunkSource.getOrLoadChunk(mTargetChunkPos, ::ChunkSource::LoadMode::None, true);
     return chunk && static_cast<int>(chunk->mLoadState->load()) >= static_cast<int>(ChunkState::Loaded)
