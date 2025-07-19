@@ -15,11 +15,10 @@ namespace land {
 Land::Land() = default;
 Land::Land(LandContext ctx) : mContext(std::move(ctx)) {}
 Land::Land(LandAABB const& pos, LandDimid dimid, bool is3D, UUIDs const& owner) {
-    mContext.mPos           = pos;
-    mContext.mLandDimid     = dimid;
-    mContext.mIs3DLand      = is3D;
-    mContext.mLandOwner     = owner;
-    mContext.mLandPermTable = Config::cfg.land.defaultperm;
+    mContext.mPos       = pos;
+    mContext.mLandDimid = dimid;
+    mContext.mIs3DLand  = is3D;
+    mContext.mLandOwner = owner;
 }
 
 SharedLand Land::getSelfFromRegistry() const {
