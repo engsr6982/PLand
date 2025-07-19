@@ -22,7 +22,7 @@ ChangeLandRangeSelector::ChangeLandRangeSelector(Player& player, SharedLand land
 
 ChangeLandRangeSelector::~ChangeLandRangeSelector() {
     auto player = getPlayer();
-    if (player) {
+    if (!player) {
         return;
     }
 
