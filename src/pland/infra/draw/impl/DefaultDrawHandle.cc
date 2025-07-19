@@ -7,6 +7,7 @@
 #include "mc/util/MolangVariableMap.h"
 #include "mc/world/level/dimension/VanillaDimensions.h"
 #include "pland/Global.h"
+#include "pland/PLand.h"
 #include "pland/aabb/LandAABB.h"
 #include "pland/infra/draw/IDrawHandle.h"
 #include "pland/land/Land.h"
@@ -31,7 +32,7 @@ class ParticleSpawner {
     int                                    mDimensionId;
 
     static GeoId getNextGeoId() {
-        static uint64 id{0};
+        static uint64 id{1};
         return GeoId{id++};
     }
 
@@ -115,7 +116,14 @@ public:
         mDrawedLands[land->getId()] = id;
     }
 
-    void remove(GeoId id) { mSpawners.erase(id); }
+    void remove(GeoId id) {
+        PLand::getInstance().getSelf().getLogger().debug(
+            "Remove GeoId {}, exist: {}",
+            id.value,
+            mSpawners.contains(id)
+        );
+        mSpawners.erase(id);
+    }
 
     void remove(LandID landId) {
         auto iter = mDrawedLands.find(landId);
