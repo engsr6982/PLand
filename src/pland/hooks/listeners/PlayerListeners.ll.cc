@@ -132,7 +132,7 @@ void EventListener::registerLLPlayerListeners() {
                 auto&       player   = ev.self();
                 auto const& blockPos = mc_utils::face2Pos(ev.pos(), ev.face());
                 logger->debug(
-                    "[PlaceBlock] Player: {}({}), Pos: {}, Block: {}",
+                    "[PlaceBlock] Player: {}({}), Pos: {}",
                     player.getRealName(),
                     player.getUuid().asString(),
                     blockPos.toString()
