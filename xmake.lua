@@ -76,7 +76,7 @@ target("PLand") -- Change this to your mod name.
 
     if is_mode("debug") then
         add_defines("DEBUG")
-        -- add_defines("LL_I18N_COLLECT_STRINGS")
+        -- add_defines("PLAND_I18N_COLLECT_STRINGS", "LL_I18N_COLLECT_STRINGS", "LL_I18N_COLLECT_STRINGS_CUSTOM")
     end 
 
     if has_config("test") then
