@@ -1,31 +1,41 @@
 {
-    "format_version": 2,
+    "format_version": 3,
+    "format_uuid": "289f771f-2c9a-4d73-9f3f-8492495a924d",
     "tooth": "github.com/engsr6982/PLand",
-    "version": "0.9.0",
+    "version": "0.11.0-rc.1",
     "info": {
-        "name": "PLand - 领地系统",
-        "description": "基于 LeviLamina 的领地系统",
-        "author": "engsr6982",
+        "name": "PLand",
+        "description": "基于 LeviLamina 的领地系统 / A land system based on LeviLamina",
         "tags": [
-            "platform:levilamina",
             "type:mod",
+            "platform:levilamina",
             "land",
             "pland"
-        ]
+        ],
+        "avatar_url": ""
     },
-    "asset_url": "https://github.com/engsr6982/PLand/releases/download/v$(version)/PLand-windows-x64.zip",
-    "prerequisites": {
-        "github.com/LiteLDev/LeviLamina": ">=1.2.1 <1.3.0",
-        "github.com/LiteLDev/LegacyMoney": ">=0.11.0 <0.12.0",
-        "github.com/MiracleForest/iListenAttentively-Release": ">=0.5.0-rc.1 <0.6.0",
-        "github.com/OEOTYAN/BedrockServerClientInterface": ">0.1.6"
-    },
-    "files": {
-        "place": [
-            {
-                "src": "PLand/*",
-                "dest": "plugins/PLand/"
-            }
-        ]
-    }
+    "variants": [
+        {
+            "platform": "win-x64",
+            "dependencies": {
+                "github.com/LiteLDev/LeviLamina": "1.3.*",
+                "github.com/MiracleForest/iListenAttentively-Release": "0.5.*"
+            },
+            "assets": [
+                {
+                    "type": "zip",
+                    "urls": [
+                        "https://{{tooth}}/releases/download/v{{version}}/PLand-windows-x64.zip"
+                    ],
+                    "placements": [
+                        {
+                            "type": "dir",
+                            "src": "PLand/",
+                            "dest": "plugins/PLand"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
 }

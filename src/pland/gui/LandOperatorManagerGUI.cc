@@ -4,9 +4,12 @@
 #include "ll/api/service/PlayerInfo.h"
 #include "pland/PLand.h"
 #include "pland/gui/common/ChooseLandAdvancedUtilGUI.h"
+#include "pland/gui/common/EditLandPermTableUtilGUI.h"
 #include "pland/gui/form/BackPaginatedSimpleForm.h"
 #include "pland/gui/form/BackSimpleForm.h"
+#include "pland/land/LandContext.h"
 #include "pland/land/LandRegistry.h"
+#include "pland/land/LandTemplatePermTable.h"
 #include "pland/utils/McUtils.h"
 
 
@@ -38,6 +41,16 @@ void LandOperatorManagerGUI::sendMainMenu(Player& player) {
     fm.appendButton("管理指定领地"_trf(player), "textures/ui/magnifyingGlass", "path", [](Player& self) {
         // sendChooseLandGUI(self, PLand::getInstance().getLandRegistry()->getLands());
         sendChooseLandAdvancedGUI(self, PLand::getInstance().getLandRegistry()->getLands());
+    });
+    fm.appendButton("编辑默认权限"_trf(player), "textures/ui/icon_map", "path", [](Player& self) {
+        EditLandPermTableUtilGUI::sendTo(
+            self,
+            PLand::getInstance().getLandRegistry()->getLandTemplatePermTable().get(),
+            [](Player& self, LandPermTable newTable) {
+                PLand::getInstance().getLandRegistry()->getLandTemplatePermTable().set(newTable);
+                mc_utils::sendText(self, "权限表已更新"_trf(self));
+            }
+        );
     });
 
     fm.sendTo(player);

@@ -5,10 +5,13 @@
 #include "ll/api/i18n/I18n.h"
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/level/BlockPos.h"
+#include "nlohmann/json_fwd.hpp"
 #include "pland/Global.h"
 #include "pland/PLand.h"
 #include "pland/aabb/LandAABB.h"
 #include "pland/land/Land.h"
+#include "pland/land/LandContext.h"
+#include "pland/land/LandTemplatePermTable.h"
 #include "pland/utils/JSON.h"
 #include "pland/utils/Utils.h"
 #include <algorithm>
@@ -33,18 +36,18 @@ std::string PlayerSettings::SERVER_LOCALE_CODE() { return "server"; }
 
 
 void LandRegistry::_loadOperators() {
-    if (!mDB->has(DB_KEY_OPERATORS())) {
-        mDB->set(DB_KEY_OPERATORS(), "[]"); // empty array
+    if (!mDB->has(DbOperatorDataKey)) {
+        mDB->set(DbOperatorDataKey, "[]"); // empty array
     }
-    auto ops = JSON::parse(*mDB->get(DB_KEY_OPERATORS()));
+    auto ops = JSON::parse(*mDB->get(DbOperatorDataKey));
     JSON::jsonToStructNoMerge(ops, mLandOperators);
 }
 
 void LandRegistry::_loadPlayerSettings() {
-    if (!mDB->has(DB_KEY_PLAYER_SETTINGS())) {
-        mDB->set(DB_KEY_PLAYER_SETTINGS(), "{}"); // empty object
+    if (!mDB->has(DbPlayerSettingDataKey)) {
+        mDB->set(DbPlayerSettingDataKey, "{}"); // empty object
     }
-    auto settings = JSON::parse(*mDB->get(DB_KEY_PLAYER_SETTINGS()));
+    auto settings = JSON::parse(*mDB->get(DbPlayerSettingDataKey));
     if (!settings.is_object()) {
         throw std::runtime_error("player settings is not an object");
     }
@@ -60,7 +63,7 @@ void LandRegistry::_connectDatabaseAndCheckVersion() {
     auto&       self    = land::PLand::getInstance().getSelf();
     auto&       logger  = self.getLogger();
     auto const& dataDir = self.getDataDir();
-    auto const  dbDir   = dataDir / DB_DIR_NAME();
+    auto const  dbDir   = dataDir / DbDirName;
 
     bool const isNewCreatedDB = !fs::exists(dbDir); // 是否是新建的数据库
 
@@ -75,16 +78,15 @@ void LandRegistry::_connectDatabaseAndCheckVersion() {
         mDB = std::make_unique<ll::data::KeyValueDB>(dbDir);
     }
 
-    auto const dbVersionKey = DB_KEY_VERSION();
-    if (!mDB->has(dbVersionKey)) {
+    if (!mDB->has(DbVersionKey)) {
         if (isNewCreatedDB) {
-            mDB->set(dbVersionKey, std::to_string(LandContextVersion)); // 设置初始版本号
+            mDB->set(DbVersionKey, std::to_string(LandContextVersion)); // 设置初始版本号
         } else {
-            mDB->set(dbVersionKey, "-1"); // 数据库存在，但没有版本号，表示是旧版数据库(0.8.1之前)
+            mDB->set(DbVersionKey, "-1"); // 数据库存在，但没有版本号，表示是旧版数据库(0.8.1之前)
         }
     }
 
-    auto version = std::stoi(*mDB->get(dbVersionKey));
+    auto version = std::stoi(*mDB->get(DbVersionKey));
     if (version != LandContextVersion) {
         if (version > LandContextVersion) {
             logger.fatal(
@@ -115,7 +117,7 @@ void LandRegistry::_connectDatabaseAndCheckVersion() {
             mDB.reset();
             backup();
             mDB = std::make_unique<ll::data::KeyValueDB>(dbDir);
-            mDB->set(dbVersionKey, std::to_string(LandContextVersion)); // 更新版本号
+            mDB->set(DbVersionKey, std::to_string(LandContextVersion)); // 更新版本号
             // 这里只需要修改版本号以及备份，其它兼容转换操作将在 _checkVersionAndTryAdaptBreakingChanges 中进行
         }
     }
@@ -130,7 +132,7 @@ void LandRegistry::_checkVersionAndTryAdaptBreakingChanges(nlohmann::json& landD
         constexpr auto NEW_MAX_KEY    = "max";
         constexpr auto NEW_MIN_KEY    = "min";
 
-        auto& pos = landData["getAABB()"];
+        auto& pos = landData["mPos"];
         if (pos.contains(LEGACY_MAX_KEY)) {
             auto legacyMax = pos[LEGACY_MAX_KEY]; // copy
             pos.erase(LEGACY_MAX_KEY);
@@ -144,16 +146,15 @@ void LandRegistry::_checkVersionAndTryAdaptBreakingChanges(nlohmann::json& landD
     }
 }
 
+bool LandRegistry::isLandData(std::string_view key) {
+    return key != DbVersionKey && key != DbOperatorDataKey && key != DbPlayerSettingDataKey && key != DbTemplatePermKey;
+}
 void LandRegistry::_loadLands() {
     ll::coro::Generator<std::pair<std::string_view, std::string_view>> iter = mDB->iter();
 
-    auto operatorKey      = DB_KEY_OPERATORS();
-    auto playerSettingKey = DB_KEY_PLAYER_SETTINGS();
-    auto versionKey       = DB_KEY_VERSION();
-
     LandID safeId{0};
     for (auto [key, value] : iter) {
-        if (key == operatorKey || key == playerSettingKey || key == versionKey) continue;
+        if (!isLandData(key)) continue;
 
         auto json = JSON::parse(value);
         _checkVersionAndTryAdaptBreakingChanges(json);
@@ -170,6 +171,30 @@ void LandRegistry::_loadLands() {
     }
 
     mLandIdAllocator = std::make_unique<LandIdAllocator>(safeId); // 初始化ID分配器
+}
+void LandRegistry::_loadLandTemplatePermTable() {
+    if (!mDB->has(DbTemplatePermKey)) {
+        auto t = LandPermTable{};
+        mDB->set(DbTemplatePermKey, JSON::structTojson(t).dump());
+    }
+
+    auto rawJson = mDB->get(DbTemplatePermKey);
+    try {
+        auto json = nlohmann::json::parse(*rawJson);
+        if (!json.is_object()) {
+            throw std::runtime_error("Template perm table is not an object");
+        }
+
+        auto t = LandPermTable{};
+        JSON::jsonToStructTryPatch(json, t); // 反射并补丁
+
+        mLandTemplatePermTable = std::make_unique<LandTemplatePermTable>(t);
+    } catch (...) {
+        mLandTemplatePermTable = std::make_unique<LandTemplatePermTable>(LandPermTable{});
+        PLand::getInstance().getSelf().getLogger().error(
+            "Failed to load template perm table, using default perm table instead"
+        );
+    }
 }
 
 void LandRegistry::_buildDimensionChunkMap() {
@@ -202,9 +227,15 @@ namespace land {
 
 void LandRegistry::save() {
     std::shared_lock<std::shared_mutex> lock(mMutex); // 获取锁
-    mDB->set(DB_KEY_OPERATORS(), JSON::stringify(JSON::structTojson(mLandOperators)));
+    mDB->set(DbOperatorDataKey, JSON::stringify(JSON::structTojson(mLandOperators)));
 
-    mDB->set(DB_KEY_PLAYER_SETTINGS(), JSON::stringify(JSON::structTojson(mPlayerSettings)));
+    mDB->set(DbPlayerSettingDataKey, JSON::stringify(JSON::structTojson(mPlayerSettings)));
+
+    if (mLandTemplatePermTable->mDirtyCounter.isDirty()) {
+        if (mDB->set(DbTemplatePermKey, JSON::structTojson(mLandTemplatePermTable->mTemplatePermTable).dump())) {
+            mLandTemplatePermTable->mDirtyCounter.reset();
+        }
+    }
 
     for (auto const& land : mLandCache | std::views::values) {
         land->save();
@@ -231,6 +262,10 @@ LandRegistry::LandRegistry() {
     logger.trace("加载领地数据...");
     _loadLands();
     logger.info("已加载 {} 块领地数据", mLandCache.size());
+
+    logger.trace("加载模板权限表...");
+    _loadLandTemplatePermTable();
+    logger.info("已加载模板权限表");
 
     logger.trace("构建维度区块映射...");
     _buildDimensionChunkMap();
@@ -305,6 +340,7 @@ bool LandRegistry::hasPlayerSettings(UUIDs const& uuid) const {
     return mPlayerSettings.find(uuid) != mPlayerSettings.end();
 }
 
+LandTemplatePermTable& LandRegistry::getLandTemplatePermTable() const { return *mLandTemplatePermTable; }
 
 bool LandRegistry::hasLand(LandID id) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
@@ -798,9 +834,4 @@ std::pair<int, int> LandRegistry::DecodeChunkID(ChunkID id) {
     if (!zPositive) z = -z;
     return {x, z};
 }
-
-string LandRegistry::DB_DIR_NAME() { return "db"; }
-string LandRegistry::DB_KEY_OPERATORS() { return "operators"; }
-string LandRegistry::DB_KEY_PLAYER_SETTINGS() { return "player_settings"; }
-string LandRegistry::DB_KEY_VERSION() { return "__version__"; }
 } // namespace land

@@ -1,5 +1,6 @@
 #include "pland/land/Land.h"
 #include "LandCreateValidator.h"
+#include "LandTemplatePermTable.h"
 #include "pland/Global.h"
 #include "pland/PLand.h"
 #include "pland/infra/Config.h"
@@ -19,7 +20,7 @@ Land::Land(LandAABB const& pos, LandDimid dimid, bool is3D, UUIDs const& owner) 
     mContext.mLandDimid     = dimid;
     mContext.mIs3DLand      = is3D;
     mContext.mLandOwner     = owner;
-    mContext.mLandPermTable = Config::cfg.land.defaultperm;
+    mContext.mLandPermTable = PLand::getInstance().getLandRegistry()->getLandTemplatePermTable().get();
 }
 
 SharedLand Land::getSelfFromRegistry() const {

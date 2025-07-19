@@ -8,6 +8,7 @@
 #include <atomic>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
@@ -28,17 +29,19 @@ struct PlayerSettings {
     LDNDAPI static std::string SERVER_LOCALE_CODE();
 };
 
+class LandTemplatePermTable;
 
 class LandRegistry final {
-    std::unique_ptr<ll::data::KeyValueDB>     mDB;                       // 领地数据库
-    std::vector<UUIDs>                        mLandOperators;            // 领地操作员
-    std::unordered_map<UUIDs, PlayerSettings> mPlayerSettings;           // 玩家设置
-    std::unordered_map<LandID, SharedLand>    mLandCache;                // 领地缓存
-    mutable std::shared_mutex                 mMutex;                    // 读写锁
-    std::thread                               mThread;                   // 线程
-    std::atomic<bool>                         mThreadStopFlag{false};    // 线程停止标志
-    std::unique_ptr<LandIdAllocator>          mLandIdAllocator{nullptr}; // 领地ID分配器
-    LandDimensionChunkMap                     mDimensionChunkMap;        // 维度区块映射
+    std::unique_ptr<ll::data::KeyValueDB>     mDB;                             // 领地数据库
+    std::vector<UUIDs>                        mLandOperators;                  // 领地操作员
+    std::unordered_map<UUIDs, PlayerSettings> mPlayerSettings;                 // 玩家设置
+    std::unordered_map<LandID, SharedLand>    mLandCache;                      // 领地缓存
+    mutable std::shared_mutex                 mMutex;                          // 读写锁
+    std::thread                               mThread;                         // 线程
+    std::atomic<bool>                         mThreadStopFlag{false};          // 线程停止标志
+    std::unique_ptr<LandIdAllocator>          mLandIdAllocator{nullptr};       // 领地ID分配器
+    LandDimensionChunkMap                     mDimensionChunkMap;              // 维度区块映射
+    std::unique_ptr<LandTemplatePermTable>    mLandTemplatePermTable{nullptr}; // 领地模板权限表
 
     friend class DataConverter;
 
@@ -46,6 +49,7 @@ private: //! private 方法非线程安全
     void _loadOperators();
     void _loadPlayerSettings();
     void _loadLands();
+    void _loadLandTemplatePermTable();
 
     void _connectDatabaseAndCheckVersion();
     void _checkVersionAndTryAdaptBreakingChanges(nlohmann::json& landData);
@@ -80,6 +84,8 @@ public:
     LDNDAPI PlayerSettings* getPlayerSettings(UUIDs const& uuid);
 
     LDAPI bool setPlayerSettings(UUIDs const& uuid, PlayerSettings settings);
+
+    LDNDAPI LandTemplatePermTable& getLandTemplatePermTable() const;
 
     LDNDAPI bool hasLand(LandID id) const;
 
@@ -144,10 +150,12 @@ public:
     LDAPI static ChunkID             EncodeChunkID(int x, int z);
     LDAPI static std::pair<int, int> DecodeChunkID(ChunkID id);
 
-    LDAPI static string DB_DIR_NAME();
-    LDAPI static string DB_KEY_OPERATORS();
-    LDAPI static string DB_KEY_PLAYER_SETTINGS();
-    LDAPI static string DB_KEY_VERSION();
+    static constexpr auto DbDirName              = "db";              // 数据库目录名
+    static constexpr auto DbVersionKey           = "__version__";     // 数据库版本键
+    static constexpr auto DbOperatorDataKey      = "operators";       // 操作员数据键
+    static constexpr auto DbPlayerSettingDataKey = "player_settings"; // 玩家设置数据键
+    static constexpr auto DbTemplatePermKey      = "template_perm";   // 领地模板权限表数据键
+    static bool           isLandData(std::string_view key);           // 判断键是否为领地数据键
 };
 
 
