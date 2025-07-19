@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0-rc.2] - 2025-7-19
+
 ### 🐛 问题修复
 
-- 对 `isTargetChunkFullyLoaded` 添加空指针检查
+- 对领地传送功能(`isTargetChunkFullyLoaded`)添加空指针检查 @engsr6982
+- 修复新建领地完成选区领地 2/3 维颠倒错误 @engsr6982
+- 修复领地重新选区功能 @engsr6982
 
 ## [0.12.0-rc.1] - 2025-7-19
 
