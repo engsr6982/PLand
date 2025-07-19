@@ -8,6 +8,7 @@
 #include <atomic>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
@@ -144,10 +145,11 @@ public:
     LDAPI static ChunkID             EncodeChunkID(int x, int z);
     LDAPI static std::pair<int, int> DecodeChunkID(ChunkID id);
 
-    LDAPI static string DB_DIR_NAME();
-    LDAPI static string DB_KEY_OPERATORS();
-    LDAPI static string DB_KEY_PLAYER_SETTINGS();
-    LDAPI static string DB_KEY_VERSION();
+    static constexpr auto DbDirName              = "db";              // 数据库目录名
+    static constexpr auto DbVersionKey           = "__version__";     // 数据库版本键
+    static constexpr auto DbOperatorDataKey      = "operators";       // 操作员数据键
+    static constexpr auto DbPlayerSettingDataKey = "player_settings"; // 玩家设置数据键
+    static bool           isLandData(std::string_view key);           // 判断键是否为领地数据键
 };
 
 
