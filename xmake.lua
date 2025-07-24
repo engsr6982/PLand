@@ -14,6 +14,7 @@ add_requires("ilistenattentively 0.7.0")
 
 -- xmake
 add_requires("exprtk 0.0.3")
+-- add_requires("quickjspp")
 
 if has_config("devtool") then
     add_requires("imgui v1.91.6-docking", {configs = { opengl3 = true, glfw = true }})
