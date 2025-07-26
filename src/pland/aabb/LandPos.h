@@ -32,7 +32,7 @@ public:
     template <typename T = BlockPos>
         requires HasXYZ<T>
     T as() const {
-        return {.x = x, .y = y, .z = z};
+        return {x, y, z};
     }
 
     LDNDAPI std::string toString() const;
