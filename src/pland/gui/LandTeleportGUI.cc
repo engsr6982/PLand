@@ -31,7 +31,8 @@ void LandTeleportGUI::impl(Player& player, SharedLand land) {
         );
         return;
     }
-    player.teleport(land->getTeleportPos().as(), land->getDimensionId());
+    auto v3 = land->getTeleportPos().as<Vec3>();
+    player.teleport(v3, land->getDimensionId());
 }
 
 
