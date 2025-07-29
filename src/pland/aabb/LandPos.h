@@ -19,7 +19,7 @@ concept HasXYZ = requires(T const& t) {
  */
 class LandPos {
 public:
-    int x, y, z;
+    int x{0}, y{0}, z{0};
 
     LDNDAPI static LandPos make(int x, int y, int z);
 
