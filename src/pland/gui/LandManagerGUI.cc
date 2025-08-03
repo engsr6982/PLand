@@ -21,6 +21,7 @@
 #include "pland/infra/draw/IDrawHandle.h"
 #include "pland/land/Land.h"
 #include "pland/land/LandContext.h"
+#include "pland/land/LandCreateValidator.h"
 #include "pland/land/LandEvent.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/land/StorageLayerError.h"
@@ -362,6 +363,12 @@ void LandManagerGUI::sendTransferLandGUI(Player& player, SharedLand const& ptr) 
                     return;
                 }
 
+                if (auto res = LandCreateValidator::isPlayerLandCountLimitExceeded(target.getUuid().asString());
+                    !res) {
+                    LandCreateValidator::sendErrorMessage(self, res.error());
+                    return;
+                }
+
                 LandOwnerChangeBeforeEvent ev(self, target.getUuid().asString(), ptr->getId());
                 ll::event::EventBus::getInstance().publish(ev);
                 if (ev.isCancelled()) {
@@ -449,6 +456,11 @@ void LandManagerGUI::_sendTransferLandToOfflinePlayerGUI(Player& player, SharedL
         if (self.getUuid().asString() == targetUuid) {
             mc_utils::sendText(self, "不能将领地转让给自己, 左手倒右手哦!"_trf(self));
             sendTransferLandGUI(self, ptr);
+            return;
+        }
+
+        if (auto res = LandCreateValidator::isPlayerLandCountLimitExceeded(targetUuid); !res) {
+            LandCreateValidator::sendErrorMessage(self, res.error());
             return;
         }
 
