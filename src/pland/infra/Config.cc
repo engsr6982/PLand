@@ -34,7 +34,7 @@ bool Config::trySave() {
 
 Config Config::cfg = [] {
     Config c;
-    c.permissionMaps.itemSpecific = {
+    c.protection.permissionMaps.itemSpecific = {
         {          "minecraft:skull", "allowPlace"},
         {         "minecraft:banner", "allowPlace"},
         {   "minecraft:glow_ink_sac", "allowPlace"},
@@ -44,7 +44,7 @@ Config Config::cfg = [] {
         {      "minecraft:bone_meal", "useBoneMeal"},
         {    "minecraft:armor_stand", "allowPlace"}
     };
-    c.permissionMaps.blockSpecific = {
+    c.protection.permissionMaps.blockSpecific = {
         {                "minecraft:dragon_egg", "allowAttackDragonEgg"},
         {                       "minecraft:bed", "useBed"},
         {                     "minecraft:chest", "allowOpenChest"},
@@ -63,7 +63,7 @@ Config Config::cfg = [] {
         {                "minecraft:flower_pot", "editFlowerPot"},
         {          "minecraft:sweet_berry_bush", "allowDestroy"}
     };
-    c.permissionMaps.blockFunctional = {
+    c.protection.permissionMaps.blockFunctional = {
         {   "minecraft:cartography_table", "useCartographyTable"},
         {      "minecraft:smithing_table", "useSmithingTable"},
         {       "minecraft:brewing_stand", "useBrewingStand"},

@@ -113,80 +113,81 @@ struct Config {
     } listeners;
 
     struct {
-        std::unordered_set<std::string> hostileMobTypeNames{// 敌对生物
-                                                            "minecraft:zombie",
-                                                            "minecraft:skeleton",
-                                                            "minecraft:creeper",
-                                                            "minecraft:spider",
-                                                            "minecraft:enderman",
-                                                            "minecraft:witch",
-                                                            "minecraft:blaze",
-                                                            "minecraft:ghast",
-                                                            "minecraft:magma_cube",
-                                                            "minecraft:silverfish",
-                                                            "minecraft:slime",
-                                                            "minecraft:guardian",
-                                                            "minecraft:elder_guardian",
-                                                            "minecraft:wither_skeleton",
-                                                            "minecraft:stray",
-                                                            "minecraft:husk",
-                                                            "minecraft:zombie_villager",
-                                                            "minecraft:drowned",
-                                                            "minecraft:phantom",
-                                                            "minecraft:pillager",
-                                                            "minecraft:vindicator",
-                                                            "minecraft:ravager",
-                                                            "minecraft:evocation_illager",
-                                                            "minecraft:vex",
-                                                            "minecraft:shulker",
-                                                            "minecraft:endermite",
-                                                            "minecraft:cave_spider",
-                                                            "minecraft:zoglin",
-                                                            "minecraft:piglin_brute",
-                                                            "minecraft:hoglin",
-                                                            "minecraft:wither",
-                                                            "minecraft:ender_dragon"
-        };
-        std::unordered_set<std::string> specialMobTypeNames{
-            // 特殊生物
-            "minecraft:painting",
-            "minecraft:hopper_minecart",
-            "minecraft:chest_boat",
-            "minecraft:leash_knot",
-            "minecraft:armor_stand",
-            "minecraft:minecart",
-            "minecraft:command_block_minecart",
-            "minecraft:boat",
-            "minecraft:ender_crystal",
-        };
-        std::unordered_set<std::string> passiveMobTypeNames{// 友好生物
-                                                            "minecraft:cow",
-                                                            "minecraft:pig",
-                                                            "minecraft:sheep",
-                                                            "minecraft:chicken",
-                                                            "minecraft:rabbit",
-                                                            "minecraft:mooshroom",
-                                                            "minecraft:horse",
-                                                            "minecraft:donkey",
-                                                            "minecraft:mule",
-                                                            "minecraft:ocelot",
-                                                            "minecraft:bat",
-                                                            "minecraft:sniffer",
-                                                            "minecraft:camel",
-                                                            "minecraft:armadillo"
-        };
-        std::unordered_set<std::string> customSpecialMobTypeNames; // Addon生物类型名称
-    } mob;
+        struct {
+            std::unordered_set<std::string> hostileMobTypeNames{// 敌对生物
+                                                                "minecraft:zombie",
+                                                                "minecraft:skeleton",
+                                                                "minecraft:creeper",
+                                                                "minecraft:spider",
+                                                                "minecraft:enderman",
+                                                                "minecraft:witch",
+                                                                "minecraft:blaze",
+                                                                "minecraft:ghast",
+                                                                "minecraft:magma_cube",
+                                                                "minecraft:silverfish",
+                                                                "minecraft:slime",
+                                                                "minecraft:guardian",
+                                                                "minecraft:elder_guardian",
+                                                                "minecraft:wither_skeleton",
+                                                                "minecraft:stray",
+                                                                "minecraft:husk",
+                                                                "minecraft:zombie_villager",
+                                                                "minecraft:drowned",
+                                                                "minecraft:phantom",
+                                                                "minecraft:pillager",
+                                                                "minecraft:vindicator",
+                                                                "minecraft:ravager",
+                                                                "minecraft:evocation_illager",
+                                                                "minecraft:vex",
+                                                                "minecraft:shulker",
+                                                                "minecraft:endermite",
+                                                                "minecraft:cave_spider",
+                                                                "minecraft:zoglin",
+                                                                "minecraft:piglin_brute",
+                                                                "minecraft:hoglin",
+                                                                "minecraft:wither",
+                                                                "minecraft:ender_dragon"};
+            std::unordered_set<std::string> specialMobTypeNames{
+                // 特殊生物
+                "minecraft:painting",
+                "minecraft:hopper_minecart",
+                "minecraft:chest_boat",
+                "minecraft:leash_knot",
+                "minecraft:armor_stand",
+                "minecraft:minecart",
+                "minecraft:command_block_minecart",
+                "minecraft:boat",
+                "minecraft:ender_crystal",
+            };
+            std::unordered_set<std::string> passiveMobTypeNames{// 友好生物
+                                                                "minecraft:cow",
+                                                                "minecraft:pig",
+                                                                "minecraft:sheep",
+                                                                "minecraft:chicken",
+                                                                "minecraft:rabbit",
+                                                                "minecraft:mooshroom",
+                                                                "minecraft:horse",
+                                                                "minecraft:donkey",
+                                                                "minecraft:mule",
+                                                                "minecraft:ocelot",
+                                                                "minecraft:bat",
+                                                                "minecraft:sniffer",
+                                                                "minecraft:camel",
+                                                                "minecraft:armadillo"};
+            std::unordered_set<std::string> customSpecialMobTypeNames; // Addon生物类型名称
+        } mob;
+
+        struct {
+            std::unordered_map<std::string, std::string> itemSpecific;
+            std::unordered_map<std::string, std::string> blockSpecific;
+            std::unordered_map<std::string, std::string> blockFunctional;
+        } permissionMaps;
+    } protection;
 
     struct {
         bool devTools{false}; // 开发工具
     } internal;
 
-    struct {
-        std::unordered_map<std::string, std::string> itemSpecific;
-        std::unordered_map<std::string, std::string> blockSpecific;
-        std::unordered_map<std::string, std::string> blockFunctional;
-    } permissionMaps;
 
     // Functions
     LDAPI static Config cfg;

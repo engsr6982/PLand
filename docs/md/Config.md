@@ -214,7 +214,11 @@
     "EndermanTakeBlockEvent": true, // 末影人放下方块
     "DragonEggBlockTeleportBeforeEvent": true // 龙蛋传送事件
   },
-  // v0.9.0
+  "internal": {
+    "devTools": false // 是否启用开发工具，启用前请确保您的机器有具有显示器，否则初始化时会引发错误、甚至崩溃。
+  },
+   "protection": {
+      // v0.9.0
   "mob": {
     "hostileMobTypeNames": [
       // 敌对生物
@@ -305,9 +309,6 @@
       // 关联权限："allowCustomSpecialDamage": "允许自定义实体受伤",
     ]
   },
-  "internal": {
-    "devTools": false // 是否启用开发工具，启用前请确保您的机器有具有显示器，否则初始化时会引发错误、甚至崩溃。
-  },
   "permissionMaps": {
     "itemSpecific": {
       "minecraft:flint_and_steel": "useFlintAndSteel"
@@ -318,6 +319,7 @@
     "blockFunctional": {
       "minecraft:anvil": "useAnvil"
     }
+  }
   }
 }
 ```

@@ -117,13 +117,13 @@ void EventListener::registerILAEntityListeners() {
 
             if (hurtActor.isPlayer()) {
                 CANCEL_AND_RETURN_IF(!tab.allowPlayerDamage);
-            } else if (Config::cfg.mob.hostileMobTypeNames.contains(hurtActorTypeName)) {
+            } else if (Config::cfg.protection.mob.hostileMobTypeNames.contains(hurtActorTypeName)) {
                 CANCEL_AND_RETURN_IF(!tab.allowMonsterDamage);
-            } else if (Config::cfg.mob.specialMobTypeNames.contains(hurtActorTypeName)) {
+            } else if (Config::cfg.protection.mob.specialMobTypeNames.contains(hurtActorTypeName)) {
                 CANCEL_AND_RETURN_IF(!tab.allowSpecialDamage);
-            } else if (Config::cfg.mob.passiveMobTypeNames.contains(hurtActorTypeName)) {
+            } else if (Config::cfg.protection.mob.passiveMobTypeNames.contains(hurtActorTypeName)) {
                 CANCEL_AND_RETURN_IF(!tab.allowPassiveDamage);
-            } else if (Config::cfg.mob.customSpecialMobTypeNames.contains(hurtActorTypeName)) {
+            } else if (Config::cfg.protection.mob.customSpecialMobTypeNames.contains(hurtActorTypeName)) {
                 CANCEL_AND_RETURN_IF(!tab.allowCustomSpecialDamage);
             }
         });

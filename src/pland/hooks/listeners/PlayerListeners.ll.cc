@@ -100,9 +100,9 @@ void loadPermissionMapsFromConfig() {
         }
     };
 
-    populateMap(Config::cfg.permissionMaps.itemSpecific, ItemSpecificPermissionMap, "itemSpecific");
-    populateMap(Config::cfg.permissionMaps.blockSpecific, BlockSpecificPermissionMap, "blockSpecific");
-    populateMap(Config::cfg.permissionMaps.blockFunctional, BlockFunctionalPermissionMap, "blockFunctional");
+    populateMap(Config::cfg.protection.permissionMaps.itemSpecific, ItemSpecificPermissionMap, "itemSpecific");
+    populateMap(Config::cfg.protection.permissionMaps.blockSpecific, BlockSpecificPermissionMap, "blockSpecific");
+    populateMap(Config::cfg.protection.permissionMaps.blockFunctional, BlockFunctionalPermissionMap, "blockFunctional");
 }
 
 
@@ -337,15 +337,15 @@ void EventListener::registerLLPlayerListeners() {
                 return false;
             };
 
-            if (Config::cfg.mob.hostileMobTypeNames.contains(mobTypeName)) {
+            if (Config::cfg.protection.mob.hostileMobTypeNames.contains(mobTypeName)) {
                 if (check_perm(tab.allowMonsterDamage, "allowMonsterDamage")) return;
-            } else if (Config::cfg.mob.specialMobTypeNames.contains(mobTypeName)) {
+            } else if (Config::cfg.protection.mob.specialMobTypeNames.contains(mobTypeName)) {
                 if (check_perm(tab.allowSpecialDamage, "allowSpecialDamage")) return;
             } else if (mobTypeName == "minecraft:player") {
                 if (check_perm(tab.allowPlayerDamage, "allowPlayerDamage")) return;
-            } else if (Config::cfg.mob.passiveMobTypeNames.contains(mobTypeName)) {
+            } else if (Config::cfg.protection.mob.passiveMobTypeNames.contains(mobTypeName)) {
                 if (check_perm(tab.allowPassiveDamage, "allowPassiveDamage")) return;
-            } else if (Config::cfg.mob.customSpecialMobTypeNames.count(mobTypeName)) {
+            } else if (Config::cfg.protection.mob.customSpecialMobTypeNames.count(mobTypeName)) {
                 if (check_perm(tab.allowCustomSpecialDamage, "allowCustomSpecialDamage")) return;
             }
             logger->debug("[AttackEntity] All permission checks passed. Allowed.");
