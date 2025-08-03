@@ -38,6 +38,7 @@ void LandBuyGUI::impl(Player& player) {
     auto selector = manager->getSelector(player);
     if (!selector->isPointABSet()) {
         mc_utils::sendText<mc_utils::LogLevel::Error>(player, "您还没有选择领地范围，无法进行购买!"_trf(player));
+        return;
     }
 
 
