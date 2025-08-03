@@ -17,7 +17,7 @@ struct ForbiddenRange {
 };
 
 struct Config {
-    int              version{22};
+    int              version{23};
     ll::io::LogLevel logLevel{ll::io::LogLevel::Info};
 
     EconomyConfig economy;
@@ -181,6 +181,12 @@ struct Config {
     struct {
         bool devTools{false}; // 开发工具
     } internal;
+
+    struct {
+        std::unordered_map<std::string, std::string> itemSpecific;
+        std::unordered_map<std::string, std::string> blockSpecific;
+        std::unordered_map<std::string, std::string> blockFunctional;
+    } permissionMaps;
 
     // Functions
     LDAPI static Config cfg;
