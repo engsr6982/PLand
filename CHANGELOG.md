@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🐛 问题修复
 
 - 修复玩家转让领地能绕过领地最大数量限制的问题 @yangyangzhong82 #131
-
+- 修复未选择领地范围进行购买领地导致崩溃 @engsr6982
+- 修复特定情况下使用领地传送可能传送到异常坐标 @engsr6982
 
 ## [0.12.0-rc.2] - 2025-7-19
 
