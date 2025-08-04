@@ -24,14 +24,18 @@ void LandTeleportGUI::sendTo(Player& player) {
 }
 
 void LandTeleportGUI::impl(Player& player, SharedLand land) {
-    if (land->getTeleportPos().isZero()) {
+    auto const& tpPos = land->getTeleportPos();
+    if (tpPos.isZero() || !land->getAABB().hasPos(tpPos.as<Vec3>())) {
+        if (!tpPos.isZero()) {
+            land->setTeleportPos(LandPos::make(0, 0, 0));
+        }
         PLand::getInstance().getSafeTeleport()->launchTask(
             player,
             {land->getAABB().getMin().as(), land->getDimensionId()}
         );
         return;
     }
-    auto v3 = land->getTeleportPos().as<Vec3>();
+    auto v3 = tpPos.as<Vec3>();
     player.teleport(v3, land->getDimensionId());
 }
 
