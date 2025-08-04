@@ -301,5 +301,6 @@
     "已更新点 B: {}": "Point B updated: {}",
     "[ 选区完成 ]": "[ Selection completed ]",
     "输入 /pland buy 呼出购买菜单": "Enter /pland buy to open purchase menu",
-    "获取维度失败": "Failed to get dimension"
+    "获取维度失败": "Failed to get dimension",
+    "您还没有选择领地范围，无法进行购买!": "You haven't selected territory range, unable to purchase!"
 }

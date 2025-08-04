@@ -10,7 +10,7 @@ namespace land {
  */
 class LandAABB {
 public:
-    LandPos min, max;
+    LandPos min{}, max{};
 
     LDNDAPI static LandAABB make(BlockPos const& min, BlockPos const& max);
 

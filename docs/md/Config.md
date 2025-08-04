@@ -8,7 +8,7 @@
 
 ```json
 {
-  "version": 21, // 配置文件版本，请勿修改
+  "version": 23, // 配置文件版本，请勿修改
   "logLevel": "Info", // 日志等级 Off / Fatal / Error / Warn / Info / Debug / Trace
   "economy": {
     "enabled": true, // 是否启用经济系统
@@ -214,7 +214,11 @@
     "EndermanTakeBlockEvent": true, // 末影人放下方块
     "DragonEggBlockTeleportBeforeEvent": true // 龙蛋传送事件
   },
-  // v0.9.0
+  "internal": {
+    "devTools": false // 是否启用开发工具，启用前请确保您的机器有具有显示器，否则初始化时会引发错误、甚至崩溃。
+  },
+   "protection": {
+      // v0.9.0
   "mob": {
     "hostileMobTypeNames": [
       // 敌对生物
@@ -305,9 +309,82 @@
       // 关联权限："allowCustomSpecialDamage": "允许自定义实体受伤",
     ]
   },
-  "internal": {
-    "devTools": false // 是否启用开发工具，启用前请确保您的机器有具有显示器，否则初始化时会引发错误、甚至崩溃。
+  "permissionMaps": {
+    "itemSpecific": {
+      "minecraft:flint_and_steel": "useFlintAndSteel"
+    },
+    "blockSpecific": {
+      "minecraft:chest": "allowOpenChest"
+    },
+    "blockFunctional": {
+      "minecraft:anvil": "useAnvil"
+    }
   }
+  }
+}
+```
+
+## permissionMaps
+> v22 新增
+
+此部分用于配置特定物品或方块交互所需的权限。这允许服主自定义哪些物品/方块在领地内可以被非成员使用。
+
+它包含三个子对象：
+- `itemSpecific`: 定义了使用特定**物品**时所需的权限。键是物品的命名空间ID，值是权限名称。
+- `blockSpecific`: 定义了与特定**方块**交互时所需的权限（通常是简单交互，如使用床）。键是方块的命名空间ID，值是权限名称。
+- `blockFunctional`: 定义了与具有复杂功能的**方块**交互时所需的权限（如工作台、熔炉等）。键是方块的命名空间ID，值是权限名称。
+
+默认配置中包含了大部分原版物品和方块的权限设置，您可以根据需要进行修改、添加或删除。
+
+### 可用的权限值
+以下是所有可用于 `permissionMaps` 的权限名称字符串：
+
+| 权限名 |
+| :--- |
+| `allowPlace` |
+| `useFlintAndSteel` |
+| `useBoneMeal` |
+| `allowAttackDragonEgg` |
+| `useBed` |
+| `allowOpenChest` |
+| `useCampfire` |
+| `useComposter` |
+| `useNoteBlock` |
+| `useJukebox` |
+| `useBell` |
+| `useDaylightDetector` |
+| `useLectern` |
+| `useCauldron` |
+| `useRespawnAnchor` |
+| `editFlowerPot` |
+| `allowDestroy` |
+| `useCartographyTable` |
+| `useSmithingTable` |
+| `useBrewingStand` |
+| `useAnvil` |
+| `useGrindstone` |
+| `useEnchantingTable` |
+| `useBarrel` |
+| `useBeacon` |
+| `useHopper` |
+| `useDropper` |
+| `useDispenser` |
+| `useLoom` |
+| `useStonecutter` |
+| `useCrafter` |
+| `useChiseledBookshelf` |
+| `useCake` |
+| `useComparator` |
+| `useRepeater` |
+| `useBeeNest` |
+| `useVault` |
+
+**示例**：
+默认情况下，`minecraft:flint_and_steel`（打火石）需要 `useFlintAndSteel` 权限。如果您想让它需要 `allowPlace` 权限，您可以这样修改：
+```json
+"itemSpecific": {
+    "minecraft:flint_and_steel": "allowPlace",
+    // ... 其他物品
 }
 ```
 

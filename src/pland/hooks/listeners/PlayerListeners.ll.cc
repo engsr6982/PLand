@@ -36,65 +36,78 @@
 namespace land {
 
 // These maps are used by PlayerInteractBlockEvent, so they stay in this file.
-static const std::unordered_map<std::string_view, bool LandPermTable::*> ItemSpecificPermissionMap = {
-    {          "minecraft:skull",       &LandPermTable::allowPlace}, // 放置头颅
-    {         "minecraft:banner",       &LandPermTable::allowPlace}, // 放置旗帜
-    {   "minecraft:glow_ink_sac",       &LandPermTable::allowPlace}, // 荧光墨囊给告示牌上色
-    {    "minecraft:end_crystal",       &LandPermTable::allowPlace}, // 放置末地水晶
-    {      "minecraft:ender_eye",       &LandPermTable::allowPlace}, // 放置末影之眼
-    {"minecraft:flint_and_steel", &LandPermTable::useFlintAndSteel}, // 使用打火石
-    {      "minecraft:bone_meal",      &LandPermTable::useBoneMeal}, // 使用骨粉
-    {    "minecraft:armor_stand",       &LandPermTable::allowPlace}  // 放置盔甲架
+static std::unordered_map<std::string_view, bool LandPermTable::*> ItemSpecificPermissionMap;
+static std::unordered_map<std::string_view, bool LandPermTable::*> BlockSpecificPermissionMap;
+static std::unordered_map<std::string_view, bool LandPermTable::*> BlockFunctionalPermissionMap;
+
+// A map to convert permission names (from config) to member pointers.
+static const std::unordered_map<std::string, bool LandPermTable::*> StringToPermPtrMap = {
+    {    "allowPlace", &LandPermTable::allowPlace},
+    {"useFlintAndSteel", &LandPermTable::useFlintAndSteel},
+    {   "useBoneMeal", &LandPermTable::useBoneMeal},
+    {"allowAttackDragonEgg", &LandPermTable::allowAttackDragonEgg},
+    {        "useBed", &LandPermTable::useBed},
+    {"allowOpenChest", &LandPermTable::allowOpenChest},
+    {   "useCampfire", &LandPermTable::useCampfire},
+    {  "useComposter", &LandPermTable::useComposter},
+    {  "useNoteBlock", &LandPermTable::useNoteBlock},
+    {    "useJukebox", &LandPermTable::useJukebox},
+    {       "useBell", &LandPermTable::useBell},
+    {"useDaylightDetector", &LandPermTable::useDaylightDetector},
+    {    "useLectern", &LandPermTable::useLectern},
+    {   "useCauldron", &LandPermTable::useCauldron},
+    {"useRespawnAnchor", &LandPermTable::useRespawnAnchor},
+    { "editFlowerPot", &LandPermTable::editFlowerPot},
+    {  "allowDestroy", &LandPermTable::allowDestroy},
+    {"useCartographyTable", &LandPermTable::useCartographyTable},
+    { "useSmithingTable", &LandPermTable::useSmithingTable},
+    { "useBrewingStand", &LandPermTable::useBrewingStand},
+    {      "useAnvil", &LandPermTable::useAnvil},
+    { "useGrindstone", &LandPermTable::useGrindstone},
+    {"useEnchantingTable", &LandPermTable::useEnchantingTable},
+    {     "useBarrel", &LandPermTable::useBarrel},
+    {     "useBeacon", &LandPermTable::useBeacon},
+    {     "useHopper", &LandPermTable::useHopper},
+    {    "useDropper", &LandPermTable::useDropper},
+    {  "useDispenser", &LandPermTable::useDispenser},
+    {       "useLoom", &LandPermTable::useLoom},
+    { "useStonecutter", &LandPermTable::useStonecutter},
+    {    "useCrafter", &LandPermTable::useCrafter},
+    {"useChiseledBookshelf", &LandPermTable::useChiseledBookshelf},
+    {       "useCake", &LandPermTable::useCake},
+    { "useComparator", &LandPermTable::useComparator},
+    {   "useRepeater", &LandPermTable::useRepeater},
+    {    "useBeeNest", &LandPermTable::useBeeNest},
+    {      "useVault", &LandPermTable::useVault}
 };
 
-static const std::unordered_map<std::string_view, bool LandPermTable::*> BlockSpecificPermissionMap = {
-    {                "minecraft:dragon_egg", &LandPermTable::allowAttackDragonEgg}, // 攻击龙蛋
-    {                       "minecraft:bed",               &LandPermTable::useBed}, // 使用床
-    {                     "minecraft:chest",       &LandPermTable::allowOpenChest}, // 打开箱子
-    {             "minecraft:trapped_chest",       &LandPermTable::allowOpenChest}, // 打开陷阱箱
-    {                  "minecraft:campfire",          &LandPermTable::useCampfire}, // 使用营火
-    {             "minecraft:soul_campfire",          &LandPermTable::useCampfire}, // 使用灵魂营火
-    {                 "minecraft:composter",         &LandPermTable::useComposter}, // 使用堆肥桶
-    {                 "minecraft:noteblock",         &LandPermTable::useNoteBlock}, // 使用音符盒
-    {                   "minecraft:jukebox",           &LandPermTable::useJukebox}, // 使用唱片机
-    {                      "minecraft:bell",              &LandPermTable::useBell}, // 使用钟
-    {"minecraft:daylight_detector_inverted",  &LandPermTable::useDaylightDetector}, // 使用阳光探测器 (反向)
-    {         "minecraft:daylight_detector",  &LandPermTable::useDaylightDetector}, // 使用阳光探测器
-    {                   "minecraft:lectern",           &LandPermTable::useLectern}, // 使用讲台
-    {                  "minecraft:cauldron",          &LandPermTable::useCauldron}, // 使用炼药锅
-    {            "minecraft:respawn_anchor",     &LandPermTable::useRespawnAnchor}, // 使用重生锚
-    {                "minecraft:flower_pot",        &LandPermTable::editFlowerPot}, // 编辑花盆
-    {          "minecraft:sweet_berry_bush",         &LandPermTable::allowDestroy}, // 收集甜浆果
-};
+// Helper to load permissions from config
+void loadPermissionMapsFromConfig() {
+    auto logger = &land::PLand::getInstance().getSelf().getLogger();
 
-static const std::unordered_map<std::string_view, bool LandPermTable::*> BlockFunctionalPermissionMap = {
-    {   "minecraft:cartography_table",  &LandPermTable::useCartographyTable}, // 制图台
-    {      "minecraft:smithing_table",     &LandPermTable::useSmithingTable}, // 锻造台
-    {       "minecraft:brewing_stand",      &LandPermTable::useBrewingStand}, // 酿造台
-    {               "minecraft:anvil",             &LandPermTable::useAnvil}, // 铁砧
-    {          "minecraft:grindstone",        &LandPermTable::useGrindstone}, // 砂轮
-    {    "minecraft:enchanting_table",   &LandPermTable::useEnchantingTable}, // 附魔台
-    {              "minecraft:barrel",            &LandPermTable::useBarrel}, // 木桶
-    {              "minecraft:beacon",            &LandPermTable::useBeacon}, // 信标
-    {              "minecraft:hopper",            &LandPermTable::useHopper}, // 漏斗
-    {             "minecraft:dropper",           &LandPermTable::useDropper}, // 投掷器
-    {           "minecraft:dispenser",         &LandPermTable::useDispenser}, // 发射器
-    {                "minecraft:loom",              &LandPermTable::useLoom}, // 织布机
-    {   "minecraft:stonecutter_block",       &LandPermTable::useStonecutter}, // 切石机
-    {             "minecraft:crafter",           &LandPermTable::useCrafter}, // 合成器
-    {  "minecraft:chiseled_bookshelf", &LandPermTable::useChiseledBookshelf}, // 书架
-    {                "minecraft:cake",              &LandPermTable::useCake}, //  蛋糕
-    {"minecraft:unpowered_comparator",        &LandPermTable::useComparator}, //  比较器
-    {  "minecraft:powered_comparator",        &LandPermTable::useComparator}, //  比较器
-    {  "minecraft:unpowered_repeater",          &LandPermTable::useRepeater}, //  中继器
-    {    "minecraft:powered_repeater",          &LandPermTable::useRepeater}, //  中继器
-    {            "minecraft:bee_nest",           &LandPermTable::useBeeNest}, //  蜂巢
-    {             "minecraft:beehive",           &LandPermTable::useBeeNest}, //
-    {               "minecraft:vault",             &LandPermTable::useVault}  //  蜂箱
-};
+    ItemSpecificPermissionMap.clear();
+    BlockSpecificPermissionMap.clear();
+    BlockFunctionalPermissionMap.clear();
+
+    auto populateMap = [&](const auto& configMap, auto& targetMap, const std::string& mapName) {
+        for (const auto& [itemName, permName] : configMap) {
+            auto it = StringToPermPtrMap.find(permName);
+            if (it != StringToPermPtrMap.end()) {
+                targetMap[itemName] = it->second;
+            } else {
+                logger->warn("Permission '{}' for item '{}' in '{}' map not found. Ignoring.", permName, itemName, mapName);
+            }
+        }
+    };
+
+    populateMap(Config::cfg.protection.permissionMaps.itemSpecific, ItemSpecificPermissionMap, "itemSpecific");
+    populateMap(Config::cfg.protection.permissionMaps.blockSpecific, BlockSpecificPermissionMap, "blockSpecific");
+    populateMap(Config::cfg.protection.permissionMaps.blockFunctional, BlockFunctionalPermissionMap, "blockFunctional");
+}
 
 
 void EventListener::registerLLPlayerListeners() {
+    loadPermissionMapsFromConfig();
     auto* db     = PLand::getInstance().getLandRegistry();
     auto* bus    = &ll::event::EventBus::getInstance();
     auto* logger = &land::PLand::getInstance().getSelf().getLogger();
@@ -324,15 +337,15 @@ void EventListener::registerLLPlayerListeners() {
                 return false;
             };
 
-            if (Config::cfg.mob.hostileMobTypeNames.contains(mobTypeName)) {
+            if (Config::cfg.protection.mob.hostileMobTypeNames.contains(mobTypeName)) {
                 if (check_perm(tab.allowMonsterDamage, "allowMonsterDamage")) return;
-            } else if (Config::cfg.mob.specialMobTypeNames.contains(mobTypeName)) {
+            } else if (Config::cfg.protection.mob.specialMobTypeNames.contains(mobTypeName)) {
                 if (check_perm(tab.allowSpecialDamage, "allowSpecialDamage")) return;
             } else if (mobTypeName == "minecraft:player") {
                 if (check_perm(tab.allowPlayerDamage, "allowPlayerDamage")) return;
-            } else if (Config::cfg.mob.passiveMobTypeNames.contains(mobTypeName)) {
+            } else if (Config::cfg.protection.mob.passiveMobTypeNames.contains(mobTypeName)) {
                 if (check_perm(tab.allowPassiveDamage, "allowPassiveDamage")) return;
-            } else if (Config::cfg.mob.customSpecialMobTypeNames.count(mobTypeName)) {
+            } else if (Config::cfg.protection.mob.customSpecialMobTypeNames.count(mobTypeName)) {
                 if (check_perm(tab.allowCustomSpecialDamage, "allowCustomSpecialDamage")) return;
             }
             logger->debug("[AttackEntity] All permission checks passed. Allowed.");
