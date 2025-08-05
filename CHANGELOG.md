@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2025-8-4
+
+### ✨ 新增功能
+
+- 将交互权限检查的映射表移至配置文件，不再硬编码 @yangyangzhong82 #130
+
+### 🐛 问题修复
+
+- 修复玩家转让领地能绕过领地最大数量限制的问题 @yangyangzhong82 #131
+- 修复未选择领地范围进行购买领地导致崩溃 @engsr6982
+- 修复特定情况下使用领地传送可能传送到异常坐标 #127 @engsr6982 @yangyangzhong82
+
 ## [0.11.0-rc.2] - 2025-7-19
 
 > 基于 0.12.0-rc.2，同步修复一些问题
