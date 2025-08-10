@@ -31,22 +31,46 @@ void EventListener::registerILAWorldListeners() {
     auto* bus    = &ll::event::EventBus::getInstance();
     auto* logger = &land::PLand::getInstance().getSelf().getLogger();
 
+
     RegisterListenerIf(Config::cfg.listeners.ExplosionBeforeEvent, [&]() {
         return bus->emplaceListener<ila::mc::ExplosionBeforeEvent>([db, logger](ila::mc::ExplosionBeforeEvent& ev) {
             logger->debug("[Explode] Pos: {}", ev.explosion().mPos->toString());
-            auto lands = db->getLandAt(
-                BlockPos{ev.explosion().mPos},
-                (int)(ev.explosion().mRadius + 1.0),
-                ev.blockSource().getDimensionId()
-            );
-            for (auto& p : lands) {
-                if (!p->getPermTable().allowExplode) {
+            auto        explosionPos = BlockPos{ev.explosion().mPos};
+            auto        dimid        = ev.blockSource().getDimensionId();
+            SharedLand  centerLand   = db->getLandAt(explosionPos, dimid);
+
+            if (centerLand) {
+                // 规则一：爆炸中心所在领地的权限具有决定性。
+                if (!centerLand->getPermTable().allowExplode) {
                     ev.cancel();
-                    break;
+                    return;
+                }
+
+                // 规则二：如果中心领地允许爆炸，检查是否影响到其他禁止爆炸的、不相关的领地。
+                auto touchedLands = db->getLandAt(explosionPos, (int)(ev.explosion().mRadius + 1.0), dimid);
+                auto centerRoot   = centerLand->getRootLand();
+                for (auto const& touchedLand : touchedLands) {
+                    if (touchedLand->getRootLand() != centerRoot) {
+                        if (!touchedLand->getPermTable().allowExplode) {
+                            ev.cancel();
+                            return;
+                        }
+                    }
+                }
+            } else {
+                // 情况：爆炸发生在领地外。
+                // 如果影响到任何禁止爆炸的领地，则取消。
+                auto touchedLands = db->getLandAt(explosionPos, (int)(ev.explosion().mRadius + 1.0), dimid);
+                for (auto const& touchedLand : touchedLands) {
+                    if (!touchedLand->getPermTable().allowExplode) {
+                        ev.cancel();
+                        return;
+                    }
                 }
             }
         });
     });
+
 
     RegisterListenerIf(Config::cfg.listeners.FarmDecayBeforeEvent, [&]() {
         return bus->emplaceListener<ila::mc::FarmDecayBeforeEvent>([db, logger](ila::mc::FarmDecayBeforeEvent& ev) {
