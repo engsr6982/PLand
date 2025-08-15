@@ -4,13 +4,15 @@ add_repositories("liteldev-repo https://github.com/LiteLDev/xmake-repo.git")
 add_repositories("engsr6982-repo https://github.com/engsr6982/xmake-repo.git")
 add_repositories("miracleforest-repo https://github.com/MiracleForest/xmake-repo.git")
 
-
 -- LeviMc(LiteLDev)
 add_requires("levilamina 1.4.1", {configs = {target_type = "server"}})
 add_requires("levibuildscript")
 
 -- MiracleForest
 add_requires("ilistenattentively 0.7.0")
+
+-- engsr6982
+add_requires("qjspp 0.1.0");
 
 -- xmake
 add_requires("exprtk 0.0.3")
@@ -23,7 +25,6 @@ end
 if not has_config("vs_runtime") then
     set_runtimes("MD")
 end
-
 
 option("test")
     set_default(false)
@@ -64,7 +65,8 @@ target("PLand") -- Change this to your mod name.
     add_packages(
         "levilamina",
         "exprtk",
-        "ilistenattentively"
+        "ilistenattentively",
+        "qjspp"
     )
 
     set_exceptions("none") -- To avoid conflicts with /EHa.
