@@ -119,5 +119,7 @@ struct LandContext {
     std::vector<LandID> mSubLandIDs{};             // 子领地ID
 };
 
+STATIC_ASSERT_AGGREGATE(LandPermTable);
+STATIC_ASSERT_AGGREGATE(LandContext);
 
 } // namespace land

@@ -8,6 +8,7 @@
 #include <expected>
 #include <filesystem>
 #include <optional>
+#include <type_traits>
 #include <unordered_map>
 
 
@@ -30,6 +31,8 @@ class Player;
     CLASS& operator=(CLASS&&) = delete;
 
 #define LD_DISALLOW_COPY_AND_MOVE(CLASS) LD_DISALLOW_COPY(CLASS) LD_DISALLOW_MOVE(CLASS)
+
+#define STATIC_ASSERT_AGGREGATE(TYPE) static_assert(std::is_aggregate_v<TYPE>, #TYPE " must be an aggregate type")
 
 
 namespace land {

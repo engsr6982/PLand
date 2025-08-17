@@ -55,5 +55,7 @@ public:
     }
 };
 
+STATIC_ASSERT_AGGREGATE(LandPos);
+
 
 } // namespace land

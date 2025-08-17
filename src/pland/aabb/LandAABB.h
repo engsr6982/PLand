@@ -128,5 +128,6 @@ public:
     LDNDAPI static int getMinSpacing(LandAABB const& a, LandAABB const& b);
 };
 
+STATIC_ASSERT_AGGREGATE(LandAABB);
 
 } // namespace land
