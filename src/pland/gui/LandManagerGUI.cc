@@ -62,17 +62,19 @@ void LandManagerGUI::sendMainMenu(Player& player, SharedLand land) {
         );
     }
 
-    fm.setContent("领地: {}\n类型: {}\n大小: {}x{}x{} = {}\n范围: {}\n\n{}"_trf(
-        player,
-        land->getName(),
-        land->is3D() ? "3D" : "2D",
-        land->getAABB().getDepth(),
-        land->getAABB().getWidth(),
-        land->getAABB().getHeight(),
-        land->getAABB().getVolume(),
-        land->getAABB().toString(),
-        subContent
-    ));
+    fm.setContent(
+        "领地: {}\n类型: {}\n大小: {}x{}x{} = {}\n范围: {}\n\n{}"_trf(
+            player,
+            land->getName(),
+            land->is3D() ? "3D" : "2D",
+            land->getAABB().getDepth(),
+            land->getAABB().getWidth(),
+            land->getAABB().getHeight(),
+            land->getAABB().getVolume(),
+            land->getAABB().toString(),
+            subContent
+        )
+    );
 
 
     fm.appendButton("编辑权限"_trf(player), "textures/ui/sidebar_icons/promotag", "path", [land](Player& pl) {
@@ -214,16 +216,16 @@ void LandManagerGUI::_implRemoveParentLandGUI(Player& player, SharedLand const& 
             return;
         }
 
-        auto result = PLand::getInstance().getLandRegistry()->removeLandAndSubLands(ptr);
-        if (!result) {
-            economy->reduce(pl, price);
-            return;
-        }
-
         auto subLands = ptr->getSelfAndDescendants();
         auto handle   = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(pl);
         for (const auto& ld : subLands) {
             handle->remove(ld);
+        }
+
+        auto result = PLand::getInstance().getLandRegistry()->removeLandAndSubLands(ptr);
+        if (!result) {
+            economy->reduce(pl, price);
+            return;
         }
 
         ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, mainLandId});
@@ -282,16 +284,16 @@ void LandManagerGUI::_implRemoveMixLandGUI(Player& player, SharedLand const& ptr
             return;
         }
 
-        auto result = PLand::getInstance().getLandRegistry()->removeLandAndSubLands(ptr);
-        if (!result) {
-            economy->reduce(pl, price);
-            return;
-        }
-
         auto subLands = ptr->getSelfAndDescendants();
         auto handle   = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(pl);
         for (const auto& ld : subLands) {
             handle->remove(ld);
+        }
+
+        auto result = PLand::getInstance().getLandRegistry()->removeLandAndSubLands(ptr);
+        if (!result) {
+            economy->reduce(pl, price);
+            return;
         }
 
         ll::event::EventBus::getInstance().publish(PlayerDeleteLandAfterEvent{pl, mainLandId});
@@ -363,8 +365,7 @@ void LandManagerGUI::sendTransferLandGUI(Player& player, SharedLand const& ptr) 
                     return;
                 }
 
-                if (auto res = LandCreateValidator::isPlayerLandCountLimitExceeded(target.getUuid().asString());
-                    !res) {
+                if (auto res = LandCreateValidator::isPlayerLandCountLimitExceeded(target.getUuid().asString()); !res) {
                     LandCreateValidator::sendErrorMessage(self, res.error());
                     return;
                 }
