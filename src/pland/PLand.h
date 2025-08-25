@@ -1,17 +1,18 @@
 #pragma once
 #include <memory>
 
+#include "Global.h"
 #include "ll/api/mod/NativeMod.h"
-
-#include "pland/hooks/EventListener.h"
-#include "pland/infra/DrawHandleManager.h"
-#include "pland/infra/SafeTeleport.h"
-#include "pland/land/LandRegistry.h"
-#include "pland/land/LandScheduler.h"
-#include "pland/selector/SelectorManager.h"
 
 
 namespace land {
+
+class LandRegistry;
+class EventListener;
+class LandScheduler;
+class SafeTeleport;
+class SelectorManager;
+class DrawHandleManager;
 
 class PLand {
     PLand();
@@ -19,16 +20,9 @@ class PLand {
 public: /* private */
     [[nodiscard]] ll::mod::NativeMod& getSelf() const;
 
-    /// @return True if the mod is loaded successfully.
     bool load();
-
-    /// @return True if the mod is enabled successfully.
     bool enable();
-
-    /// @return True if the mod is disabled successfully.
     bool disable();
-
-    /// @return True if the mod is unloaded successfully.
     bool unload();
 
 public: /* public */

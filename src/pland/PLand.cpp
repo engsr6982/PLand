@@ -14,6 +14,7 @@
 #include "pland/hooks/EventListener.h"
 #include "pland/infra/Config.h"
 #include "pland/infra/DrawHandleManager.h"
+#include "pland/infra/SafeTeleport.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/land/LandScheduler.h"
 #include "pland/selector/SelectorManager.h"
@@ -48,8 +49,10 @@ bool PLand::load() {
     if (PLAND_VERSION_SNAPSHOT) {
         logger.warn("Version: {}", PLAND_VERSION_STRING);
         logger.warn("您当前正在使用开发快照版本，此版本可能某些功能异常、损坏、甚至导致崩溃，请勿在生产环境中使用。");
-        logger.warn("You are using a development snapshot version, this version may have some abnormal, broken or even "
-                    "crash functions, please do not use it in production environment.");
+        logger.warn(
+            "You are using a development snapshot version, this version may have some abnormal, broken or even "
+            "crash functions, please do not use it in production environment."
+        );
     } else {
         logger.info("Version: {}", PLAND_VERSION_STRING);
     }

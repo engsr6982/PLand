@@ -15,7 +15,9 @@
 #include "pland/infra/Config.h"
 #include "pland/land/LandRegistry.h"
 
+#include "mc/world/level/BlockSource.h"
 #include "mc/world/level/block/Block.h"
+
 
 namespace land {
 

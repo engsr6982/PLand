@@ -3,6 +3,8 @@
 #include "pland/hooks/listeners/ListenerHelper.h"
 
 #include "ll/api/event/EventBus.h"
+#include "mc/deps/ecs/WeakEntityRef.h"
+
 
 #include "ila/event/minecraft/world/actor/ActorDestroyBlockEvent.h"
 #include "ila/event/minecraft/world/actor/ActorRideEvent.h"
