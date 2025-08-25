@@ -1,4 +1,5 @@
 #include "pland/aabb/LandAABB.h"
+#include "mc/deps/core/math/Vec3.h"
 
 
 namespace land {
@@ -92,6 +93,49 @@ std::vector<BlockPos> LandAABB::getRange() const {
     return range;
 }
 
+std::array<Vec3, 4> LandAABB::getVertices() const {
+    return {
+        min.as(), // 左下
+        {max.x, min.y, min.z}, // 左上
+        max.as(), // 右上
+        {min.x, max.y, max.z}  // 右下
+    };
+}
+
+std::array<Vec3, 8> LandAABB::getCorners() const {
+    return {
+        min.as<Vec3>(), // 000
+        Vec3{max.x, min.y, min.z}, // 100
+        Vec3{max.x, max.y, min.z}, // 110
+        Vec3{min.x, max.y, min.z}, // 010
+        Vec3{min.x, min.y, max.z}, // 001
+        Vec3{max.x, min.y, max.z}, // 101
+        max.as<Vec3>(), // 111
+        Vec3{min.x, max.y, max.z}  // 011
+    };
+}
+
+std::vector<std::pair<BlockPos, BlockPos>> LandAABB::getEdges() const {
+    auto c = getCorners();
+    return {
+        // bottom face
+        {c[0], c[1]},
+        {c[1], c[2]},
+        {c[2], c[3]},
+        {c[3], c[0]},
+        // top face
+        {c[4], c[5]},
+        {c[5], c[6]},
+        {c[6], c[7]},
+        {c[7], c[4]},
+        // vertical edges
+        {c[0], c[4]},
+        {c[1], c[5]},
+        {c[2], c[6]},
+        {c[3], c[7]}
+    };
+}
+
 bool LandAABB::hasPos(const BlockPos& pos, bool ignoreY) const {
     if (ignoreY) {
         return pos.x >= min.x && pos.x <= max.x && pos.z >= min.z && pos.z <= max.z;
@@ -177,8 +221,7 @@ bool LandAABB::isAboveLand(BlockPos const& pos) const {
 
 int LandAABB::getMinSpacing(LandAABB const& a, LandAABB const& b) {
     // 检查是否有重叠
-    if (a.max.x >= b.min.x && a.min.x <= b.max.x &&
-        a.max.z >= b.min.z && a.min.z <= b.max.z) {
+    if (a.max.x >= b.min.x && a.min.x <= b.max.x && a.max.z >= b.min.z && a.min.z <= b.max.z) {
         // 如果有重叠，计算最大重叠深度（返回负值）
         int xOverlap = std::min(a.max.x - b.min.x, b.max.x - a.min.x);
         int zOverlap = std::min(a.max.z - b.min.z, b.max.z - a.min.z);
@@ -188,7 +231,7 @@ int LandAABB::getMinSpacing(LandAABB const& a, LandAABB const& b) {
     // 如果没有重叠，计算最小间距
     int xSpacing = std::max(a.min.x - b.max.x, b.min.x - a.max.x);
     int zSpacing = std::max(a.min.z - b.max.z, b.min.z - a.max.z);
-    
+
     // 返回最小间距（正值）
     return std::max(xSpacing, zSpacing);
 }

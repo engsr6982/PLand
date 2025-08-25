@@ -12,7 +12,6 @@ class IDrawHandle;
 
 class DrawHandleManager final {
     std::unordered_map<UUIDm, std::unique_ptr<IDrawHandle>> mDrawHandles;
-    bool const                                              mBsciAvailable{false};
 
     std::unique_ptr<IDrawHandle> createHandle() const;
 

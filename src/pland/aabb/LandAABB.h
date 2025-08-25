@@ -1,4 +1,5 @@
 #pragma once
+#include "mc/world/level/BlockPos.h"
 #include "pland/Global.h"
 #include "pland/aabb/LandPos.h"
 
@@ -80,6 +81,21 @@ public:
      * @return std::vector<BlockPos> 表示底面矩形框的边线坐标
      */
     LDNDAPI std::vector<BlockPos> getRange() const;
+
+    /**
+     * @brief 获取 AABB 区域的顶点坐标 (4个角点，平面)
+     */
+    LDNDAPI std::array<Vec3, 4> getVertices() const;
+
+    /**
+     * @brief 获取 AABB 区域的顶点坐标 (8个角点，立方体)
+     */
+    LDNDAPI std::array<Vec3, 8> getCorners() const;
+
+    /**
+     * @brief 获取立方体 Box 的 12 条边线(每条边线有两个点)
+     */
+    LDNDAPI std::vector<std::pair<BlockPos, BlockPos>> getEdges() const;
 
     LDNDAPI bool hasPos(BlockPos const& pos, bool ignoreY = false) const;
 

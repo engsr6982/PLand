@@ -1,34 +1,42 @@
 #include "pland/infra/DrawHandleManager.h"
 #include "mc/world/actor/player/Player.h"
 #include "pland/PLand.h"
+#include "pland/infra/Config.h"
+#include "pland/infra/DrawHandleType.h"
 #include "pland/infra/draw/IDrawHandle.h"
 #include "pland/infra/draw/impl/BSCIDrawHandle.h"
+#include "pland/infra/draw/impl/DebugShapeHandle.h"
 #include "pland/infra/draw/impl/DefaultDrawHandle.h"
+#include <memory>
 
 
 namespace land {
 
 
-DrawHandleManager::DrawHandleManager() : mBsciAvailable(BsciDrawHandle::isBsciModuleLoaded()) {
+DrawHandleManager::DrawHandleManager() {
     auto& logger = PLand::getInstance().getSelf().getLogger();
-    logger.trace("[DrawHandleManager] Check the dependency status");
-
-    if (mBsciAvailable) {
-        logger.trace("[DrawHandleManager] BedrockServerClientInterface module is loaded");
-    } else {
-        logger.warn("[DrawHandleManager] The BedrockServerClientInterface module is not loaded, and the plugin uses "
-                    "the built-in particle system!");
+    if (Config::cfg.land.drawHandleBackend == DrawHandleBackend::BedrockServerClientInterfaceMod
+        && !BsciDrawHandle::isBsciModuleLoaded()) {
+        logger.warn(
+            "[DrawHandleManager] The BedrockServerClientInterface module is not loaded, and the plugin uses "
+            "the built-in particle system!"
+        );
         logger.warn("[DrawHandleManager] BedrockServerClientInterface 模块未加载，插件将使用内置粒子系统!");
+        Config::cfg.land.drawHandleBackend = DrawHandleBackend::DefaultParticle;
+        Config::trySave();
     }
 }
 
 DrawHandleManager::~DrawHandleManager() = default;
 
 std::unique_ptr<IDrawHandle> DrawHandleManager::createHandle() const {
-    if (mBsciAvailable) {
-        return std::make_unique<BsciDrawHandle>();
-    } else {
+    switch (Config::cfg.land.drawHandleBackend) {
+    case DrawHandleBackend::DefaultParticle:
         return std::make_unique<DefaultDrawHandle>();
+    case DrawHandleBackend::BedrockServerClientInterfaceMod:
+        return std::make_unique<BsciDrawHandle>();
+    case DrawHandleBackend::MinecraftDebugShape:
+        return std::make_unique<DebugShapeHandle>();
     }
 }
 

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ✨ 新增功能
+
+- 新增 DebugShape 绘制后端 #135 @engsr6982
+- 新增 `land.drawHandleBackend` 配置项，用于选择绘制后端 #135 @engsr6982
+
 ### 🐛 问题修复
 
 - 修复子领地爆炸权限无效 #133 @yangyangzhong82
