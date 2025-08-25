@@ -28,7 +28,9 @@ Thank you for your interest in this project! To keep our codebase maintainable a
      - `feat: 增加土地边界判断逻辑`
    - 请确保 CI 通过后再请求合并。
    - 如果修改了涉及 i18n 的内容，请同步更新 `assets/lang` 目录下的语言文件。
-   - 如果修改了依赖版本，请指明依赖版本号或者提交哈希，例如: `add_requires("levilamina 1.0.0")`
+   - 如果修改了依赖版本，请务必锁定依赖版本号或者提交哈希，例如: `add_requires("levilamina 1.0.0")`
+   - PR 的历史记录应保持清晰，避免不必要的合并提交。
+   - 对于某些脏历史记录，请使用 `git rebase` 或 `git cherry-pick` 等命令进行清理。
 
 ---
 
@@ -36,6 +38,9 @@ Thank you for your interest in this project! To keep our codebase maintainable a
 
 - 请遵循 [LeviLamina C++ Style Guide](https://lamina.levimc.org/zh/maintainer_guides/cpp_style_guide/)。
 - 请使用 [clang-format](https://clang.llvm.org/extra/clang-format/) 格式化代码。
+- 例外的情况：对于特定结构体，例如 `Vec3`，内部字段可以直接使用 `x`, `y`, `z`，无需使用 `mX`, `mY`, `mZ`。
+- 对于头文件，务必使用 `#pragma once` 以防止重复包含。
+- 尽可能使用前向声明(`forward declaration`)，避免头文件相互包含，导致编译时间增加。
 
 ---
 
@@ -64,7 +69,11 @@ feat: 新增末影人搬运权限控制
 
 ## 📄 Changelog 编写 | Changelog Updates
 
-每次 PR 提交必须附带一句话 changelog 描述，或者在 PR 描述中说明修改内容，供后续 release 时使用。
+每次提交 PR 时，请确保更新 `CHANGELOG.md` 文件，以便记录项目更新日志。
+
+> 对于 ChangeLog 的格式，参考 https://keepachangelog.com/en/1.0.0/
+
+> 注意：如果更改的内容有对应的 Issue，请将 Issue 编号添加到提交信息中，例如 `fix: xxxxx #123 @xxxx`。
 
 ---
 
