@@ -1,18 +1,4 @@
-function parse_levilamina_version() 
-    -- 读取 xmake.lua 文件
-    -- 使用正则提取 "levilamina x.x.x" 或者 "levilamina x.x.x-rc.x" 的版本号
-    -- 解析语义版本号，返回 major, minor, patch, rc (如果没有 rc 则为 0)
-    -- 写入到 Version.h 中，格式如下：
-    -- DEPEND_LEVILAMINA_MAJOR = 1
-    -- DEPEND_LEVILAMINA_MINOR = 0
-    -- DEPEND_LEVILAMINA_PATCH = 0
-    -- DEPEND_LEVILAMINA_RC = 0
-    -- DEPEND_LEVILAMINA_STRING = "x.x.x-rc.x"
-    
-end
-
 function main()
-    parse_levilamina_version()
     -- 创建include/pland目录（如果不存在）
     os.mkdir("src/pland")
     
