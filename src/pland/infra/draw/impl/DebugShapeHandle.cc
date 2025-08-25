@@ -1,4 +1,6 @@
 #include "DebugShapeHandle.h"
+#include "mc/deps/core/math/Vec3.h"
+#include "mc/world/phys/AABB.h"
 #include "pland/Global.h"
 #include "pland/aabb/LandAABB.h"
 #include "pland/infra/draw/IDrawHandle.h"
@@ -27,10 +29,38 @@ class FixedBox {
         return id++;
     }
 
+    AABB fixAABB(LandPos const& min, LandPos const& max) {
+        return AABB{
+            Vec3{min.x + 0.08, min.y + 0.08, min.z + 0.08},
+            Vec3{max.x + 0.98, max.y + 0.98, max.z + 0.98}
+        };
+    }
+    std::vector<std::pair<Vec3, Vec3>> getEdgesWithOffset(LandAABB const& aabb) {
+        auto faabb = fixAABB(aabb.min, aabb.max);
+        return {
+            // bottom
+            {                              faabb.min, {faabb.min.x, faabb.min.y, faabb.max.z}},
+            {{faabb.max.x, faabb.min.y, faabb.min.z}, {faabb.max.x, faabb.min.y, faabb.max.z}},
+            {{faabb.min.x, faabb.max.y, faabb.min.z}, {faabb.min.x, faabb.max.y, faabb.max.z}},
+            {{faabb.max.x, faabb.max.y, faabb.min.z},                               faabb.max},
+            // top
+            {                              faabb.min, {faabb.max.x, faabb.min.y, faabb.min.z}},
+            {{faabb.min.x, faabb.max.y, faabb.min.z}, {faabb.max.x, faabb.max.y, faabb.min.z}},
+            {{faabb.min.x, faabb.min.y, faabb.max.z}, {faabb.max.x, faabb.min.y, faabb.max.z}},
+            {{faabb.min.x, faabb.max.y, faabb.max.z},                               faabb.max},
+            // side
+            {                              faabb.min, {faabb.min.x, faabb.max.y, faabb.min.z}},
+            {{faabb.max.x, faabb.min.y, faabb.min.z}, {faabb.max.x, faabb.max.y, faabb.min.z}},
+            {{faabb.min.x, faabb.min.y, faabb.max.z}, {faabb.min.x, faabb.max.y, faabb.max.z}},
+            {{faabb.max.x, faabb.min.y, faabb.max.z},                               faabb.max},
+        };
+    }
+
 public:
     LD_DISALLOW_COPY(FixedBox);
     explicit FixedBox(LandAABB const& aabb) : mId(getNextId()) {
-        auto edges = aabb.getEdges();
+        // 获取偏移后的边，保证 Box 始终能精确显示范围
+        auto edges = getEdgesWithOffset(aabb);
         assert(edges.size() == LineNum);
         for (int i = 0; i < LineNum; ++i) {
             mLines[i] = std::make_unique<debug_shape::DebugLine>(edges[i].first, edges[i].second);
