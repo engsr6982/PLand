@@ -246,11 +246,14 @@ LeasingService::LeasingService(
 }
 
 LeasingService::~LeasingService() {
-    auto& bus = ll::event::EventBus::getInstance();
-    bus.removeListener(impl->mPlayerJoinListener);
-    bus.removeListener(impl->mPlayerEnterLandListener);
-    impl->mQuit->store(true);
-    impl->mSleep->interrupt(true);
+    auto const& conf = ConfigProvider::getLeasingConfig();
+    if (conf.enabled) {
+        auto& bus = ll::event::EventBus::getInstance();
+        bus.removeListener(impl->mPlayerJoinListener);
+        bus.removeListener(impl->mPlayerEnterLandListener);
+        impl->mQuit->store(true);
+        impl->mSleep->interrupt(true);
+    }
 }
 
 ll::Expected<> LeasingService::ensureLandLeased(std::shared_ptr<Land> const& land) const {
