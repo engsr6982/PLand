@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.20.3] - 2026-04-12
+
+### 🐛 问题修复
+
+- Fix(LeasingService): 修复 mod 关闭时空指针访问异常 [#211] @engsr6982
+
 ## [0.20.2] - 2026-04-12
 
 ### 🐛 问题修复
@@ -681,3 +688,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - 2024-9-18
 
 - Initial beta release
+
+
+[#211]: https://github.com/IceBlcokMC/PLand/issues/211
+
+[0.20.3]: https://github.com/IceBlcokMC/PLand/releases/tag/v0.20.3
+[0.20.2]: https://github.com/IceBlcokMC/PLand/releases/tag/v0.20.2
+[0.0.2]: https://github.com/IceBlcokMC/PLand/releases/tag/v0.0.2
+[0.0.1]: https://github.com/IceBlcokMC/PLand/releases/tag/v0.0.1
