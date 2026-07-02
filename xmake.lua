@@ -14,7 +14,7 @@ add_requires("ilistenattentively 0.12.0")
 
 -- IceBlockMC
 add_requires("ll-bstats 0.3.0")
-add_requires("economy_bridge 0.3.0")
+add_requires("economy_bridge 0.4.0")
 
 -- xmake
 add_requires("exprtk 0.0.3")
