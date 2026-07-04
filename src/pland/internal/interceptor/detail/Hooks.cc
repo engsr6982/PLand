@@ -171,14 +171,18 @@ LL_TYPE_INSTANCE_HOOK(
     LecternBlockDropBookHook,
     ll::memory::HookPriority::Normal,
     LecternBlock,
-    &LecternBlock::_dropBook,
+    &LecternBlock::$attack,
     bool,
-    Player&         player,
+    Player*         player,
     BlockPos const& pos
 ) {
+    if (!player) {
+        return origin(player, pos);
+    }
+
     auto& registry = PLand::getInstance().getLandRegistry();
-    auto  land     = registry.getLandAt(pos, player.getDimensionId());
-    if (!hasRolePermission<&RolePerms::useLectern>(land, player.getUuid())) {
+    auto  land     = registry.getLandAt(pos, player->getDimensionId());
+    if (!hasRolePermission<&RolePerms::useLectern>(land, player->getUuid())) {
         return false; // 拦截取下书本
     }
     return origin(player, pos);

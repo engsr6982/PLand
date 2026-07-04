@@ -157,7 +157,7 @@ public:
     explicit Task() = delete;
     explicit Task(Player& player, DimensionPos targetPos)
     : mId(getNextTaskId()),
-      mWeakPlayer(player.getWeakEntity()),
+      mWeakPlayer(player.getEntityContext().getWeakRef()),
       mTargetDimension(player.getLevel().getDimension(targetPos.second)),
       mTargetChunkPos(ChunkPos(targetPos.first)),
       mSourcePos({player.getPosition(), player.getDimensionId()}),

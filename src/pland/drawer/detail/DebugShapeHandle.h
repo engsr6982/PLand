@@ -1,4 +1,5 @@
 #pragma once
+#include "mc/world/level/dimension/DimensionType.h"
 #include "pland/drawer/IDrawerHandle.h"
 #include "pland/Global.h"
 

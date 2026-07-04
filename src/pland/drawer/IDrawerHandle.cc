@@ -9,7 +9,7 @@ namespace land::drawer {
 IDrawerHandle::IDrawerHandle()  = default;
 IDrawerHandle::~IDrawerHandle() = default;
 
-void IDrawerHandle::setTargetPlayer(Player& player) { mTargetPlayer = player.getWeakEntity(); }
+void IDrawerHandle::setTargetPlayer(Player& player) { mTargetPlayer = player.getEntityContext().getWeakRef(); }
 
 optional_ref<Player> IDrawerHandle::getTargetPlayer() const {
     auto mob = mTargetPlayer.tryUnwrap<Mob>();

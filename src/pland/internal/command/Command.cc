@@ -238,7 +238,7 @@ void land_draw(CommandOrigin const& ori, CommandOutput& out, DrawParam const& pa
     }
 
     case DrawType::CurrentLand: {
-        auto land = db.getLandAt(player.getPosition(), player.getDimensionId().id);
+        auto land = db.getLandAt(player.getPosition(), player.getDimensionId());
         if (!land) {
             feedback_utils::sendErrorText(out, "您当前不在领地内"_trl(localeCode));
             return;
@@ -250,7 +250,7 @@ void land_draw(CommandOrigin const& ori, CommandOutput& out, DrawParam const& pa
 
     case DrawType::NearLand: {
         auto lands =
-            db.getLandAt(player.getPosition(), ConfigProvider::getDrawConfig().range, player.getDimensionId().id);
+            db.getLandAt(player.getPosition(), ConfigProvider::getDrawConfig().range, player.getDimensionId());
         for (auto& land : lands) handle->draw(land, mce::Color::WHITE());
         feedback_utils::sendText(out, "已绘制附近 {} 个领地"_trl(localeCode, lands.size()));
         break;
@@ -266,7 +266,7 @@ void land_set_teleport_pos(CommandOrigin const& ori, CommandOutput& out) {
     auto& mod      = PLand::getInstance();
     auto& registry = mod.getLandRegistry();
     auto  point    = player.getPosition();
-    auto  land     = registry.getLandAt(point, player.getDimensionId().id);
+    auto  land     = registry.getLandAt(point, player.getDimensionId());
     if (!land) {
         feedback_utils::sendErrorText(out, "您当前不在领地内"_trl(localeCode));
         return;

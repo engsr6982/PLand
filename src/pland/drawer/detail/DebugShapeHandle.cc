@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <mc/_HeaderOutputPredefine.h>
 #include <mc/deps/core/math/Color.h>
-#include <mc/deps/core/utility/AutomaticID.h>
 #include <mc/world/phys/AABB.h>
 #include <memory>
 #include <unordered_map>

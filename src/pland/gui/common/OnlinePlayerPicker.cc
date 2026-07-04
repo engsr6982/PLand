@@ -26,7 +26,7 @@ void OnlinePlayerPicker::sendTo(Player& player, Callback const& callback, BackTo
         if (target.isSimulatedPlayer() && !includeSimulatedPlayers) {
             return true; // skip
         }
-        f.appendButton(target.getRealName(), [weak = target.getWeakEntity(), callback](Player& player) {
+        f.appendButton(target.getRealName(), [weak = target.getEntityContext().getWeakRef(), callback](Player& player) {
             if (auto target = weak.tryUnwrap<Mob>(); target && target->getEntityTypeId() == ActorType::Player) {
                 callback(player, *static_cast<Player*>(target.as_ptr()));
             }
