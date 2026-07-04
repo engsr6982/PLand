@@ -5,8 +5,10 @@ add_repositories("iceblcokmc https://github.com/IceBlcokMC/xmake-repo.git")
 add_repositories("miracleforest-repo https://github.com/MiracleForest/xmake-repo.git")
 
 
+set_toolchains("clang-cl")
+
 -- LeviMc(LiteLDev)
-add_requires("levilamina 26.10.14", {configs = {target_type = "server"}})
+add_requires("levilamina 26.20.1", {configs = {target_type = "server"}})
 add_requires("levibuildscript")
 
 -- MiracleForest
