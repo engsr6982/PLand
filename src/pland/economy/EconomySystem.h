@@ -31,6 +31,10 @@ public:
 
     LDNDAPI std::string getCostMessage(Player& player, llong amount) const;
 
+    // 扣除玩家余额；扣款前显式校验余额是否充足，避免经济后端实现缺陷导致余额被扣成负数。
+    // 返回 true 表示余额充足且已成功扣款。
+    LDNDAPI bool reduceChecked(mce::UUID const& uuid, int64_t amount) const;
+
     LDNDAPI std::shared_ptr<econbridge::IEconomy> get() const;
 
     inline std::shared_ptr<econbridge::IEconomy> operator->() const { return get(); }

@@ -64,6 +64,14 @@ void EconomySystem::reload() { impl->reload(); }
 
 std::shared_ptr<econbridge::IEconomy> EconomySystem::get() const { return impl->mEconomyImpl; }
 
+bool EconomySystem::reduceChecked(mce::UUID const& uuid, int64_t amount) const {
+    auto economy = get();
+    if (economy->get(uuid) < amount) {
+        return false;
+    }
+    return economy->reduce(uuid, amount);
+}
+
 std::string EconomySystem::getCostMessage(Player& player, llong amount) const {
     auto localeCode = player.getLocaleCode();
 
