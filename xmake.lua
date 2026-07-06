@@ -13,8 +13,8 @@ add_requires("levibuildscript")
 add_requires("ilistenattentively 0.12.0")
 
 -- IceBlockMC
-add_requires("ll-bstats 0.3.0")
-add_requires("economy_bridge 0.4.0")
+add_requires("ll-bstats 0.4.0")
+add_requires("economy_bridge 0.5.0")
 
 -- xmake
 add_requires("exprtk 0.0.3")
@@ -28,6 +28,10 @@ end
 
 if not has_config("vs_runtime") then
     set_runtimes("MD")
+end
+
+if is_plat("windows") then
+    set_toolchains("clang-cl") -- windows allways use clang-cl
 end
 
 option("devtool") -- 开发工具
@@ -44,8 +48,8 @@ target("PLand")
     set_symbols("debug")
     if is_plat("windows") then
         add_defines("NOMINMAX", "UNICODE")
-        set_exceptions("none") -- To avoid conflicts with /EHa.
-        add_cxflags( "/EHa", "/utf-8", "/W4", "/w44265", "/w44289", "/w44296", "/w45263", "/w44738", "/w45204")
+        set_exceptions("cxx")
+        add_cxflags("/utf-8", "/W4", "/w44265", "/w44289", "/w44296", "/w45263", "/w44738", "/w45204")
         add_cxflags(
             "/EHs",
             "-Wno-microsoft-cast",
@@ -59,7 +63,6 @@ target("PLand")
             "-Wno-pragma-system-header-outside-header",
             {tools = {"clang_cl"}}
         )
-        set_toolchains("clang-cl")
     end
     add_defines(
         "LDAPI_EXPORT",
