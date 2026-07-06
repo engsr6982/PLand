@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- v0.21.0 pending -->
+
+### 🐛 问题修复
+
+- 修复玩家在余额不足的情况下购买领地成功 [#217] @engsr6982 @yangyangzhong82
+
+### 🧩 其他改动
+
+- 补充遗漏的方块权限 [#221] @engsr6982
+- 适配 Bedrock Server v26.20 (LeviLamina v26.20.x) @yangyangzhong82 @engsr6982
+
 ## [0.20.3] - 2026-06-09
 
 ### 🐛 问题修复
@@ -17,13 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🐛 问题修复
 
-- 修复领地保存不成功的问题 #209  @yangyangzhong82
+- 修复领地保存不成功的问题 #209 @yangyangzhong82
 
 ## [0.20.1] - 2026-04-12
 
 ### 🐛 问题修复
 
-- 修复在LeviLamina v26.10.5以上的版本不能使用的问题  @yangyangzhong82
+- 修复在LeviLamina v26.10.5以上的版本不能使用的问题 @yangyangzhong82
 
 ## [0.20.0] - 2026-04-08
 
@@ -94,6 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.18.0] - 2026-02-14
 
 > ⚠️ 本次版本为权限系统重构版本，存在破坏性变更
+>
 > - 旧版领地权限数据与新版本完全不兼容
 > - 插件会在启动时自动执行数据迁移
 > - 由于权限模型发生变化，迁移后的权限可能与旧版行为不完全一致
@@ -103,11 +115,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 新增领地 **名称**、**描述** 可配置检查 @engsr6982
 - DevTool 新增领地树可视化 @engsr6982
 - 管理 GUI：
-    - 管理玩家表单支持分页和搜索（#129）@engsr6982
-    - 支持按领地 ID 查找领地 @engsr6982
+  - 管理玩家表单支持分页和搜索（#129）@engsr6982
+  - 支持按领地 ID 查找领地 @engsr6982
 - 权限系统:
-    - 区分环境权限与角色权限 #170 @engsr6982
-    - 成员支持独立权限配置 #170 @engsr6982
+  - 区分环境权限与角色权限 #170 @engsr6982
+  - 成员支持独立权限配置 #170 @engsr6982
 - 添加实体拾取物品事件(关联`allowMobGrief`权限) #171 @engsr6982
 - 分离拦截配置(InterceptorConfig.json)和领地配置(Config.json)，改进权限映射 #169 @engsr6982
 
@@ -689,8 +701,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial beta release
 
+<!-- Issue / Pull Request -->
 
 [#211]: https://github.com/IceBlcokMC/PLand/issues/211
+[#217]: https://github.com/IceBlcokMC/PLand/issues/217
+[#221]: https://github.com/IceBlcokMC/PLand/issues/221
+
+<!-- Release -->
 
 [0.20.3]: https://github.com/IceBlcokMC/PLand/releases/tag/v0.20.3
 [0.20.2]: https://github.com/IceBlcokMC/PLand/releases/tag/v0.20.2
