@@ -10,7 +10,7 @@ add_requires("levilamina 26.20.0", {configs = {target_type = "server"}})
 add_requires("levibuildscript")
 
 -- MiracleForest
-add_requires("ilistenattentively 0.12.0")
+add_requires("ilistenattentively 0.13.0")
 
 -- IceBlockMC
 add_requires("ll-bstats 0.4.0")
