@@ -4,6 +4,7 @@
 #include "pland/internal/interceptor/helper/InterceptorHelper.h"
 
 #include "ll/api/event/world/FireSpreadEvent.h"
+#include "mc/world/level/dimension/DimensionType.h"
 
 #include <ll/api/event/EventBus.h>
 

@@ -107,7 +107,7 @@ struct LandContext {
     LandPermTable            mLandPermTable{};                      // 领地权限
     std::string              mLandOwner{};                          // 领地主人(默认UUID,其余情况看mOwnerDataIsXUID)
     std::vector<std::string> mLandMembers{};                        // 领地成员
-    std::string              mLandName{"Unnamed territories"_tr()}; // 领地名称
+    std::string              mLandName{"Unnamed territories"};      // 领地名称
     int                      mOriginalBuyPrice{0};                  // 原始购买价格
     LandHoldType             mHoldType{LandHoldType::Bought};       // 购买/租赁模式
     struct LeaseInfo {

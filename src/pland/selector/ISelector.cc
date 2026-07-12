@@ -17,7 +17,7 @@
 namespace land {
 
 ISelector::ISelector(Player& player, LandDimid dimid, bool is3D)
-: mPlayer(player.getWeakEntity()),
+: mPlayer(player.getEntityContext().getWeakRef()),
   mDimid(dimid),
   m3D(is3D) {
     auto localeCode            = player.getLocaleCode();

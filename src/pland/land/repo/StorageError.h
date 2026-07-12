@@ -26,7 +26,7 @@ struct StorageError : public ll::ErrorInfoBase {
 
     LDNDAPI StorageError(ErrorCode code, std::string message);
 
-    LDNDAPI std::string message() const noexcept override;
+    LDNDAPI std::string message(std::string_view locale) const noexcept override;
 
     LDNDAPI static bool hasError(ErrorCode errors, ErrorCode flag);
 

@@ -243,7 +243,12 @@ ll::Expected<> LandCreateValidator::ensureSubLandPositionIsLegal(
 }
 
 
-std::string LandCreateValidator::ValidateError::message() const noexcept { return "Un translated ValidateError"; }
+std::string LandCreateValidator::ValidateError::message(std::string_view locale) const noexcept {
+    if (!locale.empty()) {
+        return translateError(std::string{locale});
+    }
+    return "Un translated ValidateError";
+}
 
 void LandCreateValidator::ValidateError::sendTo(Player& player) const {
     feedback_utils::sendErrorText(player, translateError(player.getLocaleCode()));

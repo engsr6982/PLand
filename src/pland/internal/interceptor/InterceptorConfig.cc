@@ -287,6 +287,28 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
         {                     "minecraft:crafter",      useWorkstation}, // 合成器
         {          "minecraft:chiseled_bookshelf",        useContainer}, // 雕纹书架
 
+        {"minecraft:copper_chest", useContainer},
+        {"minecraft:exposed_copper_chest", useContainer},
+        {"minecraft:weathered_copper_chest", useContainer},
+        {"minecraft:oxidized_copper_chest", useContainer},
+        {"minecraft:waxed_copper_chest", useContainer},
+        {"minecraft:waxed_exposed_copper_chest", useContainer},
+        {"minecraft:waxed_weathered_copper_chest", useContainer},
+        {"minecraft:waxed_oxidized_copper_chest", useContainer},
+        {"minecraft:oak_shelf", useWorkstation},
+        {"minecraft:spruce_shelf", useWorkstation},
+        {"minecraft:birch_shelf", useWorkstation},
+        {"minecraft:jungle_shelf", useWorkstation},
+        {"minecraft:acacia_shelf", useWorkstation},
+        {"minecraft:dark_oak_shelf", useWorkstation},
+        {"minecraft:mangrove_shelf", useWorkstation},
+        {"minecraft:cherry_shelf", useWorkstation},
+        {"minecraft:pale_oak_shelf", useWorkstation},
+        {"minecraft:bamboo_shelf", useWorkstation},
+        {"minecraft:crimson_shelf", useWorkstation},
+        {"minecraft:warped_shelf", useWorkstation},
+        {"minecraft:barrel", useWorkstation},
+
         // 展示架
         {                "minecraft:acacia_shelf",        useContainer},
         {                "minecraft:bamboo_shelf",        useContainer},

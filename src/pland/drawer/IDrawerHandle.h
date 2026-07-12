@@ -2,9 +2,9 @@
 #include "mc/deps/core/math/Color.h"
 #include "mc/deps/core/utility/optional_ref.h"
 #include "mc/deps/ecs/WeakEntityRef.h"
+#include "mc/world/level/dimension/DimensionType.h"
 #include "pland/Global.h"
 
-#include <mc/deps/core/utility/AutomaticID.h>
 
 class Player;
 
