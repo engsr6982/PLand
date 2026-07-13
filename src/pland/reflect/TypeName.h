@@ -134,3 +134,37 @@ static_assert(psig_result == "allowPlace");
 } // namespace checker
 
 } // namespace land::reflect
+
+
+namespace land::reflect::test {
+
+struct TestStruct { bool isActive; };
+
+consteval auto test_extractFunctionSignature() {
+    constexpr auto sig = std::string_view(__FUNCSIG__);
+    auto full = extractFunctionSignature(sig);
+    return extractLeafName(full);  // leaf name
+}
+static_assert(test_extractFunctionSignature() == "test_extractFunctionSignature");
+
+template<typename T>
+consteval auto test_extractTemplateInner() {
+    constexpr auto sig = std::string_view(__FUNCSIG__);
+    return extractTemplateInner(sig);
+}
+static_assert(test_extractTemplateInner<int>() == "int");
+static_assert(test_extractTemplateInner<bool>() == "bool");
+
+static_assert(extractLeafName("ns::func") == "func");
+static_assert(extractLeafName("&ns::func") == "func");
+
+template<auto Ptr>
+consteval auto test_extractTemplateInnerLeafName() {
+    constexpr auto sig = std::string_view(__FUNCSIG__);
+    return extractTemplateInnerLeafName(sig);
+}
+static_assert(test_extractTemplateInnerLeafName<&TestStruct::isActive>() == "isActive");
+
+static_assert(getTemplateInnerLeafName<&TestStruct::isActive>() == "isActive");
+
+} // namespace land::reflect::test
