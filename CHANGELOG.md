@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.1] - 2026-07-21
+
+### 🐛 问题修复
+
+- **修复拦截器及权限加载异常**：解决因反射损坏导致插件启动时无法识别物品与方块权限规则、引发领地保护失效的问题。 @engsr6982
+
 ## [0.21.0] - 2026-07-12
 
 ### 🐛 问题修复
