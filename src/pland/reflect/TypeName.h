@@ -4,18 +4,15 @@
 namespace land::reflect {
 
 /**
- * 提取函数签名
- * @param sig 原始函数签名 __FUNCSIG__ (...::funcName<Target>(...))
- * @return funcName<Target>
+ * 提取函数名称
+ * @param sig 原始函数签名 __FUNCSIG__
  */
 consteval std::string_view extractFunctionSignature(std::string_view sig) {
-    // 查找最后一个 '('
     const size_t params_start = sig.rfind('(');
     if (params_start == std::string_view::npos) return {};
 
-    // 从 '(' 向前倒序扫描，找到函数名的起点
     size_t cursor = params_start;
-    int    depth  = 0; // 用于处理嵌套的模板尖括号 <...>
+    int    depth  = 0;
 
     while (cursor > 0) {
         --cursor;
@@ -26,62 +23,67 @@ consteval std::string_view extractFunctionSignature(std::string_view sig) {
         } else if (c == '<') {
             depth--;
         } else if (depth == 0) {
-            // 当前不在模板参数内部，寻找分隔符
-            // 情况 A: 遇到作用域符 "::"，说明函数名结束
             if (c == ':' && cursor > 0 && sig[cursor - 1] == ':') {
-                // cursor 指向第二个 ':', cursor-1 是第一个 ':'
-                // 我们需要截取的是 :: 之后的内容
                 return sig.substr(cursor + 1, params_start - (cursor + 1));
             }
-            // 情况 B: 遇到空格 " "，通常是返回类型或调用约定与函数名的分隔
             if (c == ' ') {
                 return sig.substr(cursor + 1, params_start - (cursor + 1));
             }
         }
     }
-
-    // 情况 C: 扫描到了字符串头部（无命名空间的全局函数）
     return sig.substr(0, params_start);
 }
 
 /**
- * 提取模板参数内容
- * @param sig 函数签名 __FUNCSIG__ (...::funcName<Target>(...))
- * @return 模板参数内容 (Target)
+ * 提取模板参数内容（同时兼容 MSVC `<...>` 和 Clang/Clang-cl `[...]`）
+ * @param sig 函数签名 __FUNCSIG__
  */
 consteval std::string_view extractTemplateInner(std::string_view sig) {
-    // 使用 rfind 查找最后一个 '(', 锁定函数参数列表的起始位置
-    // 避开 (shared_ptr<T>) 或 void(*)(int) 等造成的干扰
+    if (sig.empty()) return {};
+
+    // -------------------------------------------------------------
+    // 情况 A：Clang / Clang-cl 格式
+    // 格式如：...func(void) [Ptr = &(anonymous namespace)::RolePerms::allowPlace]
+    // -------------------------------------------------------------
+    if (sig.ends_with(']')) {
+        size_t bracket_start = sig.rfind('[');
+        if (bracket_start != std::string_view::npos) {
+            std::string_view inner  = sig.substr(bracket_start + 1, sig.length() - bracket_start - 2);
+            size_t           eq_pos = inner.find('=');
+            if (eq_pos != std::string_view::npos) {
+                inner = inner.substr(eq_pos + 1);
+                while (!inner.empty() && inner.front() == ' ') {
+                    inner.remove_prefix(1);
+                }
+                return inner;
+            }
+        }
+    }
+
+    // -------------------------------------------------------------
+    // 情况 B：MSVC 格式
+    // 格式如：...func<&RolePerms::allowPlace>(void)
+    // -------------------------------------------------------------
     const size_t params_start = sig.rfind('(');
     if (params_start == std::string_view::npos || params_start == 0) return {};
 
-    // 检查 '(' 前面是否是模板结束符 '>'
-    // MSVC 格式: func<arg>(params)
-    // 如果不是 '>'，说明不是模板函数实例化
     size_t end_bracket = params_start - 1;
     while (end_bracket > 0 && sig[end_bracket] == ' ') {
         end_bracket--;
     }
 
-    // 如果参数表前不是 '>'，说明这不是一个模板实例化函数
     if (sig[end_bracket] != '>') return {};
 
-    // 从 '>' 开始向左倒序扫描，寻找匹配的 '<'
     size_t cursor = end_bracket;
     int    depth  = 0;
 
-    // 循环直到字符串开头
     while (true) {
         const char c = sig[cursor];
         if (c == '>') {
             depth++;
         } else if (c == '<') {
             depth--;
-            // 当深度归零时，说明找到了最外层对应的 '<'
             if (depth == 0) {
-                // 内容起始：cursor + 1
-                // 内容长度：end_bracket - (cursor + 1)
-                // 注意：这里使用 end_bracket 而不是 params_start - 1，以防中间有空格
                 return sig.substr(cursor + 1, end_bracket - (cursor + 1));
             }
         }
@@ -92,25 +94,34 @@ consteval std::string_view extractTemplateInner(std::string_view sig) {
 }
 
 /**
- * 提取末尾名称
- * @param full_name 全名 如 &land::RolePerms::allowDestroy
- * @return allowDestroy
+ * 提取末尾纯名称（去除 '&', '*', 'struct/class', 'const' 及作用域前缀）
+ * @param full_name 全名（如 "&land::RolePerms::allowDestroy" 或 "struct RolePerms*"）
  */
 consteval std::string_view extractLeafName(std::string_view full_name) {
     std::string_view result = full_name;
 
-    // 移除开头的取地址符 '&' (如果有)
+    // 1. 去除开头的取地址符 '&'
     if (result.starts_with('&')) {
         result.remove_prefix(1);
     }
-    // 倒序查找最后的 "::"
-    // std::string_view::rfind 在编译期是可用的
+
+    // 2. 去除末尾的指针/引用/空格修饰符（如 "RolePerms*" -> "RolePerms"）
+    while (!result.empty() && (result.back() == '*' || result.back() == '&' || result.back() == ' ')) {
+        result.remove_suffix(1);
+    }
+
+    // 3. 截取最后一个 "::" 之后的部分（可直接去除前置作用域/匿名命名空间）
     size_t last_scope = result.rfind("::");
     if (last_scope != std::string_view::npos) {
-        // 截取 "::" 之后的部分 (+2 是为了跳过 "::" 的长度)
-        return result.substr(last_scope + 2);
+        result = result.substr(last_scope + 2);
     }
-    // 如果没有 "::"，说明本身就是纯名称，直接返回
+
+    // 4. 处理没有 "::" 但带前缀关键字的情况（如 "struct RolePerms" -> "RolePerms"）
+    size_t last_space = result.rfind(' ');
+    if (last_space != std::string_view::npos) {
+        result = result.substr(last_space + 1);
+    }
+
     return result;
 }
 
@@ -123,48 +134,35 @@ consteval std::string_view getTemplateInnerLeafName() {
     return extractTemplateInnerLeafName(__FUNCSIG__);
 }
 
-namespace checker {
-
-inline static constexpr std::string_view psig =
-    "class std::basic_string_view<char,struct std::char_traits<char> > __cdecl "
-    "land::reflect::getTemplateInnerLeafName<&land::RolePerms::allowPlace>(void)";
-inline static constexpr std::string_view psig_result = extractTemplateInnerLeafName(psig);
-static_assert(psig_result == "allowPlace");
-
-} // namespace checker
+template <typename T>
+consteval std::string_view getTypeTemplateInnerLeafName() {
+    return extractTemplateInnerLeafName(__FUNCSIG__);
+}
 
 } // namespace land::reflect
 
 
-namespace land::reflect::test {
+namespace {
 
-struct TestStruct { bool isActive; };
+struct GuardDummy {
+    int dummyField;
+};
 
-consteval auto test_extractFunctionSignature() {
-    constexpr auto sig = std::string_view(__FUNCSIG__);
-    auto full = extractFunctionSignature(sig);
-    return extractLeafName(full);  // leaf name
-}
-static_assert(test_extractFunctionSignature() == "test_extractFunctionSignature");
+consteval std::string_view testSelfSigHelper() { return land::reflect::extractFunctionSignature(__FUNCSIG__); }
 
-template<typename T>
-consteval auto test_extractTemplateInner() {
-    constexpr auto sig = std::string_view(__FUNCSIG__);
-    return extractTemplateInner(sig);
-}
-static_assert(test_extractTemplateInner<int>() == "int");
-static_assert(test_extractTemplateInner<bool>() == "bool");
+static_assert(
+    land::reflect::getTemplateInnerLeafName<&GuardDummy::dummyField>() == "dummyField",
+    "[reflect error] Failed to reflect member pointer 'dummyField'!"
+);
 
-static_assert(extractLeafName("ns::func") == "func");
-static_assert(extractLeafName("&ns::func") == "func");
+static_assert(
+    land::reflect::getTypeTemplateInnerLeafName<GuardDummy>() == "GuardDummy",
+    "[reflect error] Failed to reflect type 'GuardDummy'!"
+);
 
-template<auto Ptr>
-consteval auto test_extractTemplateInnerLeafName() {
-    constexpr auto sig = std::string_view(__FUNCSIG__);
-    return extractTemplateInnerLeafName(sig);
-}
-static_assert(test_extractTemplateInnerLeafName<&TestStruct::isActive>() == "isActive");
+static_assert(
+    testSelfSigHelper() == "testSelfSigHelper",
+    "[reflect error] Failed to extract function signature from live __FUNCSIG__!"
+);
 
-static_assert(getTemplateInnerLeafName<&TestStruct::isActive>() == "isActive");
-
-} // namespace land::reflect::test
+} // namespace
