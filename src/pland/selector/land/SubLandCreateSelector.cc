@@ -2,6 +2,7 @@
 
 #include "pland/PLand.h"
 #include "pland/drawer/DrawHandleManager.h"
+#include "pland/land/Config.h"
 #include "pland/land/Land.h"
 #include "pland/selector/ISelector.h"
 
@@ -16,7 +17,7 @@ SubLandCreateSelector::SubLandCreateSelector(Player& player, std::shared_ptr<Lan
     mParentRangeDrawId = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(player)->draw(
         parent->getAABB(),
         parent->getDimensionId(),
-        mce::Color::RED()
+        mce::Color::fromHexString(ConfigProvider::getDrawConfig().color.onCreateSubLandDrawParentLand)
     );
 }
 

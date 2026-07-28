@@ -243,15 +243,21 @@ void land_draw(CommandOrigin const& ori, CommandOutput& out, DrawParam const& pa
             feedback_utils::sendErrorText(out, "您当前不在领地内"_trl(localeCode));
             return;
         }
-        handle->draw(land, mce::Color::GREEN());
+        handle->draw(
+            land,
+            mce::Color::fromHexString(ConfigProvider::getDrawConfig().color.onUseCommandDrawCurrentLand)
+        );
         feedback_utils::sendText(out, "已绘制领地"_trl(localeCode));
         break;
     }
 
     case DrawType::NearLand: {
-        auto lands =
-            db.getLandAt(player.getPosition(), ConfigProvider::getDrawConfig().range, player.getDimensionId());
-        for (auto& land : lands) handle->draw(land, mce::Color::WHITE());
+        auto lands = db.getLandAt(player.getPosition(), ConfigProvider::getDrawConfig().range, player.getDimensionId());
+        for (auto& land : lands)
+            handle->draw(
+                land,
+                mce::Color::fromHexString(ConfigProvider::getDrawConfig().color.onUseCommandDrawNearLand)
+            );
         feedback_utils::sendText(out, "已绘制附近 {} 个领地"_trl(localeCode, lands.size()));
         break;
     }
@@ -667,7 +673,11 @@ bool LandCommand::setup() {
         h.runtimeOverload()
             .text("admin")
             .text("lease")
-            .required("force_target", ll::command::ParamKind::Enum, ll::command::enum_name_v<handlers::AdminLeaseForceTarget>)
+            .required(
+                "force_target",
+                ll::command::ParamKind::Enum,
+                ll::command::enum_name_v<handlers::AdminLeaseForceTarget>
+            )
             .optional("id", ll::command::ParamKind::Int)
             .execute(&handlers::admin_force_freeze_or_recycle);
 

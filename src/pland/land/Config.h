@@ -20,7 +20,7 @@ struct ForbiddenRange {
 
 
 struct ConfigData {
-    inline static constexpr int SchemaVersion = 34;
+    inline static constexpr int SchemaVersion = 35;
 
     int version{SchemaVersion};
 
@@ -38,6 +38,14 @@ struct ConfigData {
             bool       enabled{false};                  // 领地绘制
             int        range{64};                       // 绘制范围(以玩家为中心, 半径)
             DrawerType backend{DrawerType::DebugShape}; // 绘制实现
+
+            struct ColorConfig {
+                std::string onSelectorConfirm{"#FF00FF"};             // 选区确认后的颜色
+                std::string onResizeLandDrawOldRange{"#FF0000"};      // 调整领地大小时绘制旧范围的颜色
+                std::string onCreateSubLandDrawParentLand{"#FFFF00"}; // 创建子领地时绘制父领地的颜色
+                std::string onUseCommandDrawCurrentLand{"#00FF00"};   // 使用命令时绘制当前领地的颜色
+                std::string onUseCommandDrawNearLand{"#00FFFF"};      // 使用命令时绘制附近领地的颜色
+            } color;
         } draw;
 
         struct NotificationsConfig {

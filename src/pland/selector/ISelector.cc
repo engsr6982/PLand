@@ -198,7 +198,11 @@ void ISelector::onPointConfirmed() {
     if (mDrawedRange) {
         handle->remove(mDrawedRange);
     }
-    mDrawedRange = handle->draw(*newLandAABB(), mDimid, mce::Color::GREEN());
+    mDrawedRange = handle->draw(
+        *newLandAABB(),
+        mDimid,
+        mce::Color::fromHexString(ConfigProvider::getDrawConfig().color.onSelectorConfirm)
+    );
 }
 
 void ISelector::tick() { sendTitle(); }

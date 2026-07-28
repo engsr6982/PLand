@@ -1,6 +1,7 @@
 #include "LandResizeSelector.h"
 #include "pland/PLand.h"
 #include "pland/drawer/DrawHandleManager.h"
+#include "pland/land/Config.h"
 #include "pland/land/Land.h"
 #include "pland/selector/ISelector.h"
 
@@ -16,7 +17,7 @@ LandResizeSelector::LandResizeSelector(Player& player, std::shared_ptr<Land> lan
     mOldRangeDrawId = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(player)->draw(
         land->getAABB(),
         land->getDimensionId(),
-        mce::Color::BLUE()
+        mce::Color::fromHexString(ConfigProvider::getDrawConfig().color.onResizeLandDrawOldRange)
     );
 }
 
