@@ -1,9 +1,11 @@
 #pragma once
 #include "pland/Global.h"
 #include "pland/aabb/LandAABB.h"
+#include "pland/enums/LandRole.h"
 #include "pland/enums/LandType.h"
 #include "pland/infra/DirtyCounter.h"
 #include "repo/LandContext.h"
+
 
 #include "nlohmann/json.hpp"
 

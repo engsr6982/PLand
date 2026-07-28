@@ -35,21 +35,6 @@ using LandDimid = int;     // 领地所在维度
 
 inline constexpr LandID INVALID_LAND_ID = -1; // 无效的领地ID / 默认值
 
-enum class LandPermType : uint8_t {
-    Admin  = 0, // 管理员
-    Owner  = 1, // 领地主人
-    Member = 2, // 领地成员
-
-    // Actor includes both non-member players and non-player entities (e.g., Mobs, TNT).
-    Actor = 3, // 实体
-
-    // 兼容旧数据
-    Operator [[deprecated]] = 0, // 旧版操作员，映射到 Admin
-    Guest [[deprecated]]    = 3, // 旧版访客，映射到 Actor
-};
-using LandPermRole = LandPermType;
-
-
 inline int constexpr GlobalSubLandMaxNestedLevel = 16; // 子领地最大嵌套层数
 
 // Minecraft UUID::fromString / canParse 仅允许 0-9, a-f, A-F

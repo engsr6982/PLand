@@ -1,5 +1,6 @@
 #pragma once
 #include "pland/Global.h"
+#include "pland/enums/LandRole.h"
 
 #include <memory>
 #include <string_view>
