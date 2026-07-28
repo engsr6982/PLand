@@ -4,17 +4,22 @@
 #include "pland/drawer/DrawHandleManager.h"
 #include "pland/land/Config.h"
 #include "pland/land/Land.h"
-#include "pland/selector/ISelector.h"
+#include "pland/selector/ABSelector.h"
 
 #include "mc/deps/core/math/Color.h"
 
 namespace land {
 
+struct SubLandCreateSelector::Impl {
+    std::weak_ptr<Land> mParentLand;
+    drawer::GeoId       mParentRangeDrawId;
+};
 
 SubLandCreateSelector::SubLandCreateSelector(Player& player, std::shared_ptr<Land> parent)
-: ISelector(player, parent->getDimensionId(), true) {
-    mParentLand        = parent;
-    mParentRangeDrawId = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(player)->draw(
+: ABSelector(player, parent->getDimensionId(), true),
+  impl(std::make_unique<Impl>()) {
+    impl->mParentLand        = parent;
+    impl->mParentRangeDrawId = PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(player)->draw(
         parent->getAABB(),
         parent->getDimensionId(),
         mce::Color::fromHexString(ConfigProvider::getDrawConfig().color.onCreateSubLandDrawParentLand)
@@ -27,12 +32,12 @@ SubLandCreateSelector::~SubLandCreateSelector() {
         return;
     }
 
-    if (mParentRangeDrawId) {
-        PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(*player)->remove(mParentRangeDrawId);
+    if (impl->mParentRangeDrawId) {
+        PLand::getInstance().getDrawHandleManager()->getOrCreateHandle(*player)->remove(impl->mParentRangeDrawId);
     }
 }
 
-std::shared_ptr<Land> SubLandCreateSelector::getParentLand() const { return mParentLand.lock(); }
+std::shared_ptr<Land> SubLandCreateSelector::getParentLand() const { return impl->mParentLand.lock(); }
 
 std::shared_ptr<Land> SubLandCreateSelector::newSubLand() const {
     if (!isPointABSet()) {

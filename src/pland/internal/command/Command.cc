@@ -11,6 +11,7 @@
 #include "pland/land/Config.h"
 #include "pland/land/Land.h"
 #include "pland/land/repo/LandRegistry.h"
+#include "pland/selector/ABSelector.h"
 #include "pland/selector/SelectorManager.h"
 #include "pland/service/LandManagementService.h"
 #include "pland/service/ServiceLocator.h"
@@ -186,10 +187,18 @@ void selection_set_point(CommandOrigin const& ori, CommandOutput& out, SetParam 
     auto pos = player.getFeetBlockPos();
 
     auto selector = PLand::getInstance().getSelectorManager()->getSelector(player);
+    assert(selector);
+
+    auto abselector = selector->as<ABSelector>();
+    if (!abselector) {
+        // TODO: handle thirdparty AbstractSelector
+        return;
+    }
+
     if (param.type == SetType::A) {
-        selector->setPointA(pos);
+        abselector->setPointA(pos);
     } else {
-        selector->setPointB(pos);
+        abselector->setPointB(pos);
     }
 }
 
@@ -724,20 +733,6 @@ bool LandCommand::setup() {
             }
         });
     }
-#endif
-
-#ifdef DEBUG
-    h.overload().text("debug").text("dump_selectors").execute([](CommandOrigin const& ori, CommandOutput&) {
-        if (ori.getOriginType() != CommandOriginType::DedicatedServer) {
-            return;
-        }
-
-        auto& logger = land::PLand::getInstance().getSelf().getLogger();
-        land::PLand::getInstance().getSelectorManager()->forEach([&logger](mce::UUID const& uuid, ISelector* selector) {
-            logger.debug("Selector: {} - {}", uuid.asString(), selector->dumpDebugInfo());
-            return true;
-        });
-    });
 #endif
 
     return true;

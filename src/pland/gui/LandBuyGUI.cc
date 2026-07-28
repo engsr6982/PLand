@@ -10,6 +10,7 @@
 #include "pland/land/LandResizeSettlement.h"
 #include "pland/land/repo/LandRegistry.h"
 #include "pland/land/repo/StorageError.h"
+#include "pland/selector/ABSelector.h"
 #include "pland/selector/SelectorManager.h"
 #include "pland/selector/land/LandResizeSelector.h"
 #include "pland/selector/land/OrdinaryLandCreateSelector.h"
@@ -22,6 +23,7 @@
 #include "utils/BackUtils.h"
 
 
+#include <cassert>
 #include <climits>
 #include <ll/api/form/CustomForm.h>
 #include <ll/api/form/SimpleForm.h>
@@ -39,7 +41,15 @@ void LandBuyGUI::sendTo(Player& player) {
         return;
     }
 
-    auto selector = manager->getSelector(player);
+    auto abstractSelect = manager->getSelector(player);
+    assert(abstractSelect != nullptr);
+
+    auto selector = abstractSelect->as<ABSelector>();
+    if (!selector) {
+        // TODO: handle thirdparty AbstractSelector
+        return;
+    }
+
     if (!selector->isPointABSet()) {
         feedback_utils::sendErrorText(player, "您还没有选择领地范围，无法进行购买!"_trl(localeCode));
         return;

@@ -1,14 +1,14 @@
 #pragma once
-#include "pland/selector/ISelector.h"
+#include "pland/selector/ABSelector.h"
 
 
 namespace land {
 
 class Land;
 
-class SubLandCreateSelector final : public ISelector {
-    std::weak_ptr<Land> mParentLand;
-    drawer::GeoId               mParentRangeDrawId;
+class SubLandCreateSelector final : public ABSelector {
+    struct Impl;
+    std::unique_ptr<Impl> impl;
 
 public:
     LDAPI explicit SubLandCreateSelector(Player& player, std::shared_ptr<Land> parent);

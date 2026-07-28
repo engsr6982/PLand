@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 支持自定义领地边框绘制颜色 @engsr6982 [#224](https://github.com/IceBlcokMC/PLand/issues/224)
 
+### 🐛 问题修复
+
+- 修复 PC 端选区时有概率多次触发选择 @engsr6982 [#228](https://github.com/IceBlcokMC/PLand/issues/228)
+
 ## [0.21.1] - 2026-07-21
 
 ### 🐛 问题修复

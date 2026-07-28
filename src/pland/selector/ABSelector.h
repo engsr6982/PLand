@@ -1,36 +1,24 @@
 #pragma once
+#include "AbstractSelector.h"
 #include "pland/Global.h"
-#include "pland/drawer/DrawHandleManager.h"
 
-#include "mc/deps/ecs/WeakEntityRef.h"
-#include "mc/network/packet/SetTitlePacket.h"
-#include "mc/world/level/BlockPos.h"
+#include <memory>
+#include <type_traits>
 
-class Player;
-class ItemStack;
-
+namespace mce {
+class UUID;
+}
 
 namespace land {
 
 class LandAABB;
 
-class ISelector {
-    WeakRef<EntityContext>  mPlayer{};
-    LandDimid               mDimid{-1};
-    bool                    m3D = false;
-    std::optional<BlockPos> mPointA{std::nullopt};
-    std::optional<BlockPos> mPointB{std::nullopt};
-    drawer::GeoId           mDrawedRange{};
-    SetTitlePacket          mTitlePacket{SetTitlePacket::TitleType::Title};
-    SetTitlePacket          mSubTitlePacket{SetTitlePacket::TitleType::Subtitle};
-
+class ABSelector : public AbstractSelector {
 public:
-    LDAPI explicit ISelector(Player& player, LandDimid dimid, bool is3D);
-    LDAPI virtual ~ISelector();
+    LDAPI explicit ABSelector(Player& player, LandDimid dimid, bool is3D);
+    LDAPI ~ABSelector() override;
 
-public:
-    LDNDAPI optional_ref<Player> getPlayer() const;
-    LDNDAPI LandDimid            getDimensionId() const;
+    LDNDAPI LandDimid getDimensionId() const;
     LDNDAPI std::optional<BlockPos> getPointA() const;
     LDNDAPI std::optional<BlockPos> getPointB() const;
 
@@ -45,21 +33,11 @@ public:
     LDNDAPI bool isPointABSet() const;
     LDNDAPI bool is3D() const;
 
-    LDAPI void sendTitle() const;
-
     LDNDAPI std::optional<LandAABB> newLandAABB() const;
 
-    LDNDAPI std::string dumpDebugInfo() const;
-
-    template <typename T>
-    [[nodiscard]] T* as() {
-        return dynamic_cast<T*>(this);
-    }
-
-public: /* virtual */
-        /**
-         * @brief 当 A 点被设置时触发
-         */
+    /**
+     * @brief 当 A 点被设置时触发
+     */
     LDAPI virtual void onPointASet() /* = 0 */;
 
     /**
@@ -91,12 +69,20 @@ public: /* virtual */
      */
     LDAPI virtual void onPointConfirmed();
 
-    /**
-     * @note `SelectorManager` 每 20 tick 调用一次
-     * @note 用于向玩家发送标题提示当前状态
-     */
-    LDAPI virtual void tick();
+public: /// AbstractSelector
+    LDNDAPI Player* getPlayer() const override;
+
+    LDNDAPI bool isSpecifiedSelectTool(std::string const& typeName) const override;
+
+    LDAPI void selectNext(Player& player, BlockPos const& p) override;
+
+    LDAPI void tick() override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl;
 };
 
+static_assert(std::is_abstract_v<ABSelector> == false);
 
 } // namespace land

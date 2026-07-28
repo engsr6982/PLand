@@ -13,6 +13,7 @@
 #include "pland/land/Config.h"
 #include "pland/land/Land.h"
 #include "pland/land/repo/LandRegistry.h"
+#include "pland/selector/ABSelector.h"
 #include "pland/selector/SelectorManager.h"
 #include "pland/selector/land/SubLandCreateSelector.h"
 #include "pland/service/LandManagementService.h"
@@ -91,12 +92,18 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
         }
     }
 
-    fm.appendInput("start", "开始Y轴"_trl(localeCode), "int", std::to_string(selector->getPointA()->y));
-    fm.appendInput("end", "结束Y轴"_trl(localeCode), "int", std::to_string(selector->getPointB()->y));
+    ABSelector* abSelector{nullptr};
+    if (abSelector = selector->as<ABSelector>(); !abSelector) {
+        // TODO: handle thirdparty AbstractSelector
+        return;
+    }
+
+    fm.appendInput("start", "开始Y轴"_trl(localeCode), "int", std::to_string(abSelector->getPointA()->y));
+    fm.appendInput("end", "结束Y轴"_trl(localeCode), "int", std::to_string(abSelector->getPointB()->y));
 
     fm.appendLabel(exception);
 
-    fm.sendTo(player, [selector, subSelector, parentLand](Player& pl, CustomFormResult res, FormCancelReason) {
+    fm.sendTo(player, [abSelector, subSelector, parentLand](Player& pl, CustomFormResult res, FormCancelReason) {
         if (!res.has_value()) {
             return;
         }
@@ -133,8 +140,8 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
                 }
             }
 
-            selector->setYRange(startY, endY);
-            selector->onPointConfirmed();
+            abSelector->setYRange((int)startY, (int)endY);
+            abSelector->onPointConfirmed();
         } catch (...) {
             sendConfirmPrecinctsYRange(pl, "处理失败,请输入正确的Y轴范围"_trl(localeCode));
         }
@@ -142,4 +149,4 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
 }
 
 
-} // namespace land
+} // namespace land::gui

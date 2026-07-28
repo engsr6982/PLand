@@ -1,38 +1,84 @@
 #include "SelectorManager.h"
-#include "ll/api/event/ListenerBase.h"
+#include "AbstractSelector.h"
 #include "pland/PLand.h"
-#include "pland/infra/Debouncer.h"
 #include "pland/land/Config.h"
 #include "pland/utils/McUtils.h"
-
 
 #include "ll/api/chrono/GameChrono.h"
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/coro/InterruptableSleep.h"
 #include "ll/api/event/EventBus.h"
+#include "ll/api/event/ListenerBase.h"
 #include "ll/api/event/player/PlayerDisconnectEvent.h"
 #include "ll/api/event/player/PlayerInteractBlockEvent.h"
 #include "ll/api/thread/ServerThreadExecutor.h"
 
-
+#include "mc/platform/UUID.h"
 #include "mc/world/actor/player/Player.h"
 
 #include <atomic>
+#include <chrono>
+#include <memory>
+
+#include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
 
 
 namespace land {
 
+class CooldownLock {
+    ll::coro::Duration                            mCooldown;
+    std::shared_ptr<ll::coro::InterruptableSleep> mInterruptableSleep{nullptr};
+    std::shared_ptr<std::atomic<bool>>            mAbortFlag{nullptr};
+    ll::thread::ServerThreadExecutor const&       mExecutor;
+    absl::flat_hash_set<mce::UUID>                mCoolingPlayers;
+
+public:
+    explicit CooldownLock(ll::coro::Duration cooldown, ll::thread::ServerThreadExecutor const& exec)
+    : mCooldown(cooldown),
+      mInterruptableSleep(std::make_shared<ll::coro::InterruptableSleep>()),
+      mAbortFlag(std::make_shared<std::atomic<bool>>(false)),
+      mExecutor(exec) {}
+
+    ~CooldownLock() {
+        mAbortFlag->store(true);
+        mInterruptableSleep->interrupt(true); // inplace
+    }
+
+    bool tryTrigger(mce::UUID const& uuid) {
+        auto [_, inserted] = mCoolingPlayers.insert(uuid);
+        if (!inserted) {
+            return false;
+        }
+
+        ll::coro::keepThis([this, uuid, sleep = mInterruptableSleep, abort = mAbortFlag]() -> ll::coro::CoroTask<> {
+            co_await sleep->sleepFor(mCooldown);
+            if (abort->load()) {
+                co_return;
+            }
+            this->mCoolingPlayers.erase(uuid);
+        }).launch(mExecutor);
+        return true;
+    }
+};
+
+
 struct SelectorManager::Impl {
-    std::unordered_map<mce::UUID, std::unique_ptr<ISelector>> mSelectors{};
-    std::unordered_map<mce::UUID, Debouncer>                  mStabilization{};
-    ll::event::ListenerPtr                                    mListener{nullptr};
-    std::shared_ptr<std::atomic<bool>>                        mCoroStop{nullptr};
-    std::shared_ptr<ll::coro::InterruptableSleep>             mInterruptableSleep{nullptr};
+    absl::flat_hash_map<mce::UUID, std::unique_ptr<AbstractSelector>> mSelectors{};
+
+    std::unique_ptr<CooldownLock> mDebouncer{nullptr};
+
+    ll::event::ListenerPtr                        mListener{nullptr};
+    std::shared_ptr<std::atomic<bool>>            mCoroStop{nullptr};
+    std::shared_ptr<ll::coro::InterruptableSleep> mInterruptableSleep{nullptr};
 
     ll::event::ListenerPtr mPlayerDisconnectListener;
 };
 
 SelectorManager::SelectorManager() : impl(std::make_unique<Impl>()) {
+    impl->mDebouncer =
+        std::make_unique<CooldownLock>(std::chrono::milliseconds(200), ll::thread::ServerThreadExecutor::getDefault());
+
     impl->mListener = ll::event::EventBus::getInstance().emplaceListener<ll::event::PlayerInteractBlockEvent>(
         [this](ll::event::PlayerInteractBlockEvent const& ev) {
             auto& player = ev.self();
@@ -41,36 +87,17 @@ SelectorManager::SelectorManager() : impl(std::make_unique<Impl>()) {
                 return;
             }
 
-            // 防抖
-            {
-                auto iter = impl->mStabilization.find(player.getUuid());
-                if (iter == impl->mStabilization.end()) {
-                    iter = impl->mStabilization.emplace(player.getUuid(), 250).first; // ms
-                }
-                if (!iter->second.ready()) {
-                    return;
-                }
-            }
-
-            auto& itemTypeName = ConfigProvider::getSelectionConfig().item;
-            if (ev.item().getTypeName() != itemTypeName) {
-                return;
-            }
-
             auto selector = getSelector(player);
             if (!selector) {
                 return;
             }
 
-            if (selector->isPointABSet()) {
-                mc_utils::executeCommand("pland buy", player); // TODO: 优化
+            if (!selector->isSpecifiedSelectTool(ev.item().getTypeName())) {
                 return;
             }
 
-            if (!selector->isPointASet()) {
-                selector->setPointA(ev.blockPos());
-            } else if (!selector->isPointBSet()) {
-                selector->setPointB(ev.blockPos());
+            if (impl->mDebouncer->tryTrigger(player.getUuid())) {
+                selector->selectNext(player, ev.blockPos());
             }
         }
     );
@@ -94,22 +121,16 @@ SelectorManager::SelectorManager() : impl(std::make_unique<Impl>()) {
                 auto& selector = iter->second;
 
                 try {
-                    if (!selector->getPlayer()) {
-                        iter = impl->mSelectors.erase(iter); // 玩家下线
-                        continue;
-                    }
-
                     selector->tick();
-
                     ++iter;
                 } catch (std::exception const& e) {
-                    iter = impl->mSelectors.erase(iter);
+                    impl->mSelectors.erase(iter++);
                     land::PLand::getInstance().getSelf().getLogger().error(
                         "SelectorManager: Exception in selector tick: {}",
                         e.what()
                     );
                 } catch (...) {
-                    iter = impl->mSelectors.erase(iter);
+                    impl->mSelectors.erase(iter++);
                     land::PLand::getInstance().getSelf().getLogger().error(
                         "SelectorManager: Unknown exception in selector tick"
                     );
@@ -133,15 +154,15 @@ SelectorManager::~SelectorManager() {
 bool SelectorManager::hasSelector(mce::UUID const& uuid) const { return impl->mSelectors.contains(uuid); }
 bool SelectorManager::hasSelector(Player& player) const { return impl->mSelectors.contains(player.getUuid()); }
 
-ISelector* SelectorManager::getSelector(mce::UUID const& uuid) const {
+AbstractSelector* SelectorManager::getSelector(mce::UUID const& uuid) const {
     if (auto it = impl->mSelectors.find(uuid); it != impl->mSelectors.end()) {
         return it->second.get();
     }
     return nullptr;
 }
-ISelector* SelectorManager::getSelector(Player& player) const { return getSelector(player.getUuid()); }
+AbstractSelector* SelectorManager::getSelector(Player& player) const { return getSelector(player.getUuid()); }
 
-bool SelectorManager::_startSelection(std::unique_ptr<ISelector> selector) {
+bool SelectorManager::startSelection(std::unique_ptr<AbstractSelector> selector) {
     auto& uuid = selector->getPlayer()->getUuid();
     if (hasSelector(uuid)) {
         return false;
