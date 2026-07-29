@@ -22,7 +22,7 @@ struct HashedStringEq {
 };
 
 struct InterceptorConfig {
-    inline static constexpr int SchemaVersion = 3;
+    inline static constexpr int SchemaVersion = 4;
 
     int version = SchemaVersion;
     struct Listeners {

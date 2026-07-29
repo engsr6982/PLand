@@ -371,61 +371,99 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
     };
 
     config.rules.mob.allowHostileDamage = {
-        "minecraft:zombie",            // 僵尸
-        "minecraft:skeleton",          // 骷髅
-        "minecraft:creeper",           // 苦力怕
-        "minecraft:spider",            // 蜘蛛
-        "minecraft:enderman",          // 末影人
-        "minecraft:witch",             // 女巫
-        "minecraft:blaze",             // 烈焰人
-        "minecraft:ghast",             // 恶魂
-        "minecraft:magma_cube",        // 岩浆怪
-        "minecraft:silverfish",        // 银鱼
-        "minecraft:slime",             // 史莱姆
-        "minecraft:guardian",          // 守卫者
-        "minecraft:elder_guardian",    // 长老守卫者
-        "minecraft:wither_skeleton",   // 凋零骷髅
-        "minecraft:stray",             // 流浪者
-        "minecraft:husk",              // 干尸
-        "minecraft:zombie_villager",   // 僵尸村民
-        "minecraft:drowned",           // 溺尸
-        "minecraft:phantom",           // 幻翼
-        "minecraft:pillager",          // 掠夺者
-        "minecraft:vindicator",        // 卫道士
-        "minecraft:ravager",           // 劫掠兽
-        "minecraft:evocation_illager", // 唤魔者
-        "minecraft:vex",               // 恼鬼
-        "minecraft:shulker",           // 潜影贝
-        "minecraft:endermite",         // 末影螨
-        "minecraft:cave_spider",       // 洞穴蜘蛛
-        "minecraft:zoglin",            // 僵尸疣猪兽
-        "minecraft:piglin_brute",      // 猪灵残暴者
-        "minecraft:hoglin",            // 疣猪兽
-        "minecraft:wither",            // 凋零
-        "minecraft:ender_dragon",      // 末影龙
-        "minecraft:warden",            // 监守者
-        "minecraft:piglin",            // 猪灵
-        // --- 1.21.0 ~ 26.20  ---
+        "minecraft:zombie",             // 僵尸
+        "minecraft:skeleton",           // 骷髅
+        "minecraft:creeper",            // 苦力怕
+        "minecraft:spider",             // 蜘蛛
+        "minecraft:enderman",           // 末影人
+        "minecraft:witch",              // 女巫
+        "minecraft:blaze",              // 烈焰人
+        "minecraft:ghast",              // 恶魂
+        "minecraft:magma_cube",         // 岩浆怪
+        "minecraft:silverfish",         // 银鱼
+        "minecraft:slime",              // 史莱姆
+        "minecraft:guardian",           // 守卫者
+        "minecraft:elder_guardian",     // 远古守卫者
+        "minecraft:wither_skeleton",    // 凋零骷髅
+        "minecraft:stray",              // 流浪者
+        "minecraft:husk",               // 干尸
+        "minecraft:zombie_villager",    // 僵尸村民(旧)
+        "minecraft:zombie_villager_v2", // 僵尸村民(新)
+        "minecraft:zombie_pigman",      // 僵尸猪灵 (基岩版专属ID)
+        "minecraft:drowned",            // 溺尸
+        "minecraft:phantom",            // 幻翼
+        "minecraft:pillager",           // 掠夺者
+        "minecraft:vindicator",         // 卫道士
+        "minecraft:ravager",            // 劫掠兽
+        "minecraft:evocation_illager",  // 唤魔者
+        "minecraft:vex",                // 恼鬼
+        "minecraft:shulker",            // 潜影贝
+        "minecraft:endermite",          // 末影螨
+        "minecraft:cave_spider",        // 洞穴蜘蛛
+        "minecraft:zoglin",             // 僵尸疣猪兽
+        "minecraft:piglin_brute",       // 猪灵残暴者
+        "minecraft:hoglin",             // 疣猪兽
+        "minecraft:wither",             // 凋零
+        "minecraft:ender_dragon",       // 末影龙
+        "minecraft:warden",             // 监守者
+        "minecraft:piglin",             // 猪灵
+        // --- 1.21.0+ ---
         "minecraft:breeze",   // 旋风人
         "minecraft:bogged",   // 沼泽骷髅
         "minecraft:creaking", // 嘎吱怪
     };
+
     config.rules.mob.allowFriendlyDamage = {
-        "minecraft:cow",       // 牛
-        "minecraft:pig",       // 猪
-        "minecraft:sheep",     // 羊
-        "minecraft:chicken",   // 鸡
-        "minecraft:rabbit",    // 兔子
-        "minecraft:mooshroom", // 蘑菇牛
-        "minecraft:horse",     // 马
-        "minecraft:donkey",    // 驴
-        "minecraft:mule",      // 骡
-        "minecraft:ocelot",    // 猫
-        "minecraft:bat",       // 蝙蝠
-        "minecraft:sniffer",   // 探索者
-        "minecraft:camel",     // 骆驼
-        "minecraft:armadillo", // 犰狳
+        "minecraft:cow",            // 牛
+        "minecraft:pig",            // 猪
+        "minecraft:sheep",          // 羊
+        "minecraft:chicken",        // 鸡
+        "minecraft:rabbit",         // 兔子
+        "minecraft:mooshroom",      // 蘑菇牛
+        "minecraft:horse",          // 马
+        "minecraft:donkey",         // 驴
+        "minecraft:mule",           // 骡
+        "minecraft:camel",          // 骆驼
+        "minecraft:sniffer",        // 嗅探兽
+        "minecraft:armadillo",      // 犰狳
+        "minecraft:strider",        // 炽足兽
+        "minecraft:skeleton_horse", // 骷髅马
+        "minecraft:zombie_horse",   // 僵尸马
+
+        "minecraft:villager_v2",      // 村民 (基岩版新)
+        "minecraft:villager",         // 村民 (基岩版旧)
+        "minecraft:wandering_trader", // 流浪商人
+        "minecraft:iron_golem",       // 铁傀儡
+        "minecraft:snow_golem",       // 雪傀儡
+        "minecraft:allay",            // 悦灵
+
+        "minecraft:cat",    // 猫 (基岩版与豹猫分离)
+        "minecraft:ocelot", // 豹猫
+        "minecraft:wolf",   // 狼
+        "minecraft:parrot", // 鹦鹉
+
+        // --- 环境与水生生物 ---
+        "minecraft:bat",          // 蝙蝠
+        "minecraft:frog",         // 青蛙
+        "minecraft:tadpole",      // 蝌蚪
+        "minecraft:axolotl",      // 美西螈
+        "minecraft:goat",         // 山羊
+        "minecraft:fox",          // 狐狸
+        "minecraft:bee",          // 蜜蜂
+        "minecraft:panda",        // 熊猫
+        "minecraft:polar_bear",   // 北极熊
+        "minecraft:llama",        // 羊驼
+        "minecraft:trader_llama", // 行商羊驼
+        "minecraft:dolphin",      // 海豚
+        "minecraft:squid",        // 鱿鱼
+        "minecraft:glow_squid",   // 发光鱿鱼
+        "minecraft:cod",          // 鳕鱼
+        "minecraft:salmon",       // 鲑鱼
+        "minecraft:tropicalfish", // 热带鱼
+        "minecraft:pufferfish",   // 河豚
+        "minecraft:turtle",       // 海龟
     };
+
     config.rules.mob.allowSpecialEntityDamage = {
         "minecraft:painting",               // 画
         "minecraft:hopper_minecart",        // 漏斗矿车
