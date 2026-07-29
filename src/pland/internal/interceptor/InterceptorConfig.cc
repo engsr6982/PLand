@@ -32,7 +32,8 @@ void InterceptorConfig::save(std::filesystem::path configDir) {
 absl::flat_hash_map<HashedString, RolePerms::Entry RolePerms::*, HashedStringHash, HashedStringEq> DynamicRuleMap = {};
 
 void InterceptorConfig::_buildDynamicRuleMap() {
-#define DECL_PERM_FIELD(T) {reflect::getTemplateInnerLeafName<&T>(), &T}
+#define DECL_PERM_FIELD(T)                                                                                             \
+    { reflect::getTemplateInnerLeafName<&T>(), &T }
     static absl::flat_hash_map<std::string_view, RolePerms::Entry RolePerms::*> const PermStr2MemberPointer = {
         DECL_PERM_FIELD(RolePerms::allowDestroy),
         DECL_PERM_FIELD(RolePerms::allowPlace),
@@ -105,7 +106,7 @@ void InterceptorConfig::_buildDynamicRuleMap() {
         }
     }
 }
-RolePerms::Entry RolePerms::*InterceptorConfig::lookupDynamicRule(HashedString const& typeName) {
+RolePerms::Entry RolePerms::* InterceptorConfig::lookupDynamicRule(HashedString const& typeName) {
     TRACE_ADD_SCOPE("lookupDynamicRule");
     TRACE_LOG("lookup typename: {}", typeName.c_str());
     auto iter = DynamicRuleMap.find(typeName);
@@ -252,18 +253,11 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
     auto useRepeater         = std::string{reflect::getTemplateInnerLeafName<&RolePerms::useRepeater>()};
     auto useBeeNest          = std::string{reflect::getTemplateInnerLeafName<&RolePerms::useBeeNest>()};
     config.rules.block       = {
-        /*特殊方块关联*/
+        /* 特殊功能与交互方块 */
         {                       "minecraft:chest",        useContainer}, // 箱子
         {               "minecraft:trapped_chest",        useContainer}, // 陷阱箱
-        {        "minecraft:exposed_copper_chest",        useContainer},
-        {       "minecraft:oxidized_copper_chest",        useContainer},
-        {          "minecraft:waxed_copper_chest",        useContainer},
-        {  "minecraft:waxed_exposed_copper_chest",        useContainer},
-        { "minecraft:waxed_oxidized_copper_chest",        useContainer},
-        {"minecraft:waxed_weathered_copper_chest",        useContainer},
-        {      "minecraft:weathered_copper_chest",        useContainer},
-        {                    "minecraft:campfire",         useCampfire}, // 营火
-        {               "minecraft:soul_campfire",         useCampfire}, // 灵魂营火
+        {                    "minecraft:campfire",         useCampfire}, // 篝火
+        {               "minecraft:soul_campfire",         useCampfire}, // 灵魂篝火
         {                   "minecraft:composter",        useComposter}, // 堆肥桶
         {                   "minecraft:noteblock",        useNoteBlock}, // 音符盒
         {                     "minecraft:jukebox",          useJukebox}, // 唱片机
@@ -275,7 +269,8 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
         {              "minecraft:respawn_anchor",    useRespawnAnchor}, // 重生锚
         {                  "minecraft:flower_pot",       editFlowerPot}, // 花盆
         {            "minecraft:sweet_berry_bush",        allowDestroy}, // 甜莓丛
-        /*功能类方块关联*/
+
+        /* 功能类与工作台方块 */
         {           "minecraft:cartography_table",      useWorkstation}, // 制图台
         {              "minecraft:smithing_table",      useWorkstation}, // 锻造台
         {               "minecraft:brewing_stand",      useWorkstation}, // 酿造台
@@ -284,46 +279,36 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
         {            "minecraft:enchanting_table",      useWorkstation}, // 附魔台
         {                        "minecraft:loom",      useWorkstation}, // 织布机
         {           "minecraft:stonecutter_block",      useWorkstation}, // 切石机
-        {                     "minecraft:crafter",      useWorkstation}, // 合成器
+        {                     "minecraft:crafter",      useWorkstation}, // 自动合成器
         {          "minecraft:chiseled_bookshelf",        useContainer}, // 雕纹书架
+        {                      "minecraft:barrel",        useContainer}, // 木桶
 
-        {"minecraft:copper_chest", useContainer},
-        {"minecraft:exposed_copper_chest", useContainer},
-        {"minecraft:weathered_copper_chest", useContainer},
-        {"minecraft:oxidized_copper_chest", useContainer},
-        {"minecraft:waxed_copper_chest", useContainer},
-        {"minecraft:waxed_exposed_copper_chest", useContainer},
-        {"minecraft:waxed_weathered_copper_chest", useContainer},
-        {"minecraft:waxed_oxidized_copper_chest", useContainer},
-        {"minecraft:oak_shelf", useWorkstation},
-        {"minecraft:spruce_shelf", useWorkstation},
-        {"minecraft:birch_shelf", useWorkstation},
-        {"minecraft:jungle_shelf", useWorkstation},
-        {"minecraft:acacia_shelf", useWorkstation},
-        {"minecraft:dark_oak_shelf", useWorkstation},
-        {"minecraft:mangrove_shelf", useWorkstation},
-        {"minecraft:cherry_shelf", useWorkstation},
-        {"minecraft:pale_oak_shelf", useWorkstation},
-        {"minecraft:bamboo_shelf", useWorkstation},
-        {"minecraft:crimson_shelf", useWorkstation},
-        {"minecraft:warped_shelf", useWorkstation},
-        {"minecraft:barrel", useWorkstation},
+        /* 铜箱子系列 */
+        {                "minecraft:copper_chest",        useContainer}, // 铜箱子
+        {        "minecraft:exposed_copper_chest",        useContainer}, // 斑驳的铜箱子
+        {      "minecraft:weathered_copper_chest",        useContainer}, // 锈蚀的铜箱子
+        {       "minecraft:oxidized_copper_chest",        useContainer}, // 氧化铜箱子
+        {          "minecraft:waxed_copper_chest",        useContainer}, // 涂蜡铜箱子
+        {  "minecraft:waxed_exposed_copper_chest",        useContainer}, // 涂蜡斑驳铜箱子
+        {"minecraft:waxed_weathered_copper_chest",        useContainer}, // 涂蜡锈蚀铜箱子
+        { "minecraft:waxed_oxidized_copper_chest",        useContainer}, // 涂蜡氧化铜箱子
 
-        // 展示架
-        {                "minecraft:acacia_shelf",        useContainer},
-        {                "minecraft:bamboo_shelf",        useContainer},
-        {                 "minecraft:birch_shelf",        useContainer},
-        {                "minecraft:cherry_shelf",        useContainer},
-        {               "minecraft:crimson_shelf",        useContainer},
-        {              "minecraft:dark_oak_shelf",        useContainer},
-        {                "minecraft:jungle_shelf",        useContainer},
-        {              "minecraft:mangrove_shelf",        useContainer},
-        {                   "minecraft:oak_shelf",        useContainer},
-        {              "minecraft:pale_oak_shelf",        useContainer},
-        {                "minecraft:spruce_shelf",        useContainer},
-        {                "minecraft:warped_shelf",        useContainer},
-        /**/
+        /* 容器与展示架类方块 */
+        {               "minecraft:decorated_pot",        useContainer}, // 饰纹陶罐
+        {                "minecraft:acacia_shelf",        useContainer}, // 金合欢木展示架/书架
+        {                "minecraft:bamboo_shelf",        useContainer}, // 竹展示架/书架
+        {                 "minecraft:birch_shelf",        useContainer}, // 白桦木展示架/书架
+        {                "minecraft:cherry_shelf",        useContainer}, // 樱花木展示架/书架
+        {               "minecraft:crimson_shelf",        useContainer}, // 绯红木展示架/书架
+        {              "minecraft:dark_oak_shelf",        useContainer}, // 深色橡木展示架/书架
+        {                "minecraft:jungle_shelf",        useContainer}, // 丛林木展示架/书架
+        {              "minecraft:mangrove_shelf",        useContainer}, // 红树木展示架/书架
+        {                   "minecraft:oak_shelf",        useContainer}, // 橡木展示架/书架
+        {              "minecraft:pale_oak_shelf",        useContainer}, // 苍白橡木展示架/书架
+        {                "minecraft:spruce_shelf",        useContainer}, // 云杉木展示架/书架
+        {                "minecraft:warped_shelf",        useContainer}, // 诡异木展示架/书架
 
+        /* 红石与存储容器 */
         {                      "minecraft:hopper",        useContainer}, // 漏斗
         {                     "minecraft:dropper",        useContainer}, // 投掷器
         {                   "minecraft:dispenser",        useContainer}, // 发射器
@@ -331,9 +316,9 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
         {                      "minecraft:beacon",           useBeacon}, // 信标
         {                        "minecraft:cake",             useCake}, // 蛋糕
         {        "minecraft:unpowered_comparator",       useComparator}, // 红石比较器（未充能）
-        {          "minecraft:powered_comparator",       useComparator}, // 红石比较器（充能）
+        {          "minecraft:powered_comparator",       useComparator}, // 红石比较器（已充能）
         {          "minecraft:unpowered_repeater",         useRepeater}, // 红石中继器（未充能）
-        {            "minecraft:powered_repeater",         useRepeater}, // 红石中继器（充能）
+        {            "minecraft:powered_repeater",         useRepeater}, // 红石中继器（已充能）
         {                    "minecraft:bee_nest",          useBeeNest}, // 蜂巢
         {                     "minecraft:beehive",          useBeeNest}, // 蜂箱
     };
@@ -359,18 +344,24 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
         "minecraft:drowned",           // 溺尸
         "minecraft:phantom",           // 幻翼
         "minecraft:pillager",          // 掠夺者
-        "minecraft:vindicator",        // 守卫者
+        "minecraft:vindicator",        // 卫道士
         "minecraft:ravager",           // 劫掠兽
-        "minecraft:evocation_illager", // 召唤师
-        "minecraft:vex",               // 幽灵
+        "minecraft:evocation_illager", // 唤魔者
+        "minecraft:vex",               // 恼鬼
         "minecraft:shulker",           // 潜影贝
         "minecraft:endermite",         // 末影螨
         "minecraft:cave_spider",       // 洞穴蜘蛛
         "minecraft:zoglin",            // 僵尸疣猪兽
-        "minecraft:piglin_brute",      // 野猪人暴徒
+        "minecraft:piglin_brute",      // 猪灵残暴者
         "minecraft:hoglin",            // 疣猪兽
         "minecraft:wither",            // 凋零
         "minecraft:ender_dragon",      // 末影龙
+        "minecraft:warden",            // 监守者
+        "minecraft:piglin",            // 猪灵
+        // --- 1.21.0 ~ 26.20  ---
+        "minecraft:breeze",   // 旋风人
+        "minecraft:bogged",   // 沼泽骷髅
+        "minecraft:creaking", // 嘎吱怪
     };
     config.rules.mob.allowFriendlyDamage = {
         "minecraft:cow",       // 牛
@@ -398,6 +389,8 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
         "minecraft:command_block_minecart", // 指令方块矿车
         "minecraft:boat",                   // 船
         "minecraft:ender_crystal",          // 末影水晶
+        "minecraft:chest_minecart",         // 运输矿车
+        "minecraft:tnt_minecart",           // TNT矿车
     };
     return config;
 }();
