@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -21,7 +22,7 @@ struct HashedStringEq {
 };
 
 struct InterceptorConfig {
-    inline static int SchemaVersion = 3;
+    inline static constexpr int SchemaVersion = 3;
 
     int version = SchemaVersion;
     struct Listeners {
@@ -96,10 +97,24 @@ struct InterceptorConfig {
     static void load(std::filesystem::path configDir);
     static void save(std::filesystem::path configDir);
 
-    static void             _buildDynamicRuleMap();
-    static RolePerms::Entry RolePerms::*lookupDynamicRule(HashedString const& typeName);
+    static RolePerms::Entry RolePerms::* lookupDynamicRule(HashedString const& typeName);
 
-    static void tryMigrate(std::filesystem::path configDir);
+    enum class MobRecordCategory : uint8_t {
+        Undefined = 0,
+        Hostile,
+        Friendly,
+        SpecialEntity,
+    };
+    // fast lookup table for mob dynamic rules (allowHostileDamage, allowFriendlyDamage, allowSpecialEntityDamage)
+    // if mob is not found in the table, return MobRecordCategory::Undefined
+    static MobRecordCategory lookupMobDynamicCategory(HashedString const& typeName);
+
+    static void tryMigrateLegacyConfig(std::filesystem::path configDir);
+
+private:
+    static void _buildDynamicRuleMap();
 };
+
+static_assert(std::is_aggregate_v<InterceptorConfig>);
 
 } // namespace land::internal::interceptor

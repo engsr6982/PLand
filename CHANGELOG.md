@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 支持自定义领地边框绘制颜色 @engsr6982 [#224](https://github.com/IceBlcokMC/PLand/issues/224)
 
+### 🚀 性能优化
+
+- 改进对实体受伤、玩家攻击时的动态实体分组，减少不必要的多次查表并优化调试日志 @engsr6982
+
 ### 🐛 问题修复
 
 - 修复 PC 端选区时有概率多次触发选择 @engsr6982 [#228](https://github.com/IceBlcokMC/PLand/issues/228)

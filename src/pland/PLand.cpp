@@ -80,7 +80,7 @@ bool PLand::load() {
         res.error().log(logger);
     }
 
-    internal::interceptor::InterceptorConfig::tryMigrate(getSelf().getConfigDir());
+    internal::interceptor::InterceptorConfig::tryMigrateLegacyConfig(getSelf().getConfigDir());
 
     loadConfig();
     internal::interceptor::InterceptorConfig::load(getSelf().getConfigDir());

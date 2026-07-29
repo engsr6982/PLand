@@ -78,19 +78,27 @@ void EventInterceptor::setupLLEntityListeners() {
             }
 
             HashedString typeName{actor.getTypeName()};
-            if (InterceptorConfig::cfg.rules.mob.allowFriendlyDamage.contains(typeName)) {
-                if (!hasMemberOrGuestPermission<&RolePerms::allowFriendlyDamage>(land, uuid)) {
-                    ev.cancel();
-                }
-            } else if (InterceptorConfig::cfg.rules.mob.allowHostileDamage.contains(typeName)) {
+
+            auto category = InterceptorConfig::lookupMobDynamicCategory(typeName);
+            switch (category) {
+            case InterceptorConfig::MobRecordCategory::Hostile:
                 if (!hasMemberOrGuestPermission<&RolePerms::allowHostileDamage>(land, uuid)) {
                     ev.cancel();
                 }
-            } else if (InterceptorConfig::cfg.rules.mob.allowSpecialEntityDamage.contains(typeName)) {
+                break;
+            case InterceptorConfig::MobRecordCategory::Friendly:
+                if (!hasMemberOrGuestPermission<&RolePerms::allowFriendlyDamage>(land, uuid)) {
+                    ev.cancel();
+                }
+                break;
+            case InterceptorConfig::MobRecordCategory::SpecialEntity:
                 if (!hasMemberOrGuestPermission<&RolePerms::allowSpecialEntityDamage>(land, uuid)) {
                     ev.cancel();
                 }
-            }
+                break;
+            case InterceptorConfig::MobRecordCategory::Undefined:
+                break;
+            };
         });
     });
 }

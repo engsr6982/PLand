@@ -178,8 +178,10 @@ void EventInterceptor::setupLLPlayerListeners() {
                             ev.cancel();
                             return;
                         }
-                    } else if (vftable == BlastFurnaceBlock::$vftable() || vftable == FurnaceBlock::$vftable()
-                               || vftable == SmokerBlock::$vftable()) {
+                    } else if (
+                        vftable == BlastFurnaceBlock::$vftable() || vftable == FurnaceBlock::$vftable()
+                        || vftable == SmokerBlock::$vftable()
+                    ) {
                         if (!hasMemberOrGuestPermission<&RolePerms::useFurnaces>(land, uuid)) {
                             ev.cancel();
                             return;
@@ -229,19 +231,27 @@ void EventInterceptor::setupLLPlayerListeners() {
             }
 
             HashedString typeName{target.getTypeName()};
-            if (InterceptorConfig::cfg.rules.mob.allowFriendlyDamage.contains(typeName)) {
-                if (!hasMemberOrGuestPermission<&RolePerms::allowFriendlyDamage>(land, uuid)) {
-                    ev.cancel();
-                }
-            } else if (InterceptorConfig::cfg.rules.mob.allowHostileDamage.contains(typeName)) {
+
+            auto category = InterceptorConfig::lookupMobDynamicCategory(typeName);
+            switch (category) {
+            case InterceptorConfig::MobRecordCategory::Hostile:
                 if (!hasMemberOrGuestPermission<&RolePerms::allowHostileDamage>(land, uuid)) {
                     ev.cancel();
                 }
-            } else if (InterceptorConfig::cfg.rules.mob.allowSpecialEntityDamage.contains(typeName)) {
+                break;
+            case InterceptorConfig::MobRecordCategory::Friendly:
+                if (!hasMemberOrGuestPermission<&RolePerms::allowFriendlyDamage>(land, uuid)) {
+                    ev.cancel();
+                }
+                break;
+            case InterceptorConfig::MobRecordCategory::SpecialEntity:
                 if (!hasMemberOrGuestPermission<&RolePerms::allowSpecialEntityDamage>(land, uuid)) {
                     ev.cancel();
                 }
-            }
+                break;
+            case InterceptorConfig::MobRecordCategory::Undefined:
+                break;
+            };
         });
     });
     registerListenerIf(config.PlayerPickUpItemEvent, [bus, registry]() {
