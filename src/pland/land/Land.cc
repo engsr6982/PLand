@@ -4,7 +4,6 @@
 
 #include "observer/ILandObserver.h"
 #include "pland/Global.h"
-#include "pland/PLand.h"
 #include "pland/enums/LandRole.h"
 #include "pland/land/Config.h"
 #include "pland/utils/JsonUtil.h"
@@ -274,10 +273,10 @@ void Land::migrateOwner(mce::UUID const& ownerUUID) {
 }
 
 void Land::load(nlohmann::json& json) {
-    json_util::json2structWithVersionPatch(json, impl->mContext, true);
+    json_util::merge_versioned_and_deserialize(json, impl->mContext, true);
     impl->initCache();
 }
-nlohmann::json Land::toJson() const { return json_util::struct2json(impl->mContext); }
+nlohmann::json Land::toJson() const { return json_util::struct_to_json(impl->mContext); }
 
 bool Land::operator==(Land const& other) const { return impl->mContext.mLandID == other.impl->mContext.mLandID; }
 

@@ -7,7 +7,7 @@ struct LandContext;
 namespace land {
 namespace internal {
 
-class LandMigrator : public JsonMigrator {
+class LandMigrator : public infra::JsonMigrator {
 public:
     explicit LandMigrator();
 

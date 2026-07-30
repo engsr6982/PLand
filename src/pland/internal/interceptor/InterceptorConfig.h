@@ -79,23 +79,24 @@ struct InterceptorConfig {
     } hooks;
 
     struct Rules {
-        using Mapping = std::unordered_map<std::string, std::string>; // TypeName -> Permission
         struct Mob {
             using TypeNamesSet = std::unordered_set<HashedString, HashedStringHash, HashedStringEq>;
             TypeNamesSet allowHostileDamage;
             TypeNamesSet allowFriendlyDamage;
             TypeNamesSet allowSpecialEntityDamage;
         } mob;
-        Mapping item;
-        Mapping block;
+
+        using MutableMapping = std::unordered_map<std::string, std::string>; // TypeName -> Permission
+        MutableMapping item;
+        MutableMapping block;
     } rules;
 
     static InterceptorConfig cfg;
 
     inline static constexpr std::string_view FileName = "InterceptorConfig.json";
 
-    static void load(std::filesystem::path configDir);
-    static void save(std::filesystem::path configDir);
+    [[nodiscard]] static ll::Expected<> load(std::filesystem::path configDir);
+    static void                         save(std::filesystem::path configDir);
 
     static RolePerms::Entry RolePerms::* lookupDynamicRule(HashedString const& typeName);
 

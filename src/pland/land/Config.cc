@@ -1,9 +1,12 @@
 #include "pland/land/Config.h"
-#include "pland/PLand.h"
+#include "fmt/format.h"
+#include "ll/api/Expected.h"
 
 #include "ll/api/Config.h"
 
 #include "internal/ConfigMigrator.h"
+#include "ll/api/io/FileUtils.h"
+#include "pland/infra/migrator/JsonMigrator.h"
 #include "pland/utils/JsonUtil.h"
 
 #include <filesystem>
@@ -28,20 +31,27 @@ ll::Expected<>        ConfigProvider::load(const std::filesystem::path& baseDir)
         return ll::makeStringError("Failed to read config file: " + path.string());
     }
 
-    auto  json     = nlohmann::json::parse(*data);
-    auto& migrator = internal::ConfigMigrator::getInstance();
+    try {
+        auto  json     = json_util::json_t::parse(*data);
+        auto& migrator = internal::ConfigMigrator::getInstance();
 
-    auto expected = migrator.migrate(json, Impl::SchemaVersion);
-    if (!expected) {
-        return ll::makeStringError(expected.error().message());
-    }
+        auto res = migrator.migrate(json, Impl::SchemaVersion);
+        if (!res) {
+            return ll::forwardError(res.error());
+        }
 
-    json_util::json2structWithVersionPatch(json, cfg, true);
-    if (expected.value() == JsonMigrator::MigrateResult::Success) {
-        (void)save(baseDir);
+        auto mres = json_util::merge_versioned_and_deserialize(json, cfg, true);
+
+        // update migrated or merged config to disk
+        if (res.value() == infra::MigrateResult::Success || mres == json_util::MergeResult::Modified) {
+            ll::file_utils::writeFile(path, json.dump(4));
+        }
+    } catch (std::exception const& e) {
+        return ll::makeStringError(fmt::format("Failed to parse config file: {}, error: {}", path.string(), e.what()));
     }
     return {};
 }
+
 ll::Expected<> ConfigProvider::save(const std::filesystem::path& baseDir) {
     auto path = _filePath(baseDir);
     ll::config::saveConfig(cfg, path);

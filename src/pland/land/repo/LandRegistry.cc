@@ -160,8 +160,8 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
 
         for (auto& [key, value] : settings.items()) {
             PlayerSettings obj;
-            json_util::json2structWithDiffPatch(value, obj);
-            mPlayerSettings.emplace(key, std::move(obj));
+            json_util::merge_and_deserialize(value, obj);
+            mPlayerSettings.emplace(key, obj);
         }
     }
 
@@ -197,7 +197,7 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
     void loadTemplatePermTable(ll::io::Logger& logger) {
         if (!mDB->has(DbTemplatePermKey)) {
             auto t = LandPermTable{};
-            mDB->set(DbTemplatePermKey, json_util::struct2json(t).dump());
+            mDB->set(DbTemplatePermKey, json_util::struct_to_json(t).dump());
         }
 
         auto rawJson = mDB->get(DbTemplatePermKey);
@@ -208,7 +208,7 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
             }
 
             auto t = LandPermTable{};
-            json_util::json2structWithDiffPatch(json, t); // 反射并补丁
+            json_util::merge_and_deserialize(json, t); // 反射并补丁
 
             mLandTemplatePermTable = std::make_unique<LandTemplatePermTable>(t);
         } catch (...) {
@@ -481,12 +481,12 @@ bool LandRegistry::isLandData(std::string_view key) {
 
 void LandRegistry::save() {
     std::shared_lock<std::shared_mutex> lock(impl->mMutex); // 获取锁
-    impl->mDB->set(DbOperatorDataKey, json_util::struct2json(impl->mLandOperators).dump());
+    impl->mDB->set(DbOperatorDataKey, json_util::struct_to_json(impl->mLandOperators).dump());
 
-    impl->mDB->set(DbPlayerSettingDataKey, json_util::struct2json(impl->mPlayerSettings).dump());
+    impl->mDB->set(DbPlayerSettingDataKey, json_util::struct_to_json(impl->mPlayerSettings).dump());
 
     if (impl->mLandTemplatePermTable->isDirty()) {
-        if (impl->mDB->set(DbTemplatePermKey, json_util::struct2json(impl->mLandTemplatePermTable->get()).dump())) {
+        if (impl->mDB->set(DbTemplatePermKey, json_util::struct_to_json(impl->mLandTemplatePermTable->get()).dump())) {
             impl->mLandTemplatePermTable->resetDirty();
         }
     }

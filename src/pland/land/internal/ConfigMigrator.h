@@ -4,7 +4,7 @@
 namespace land {
 namespace internal {
 
-class ConfigMigrator : public JsonMigrator {
+class ConfigMigrator : public infra::BasicJsonMigrator<nlohmann::ordered_json> {
 public:
     ConfigMigrator();
 

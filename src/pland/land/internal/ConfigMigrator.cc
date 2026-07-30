@@ -9,7 +9,7 @@ namespace land {
 namespace internal {
 
 ConfigMigrator::ConfigMigrator() {
-    registerMigrator(32, [](nlohmann::json& json) -> ll::Expected<> {
+    registerMigrator(32, [](ConfigMigrator::json_t& json) -> ll::Expected<> {
         if (json.contains("land")) {
             auto& land = json["land"];
             if (land.contains("subLand")) {
@@ -28,7 +28,7 @@ ConfigMigrator::ConfigMigrator() {
         return {};
     });
 
-    registerMigrator(34, [](nlohmann::json& root) -> ll::Expected<> {
+    registerMigrator(34, [](ConfigMigrator::json_t& root) -> ll::Expected<> {
         constexpr Route routes[] = {
             // selector
             {                         "selector.tool",                              "selector.item"},

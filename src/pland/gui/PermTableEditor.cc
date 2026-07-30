@@ -2,9 +2,12 @@
 #include "utils/BackUtils.h"
 
 #include "pland/land/repo/LandContext.h"
-#include "pland/utils/JsonUtil.h"
 
 #include "ll/api/form/CustomForm.h"
+#include "ll/api/reflection/Deserialization.h"
+#include "ll/api/reflection/Serialization.h"
+
+#include <nlohmann/json.hpp>
 
 namespace land {
 namespace gui {
@@ -49,14 +52,15 @@ struct PermTableEditor::Impl : std::enable_shared_from_this<Impl> {
                 value = v.get<bool>();
                 break;
             case EditType::Member:
-                static_assert(std::same_as<
-                              std::remove_const_t<decltype(std::declval<RolePerms::Entry>().member)>,
-                              bool>);
+                static_assert(
+                    std::same_as<std::remove_const_t<decltype(std::declval<RolePerms::Entry>().member)>, bool>
+                );
                 value = v["member"].get<bool>();
                 break;
             case EditType::Actor:
-                static_assert(std::
-                                  same_as<std::remove_const_t<decltype(std::declval<RolePerms::Entry>().actor)>, bool>);
+                static_assert(
+                    std::same_as<std::remove_const_t<decltype(std::declval<RolePerms::Entry>().actor)>, bool>
+                );
                 value = v["actor"].get<bool>();
                 break;
             }

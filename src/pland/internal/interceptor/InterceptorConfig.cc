@@ -1,5 +1,7 @@
 #include "InterceptorConfig.h"
 
+#include "ll/api/Expected.h"
+#include "nlohmann/json_fwd.hpp"
 #include "pland/PLand.h"
 #include "pland/internal/interceptor/helper/EventTrace.h"
 #include "pland/land/repo/LandContext.h"
@@ -13,17 +15,51 @@
 
 #include <absl/container/flat_hash_map.h>
 #include <absl/container/flat_hash_set.h>
+#include <algorithm>
+#include <array>
 #include <cstddef>
+#include <string_view>
 
 namespace land::internal::interceptor {
+struct MutableObjectPredicate {
+    static constexpr std::array<std::string_view, 2> kMutableObjectPaths = {"/rules/item", "/rules/block"};
 
-
-void InterceptorConfig::load(std::filesystem::path configDir) {
-    auto path = configDir / FileName;
-    if (!std::filesystem::exists(path) || !ll::config::loadConfig(cfg, path)) {
-        save(configDir);
+    bool operator()(std::string_view path, json_util::json_t const&) const {
+        return std::find(kMutableObjectPaths.begin(), kMutableObjectPaths.end(), path) != kMutableObjectPaths.end();
     }
-    _buildDynamicRuleMap();
+};
+static_assert(json_util::CustomMapPredicate<MutableObjectPredicate>);
+
+ll::Expected<> InterceptorConfig::load(std::filesystem::path configDir) {
+    auto path = configDir / FileName;
+
+    if (!std::filesystem::exists(path)) {
+        (void)save(configDir);
+        _buildDynamicRuleMap();
+        return {};
+    }
+
+    auto data = ll::file_utils::readFile(path);
+    if (!data) {
+        return ll::makeStringError("Failed to read config file: " + path.string());
+    }
+
+    try {
+        auto json = json_util::json_t::parse(data.value());
+
+        auto res = json_util::merge_versioned_and_deserialize(json, cfg, false, MutableObjectPredicate{});
+
+        // update merged config to disk
+        if (res == json_util::MergeResult::Modified) {
+            ll::file_utils::writeFile(path, json.dump(4));
+        }
+
+        _buildDynamicRuleMap();
+    } catch (std::exception const& e) {
+        return ll::makeStringError(fmt::format("Failed to parse config file: {}, error: {}", path.string(), e.what()));
+    }
+
+    return {};
 }
 
 void InterceptorConfig::save(std::filesystem::path configDir) {
@@ -243,19 +279,16 @@ void InterceptorConfig::tryMigrateLegacyConfig(std::filesystem::path configDir) 
         auto& protection = json["protection"];
         if (protection.contains("mob")) {
             auto& mob = protection["mob"];
-            json_util::json2structWithDiffPatch(mob["hostileMobTypeNames"], cfg.rules.mob.allowHostileDamage);
-            json_util::json2structWithDiffPatch(mob["passiveMobTypeNames"], cfg.rules.mob.allowFriendlyDamage);
-            json_util::json2structWithDiffPatch(mob["specialMobTypeNames"], cfg.rules.mob.allowSpecialEntityDamage);
-            json_util::json2structWithDiffPatch(
-                mob["customSpecialMobTypeNames"],
-                cfg.rules.mob.allowSpecialEntityDamage
-            );
+            json_util::merge_and_deserialize(mob["hostileMobTypeNames"], cfg.rules.mob.allowHostileDamage);
+            json_util::merge_and_deserialize(mob["passiveMobTypeNames"], cfg.rules.mob.allowFriendlyDamage);
+            json_util::merge_and_deserialize(mob["specialMobTypeNames"], cfg.rules.mob.allowSpecialEntityDamage);
+            json_util::merge_and_deserialize(mob["customSpecialMobTypeNames"], cfg.rules.mob.allowSpecialEntityDamage);
         }
         if (protection.contains("permissionMaps")) {
             auto& permissionMaps = protection["permissionMaps"];
-            json_util::json2structWithDiffPatch(permissionMaps["itemSpecific"], cfg.rules.item);
-            json_util::json2structWithDiffPatch(permissionMaps["blockSpecific"], cfg.rules.block);
-            json_util::json2structWithDiffPatch(permissionMaps["blockFunctional"], cfg.rules.block);
+            json_util::merge_and_deserialize(permissionMaps["itemSpecific"], cfg.rules.item);
+            json_util::merge_and_deserialize(permissionMaps["blockSpecific"], cfg.rules.block);
+            json_util::merge_and_deserialize(permissionMaps["blockFunctional"], cfg.rules.block);
         }
         json.erase("protection");
     }
