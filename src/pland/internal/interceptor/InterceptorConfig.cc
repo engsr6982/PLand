@@ -299,6 +299,7 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
     auto useComparator       = std::string{reflect::getTemplateInnerLeafName<&RolePerms::useComparator>()};
     auto useRepeater         = std::string{reflect::getTemplateInnerLeafName<&RolePerms::useRepeater>()};
     auto useBeeNest          = std::string{reflect::getTemplateInnerLeafName<&RolePerms::useBeeNest>()};
+    auto editSign            = std::string{reflect::getTemplateInnerLeafName<&RolePerms::editSign>()};
     config.rules.block       = {
         /* 特殊功能与交互方块 */
         {                       "minecraft:chest",        useContainer}, // 箱子
@@ -368,6 +369,20 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
         {            "minecraft:powered_repeater",         useRepeater}, // 红石中继器（已充能）
         {                    "minecraft:bee_nest",          useBeeNest}, // 蜂巢
         {                     "minecraft:beehive",          useBeeNest}, // 蜂箱
+
+        // 悬挂告示牌
+        {            "minecraft:oak_hanging_sign",            editSign}, // 橡木悬挂告示牌
+        {         "minecraft:spruce_hanging_sign",            editSign}, // 云杉木悬挂告示牌
+        {          "minecraft:birch_hanging_sign",            editSign}, // 白桦木悬挂告示牌
+        {         "minecraft:jungle_hanging_sign",            editSign}, // 丛林木悬挂告示牌
+        {         "minecraft:acacia_hanging_sign",            editSign}, // 金合欢木悬挂告示牌
+        {       "minecraft:dark_oak_hanging_sign",            editSign}, // 深色橡木悬挂告示牌
+        {       "minecraft:mangrove_hanging_sign",            editSign}, // 红树木悬挂告示牌
+        {         "minecraft:cherry_hanging_sign",            editSign}, // 樱木悬挂告示牌
+        {       "minecraft:pale_oak_hanging_sign",            editSign}, // 淡色橡木悬挂告示牌
+        {         "minecraft:bamboo_hanging_sign",            editSign}, // 竹子悬挂告示牌
+        {        "minecraft:crimson_hanging_sign",            editSign}, // 绯红木悬挂告示牌
+        {         "minecraft:warped_hanging_sign",            editSign}, // 诡异木悬挂告示牌
     };
 
     config.rules.mob.allowHostileDamage = {
