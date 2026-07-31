@@ -78,7 +78,7 @@ void open_admin_mgr(CommandOrigin const& ori, CommandOutput& out) {
 
 void list_admins(CommandOrigin const& origin, CommandOutput& output) {
     CHECK_TYPE(origin, output, CommandOriginType::DedicatedServer);
-    auto& operators = PLand::getInstance().getLandRegistry().getOperators();
+    auto operators = PLand::getInstance().getLandRegistry().getOperators();
     if (operators.empty()) {
         feedback_utils::sendErrorText(output, "当前没有管理员"_tr());
         return;

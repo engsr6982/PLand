@@ -59,7 +59,7 @@ public:
 
     LDNDAPI bool removeOperator(mce::UUID const& uuid);
 
-    LDNDAPI std::vector<mce::UUID> const& getOperators() const;
+    LDNDAPI std::vector<mce::UUID> getOperators() const;
 
     LDNDAPI PlayerSettings& getOrCreatePlayerSettings(mce::UUID const& uuid);
 

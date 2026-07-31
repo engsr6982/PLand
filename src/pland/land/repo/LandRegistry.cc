@@ -56,14 +56,16 @@ thread_local bool g_isInTransaction = false;
 }
 
 struct LandRegistry::Impl : public observer::LandEventPublisher {
-    std::unique_ptr<ll::data::KeyValueDB>              mDB;                             // 领地数据库
-    std::vector<mce::UUID>                             mLandOperators;                  // 领地操作员
-    std::unordered_map<mce::UUID, PlayerSettings>      mPlayerSettings;                 // 玩家设置
-    absl::flat_hash_map<LandID, std::shared_ptr<Land>> mLandCache;                      // 领地缓存
-    mutable std::shared_mutex                          mMutex;                          // 读写锁
-    std::unique_ptr<internal::LandIdAllocator>         mLandIdAllocator{nullptr};       // 领地ID分配器
-    internal::LandDimensionChunkMap                    mDimensionChunkMap;              // 维度区块映射
-    std::unique_ptr<LandTemplatePermTable>             mLandTemplatePermTable{nullptr}; // 领地模板权限表
+    std::unique_ptr<ll::data::KeyValueDB>              mDB;             // 领地数据库
+    std::vector<mce::UUID>                             mLandOperators;  // 领地操作员
+    std::unordered_map<mce::UUID, PlayerSettings>      mPlayerSettings; // 玩家设置
+    absl::flat_hash_map<LandID, std::shared_ptr<Land>> mLandCache;      // 领地缓存
+    mutable std::shared_mutex                  mDataMutex;     // mLandCache, mDimensionChunkMap, mOwnerIdx, mMemberIdx
+    mutable std::shared_mutex                  mOperatorMutex; // mLandOperators
+    mutable std::shared_mutex                  mSettingsMutex; // mPlayerSettings
+    std::unique_ptr<internal::LandIdAllocator> mLandIdAllocator{nullptr};       // 领地ID分配器
+    internal::LandDimensionChunkMap            mDimensionChunkMap;              // 维度区块映射
+    std::unique_ptr<LandTemplatePermTable>     mLandTemplatePermTable{nullptr}; // 领地模板权限表
 
     ll::coro::InterruptableSleep mInterruptableSleep; // 中断等待
     std::atomic_bool             mCoroAbort{false};   // 协程中断标志
@@ -87,22 +89,37 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
             if (g_isInTransaction) {
                 updateIdx();
             } else {
-                std::unique_lock lock(mMutex);
+                std::unique_lock lock(mDataMutex);
                 updateIdx();
             }
         }
         LandEventPublisher::onOwnerChanged(land, oldOwner, newOwner);
     }
     void onMemberAdded(std::shared_ptr<Land> const& land, mce::UUID const& member) override {
-        mMemberIdx.insert(member, land->getId());
+        if (g_isInTransaction) {
+            mMemberIdx.insert(member, land->getId());
+        } else {
+            std::unique_lock lock(mDataMutex);
+            mMemberIdx.insert(member, land->getId());
+        }
         LandEventPublisher::onMemberAdded(land, member);
     }
     void onMemberRemoved(std::shared_ptr<Land> const& land, mce::UUID const& member) override {
-        mMemberIdx.erase_value(member, land->getId());
+        if (g_isInTransaction) {
+            mMemberIdx.erase_value(member, land->getId());
+        } else {
+            std::unique_lock lock(mDataMutex);
+            mMemberIdx.erase_value(member, land->getId());
+        }
         LandEventPublisher::onMemberRemoved(land, member);
     }
     void onMembersCleared(std::shared_ptr<Land> const& land) override {
-        reverseClearMemberIdx(land);
+        if (g_isInTransaction) {
+            reverseClearMemberIdx(land);
+        } else {
+            std::unique_lock lock(mDataMutex);
+            reverseClearMemberIdx(land);
+        }
         LandEventPublisher::onMembersCleared(land);
     }
 
@@ -382,7 +399,7 @@ LandRegistry::LandRegistry(PLand& mod) : impl(std::make_unique<Impl>()) {
     logger.trace("打开数据库...");
     impl->connectDatabase(mod);
 
-    auto lock = std::unique_lock<std::shared_mutex>(impl->mMutex);
+    auto lock = std::unique_lock<std::shared_mutex>(impl->mDataMutex);
     logger.info("加载管理员...");
     impl->loadOperators(logger);
     logger.info("已加载 {} 位管理员", impl->mLandOperators.size());
@@ -481,11 +498,16 @@ bool LandRegistry::isLandData(std::string_view key) {
 }
 
 void LandRegistry::save() {
-    std::shared_lock<std::shared_mutex> lock(impl->mMutex); // 获取锁
+    // 锁顺序: mDataMutex → mOperatorMutex → mSettingsMutex
+    std::shared_lock dataLock(impl->mDataMutex);
+    std::shared_lock opLock(impl->mOperatorMutex);
+    std::shared_lock settingsLock(impl->mSettingsMutex);
+
     impl->mDB->set(DbOperatorDataKey, json_util::struct_to_json(impl->mLandOperators).dump());
 
     impl->mDB->set(DbPlayerSettingDataKey, json_util::struct_to_json(impl->mPlayerSettings).dump());
 
+    // LandTemplatePermTable 自带内部锁，不需要额外保护
     if (impl->mLandTemplatePermTable->isDirty()) {
         if (impl->mDB->set(DbTemplatePermKey, json_util::struct_to_json(impl->mLandTemplatePermTable->get()).dump())) {
             impl->mLandTemplatePermTable->resetDirty();
@@ -498,25 +520,25 @@ void LandRegistry::save() {
 }
 
 bool LandRegistry::save(std::shared_ptr<Land> const& land, bool force) const {
-    std::unique_lock lock(impl->mMutex); // 获取锁
+    std::unique_lock lock(impl->mDataMutex);
     return impl->_save(land, force);
 }
 
 
 bool LandRegistry::isOperator(mce::UUID const& uuid) const {
-    std::shared_lock<std::shared_mutex> lock(impl->mMutex);
+    std::shared_lock<std::shared_mutex> lock(impl->mOperatorMutex);
     return std::find(impl->mLandOperators.begin(), impl->mLandOperators.end(), uuid) != impl->mLandOperators.end();
 }
 bool LandRegistry::addOperator(mce::UUID const& uuid) {
-    if (isOperator(uuid)) {
+    std::unique_lock<std::shared_mutex> lock(impl->mOperatorMutex);
+    if (std::find(impl->mLandOperators.begin(), impl->mLandOperators.end(), uuid) != impl->mLandOperators.end()) {
         return false;
     }
-    std::unique_lock<std::shared_mutex> lock(impl->mMutex); // 获取锁
     impl->mLandOperators.push_back(uuid);
     return true;
 }
 bool LandRegistry::removeOperator(mce::UUID const& uuid) {
-    std::unique_lock<std::shared_mutex> lock(impl->mMutex); // 获取锁
+    std::unique_lock<std::shared_mutex> lock(impl->mOperatorMutex); // 获取锁
 
     auto iter = std::find(impl->mLandOperators.begin(), impl->mLandOperators.end(), uuid);
     if (iter == impl->mLandOperators.end()) {
@@ -525,14 +547,14 @@ bool LandRegistry::removeOperator(mce::UUID const& uuid) {
     impl->mLandOperators.erase(iter);
     return true;
 }
-std::vector<mce::UUID> const& LandRegistry::getOperators() const {
-    std::shared_lock<std::shared_mutex> lock(impl->mMutex);
+std::vector<mce::UUID> LandRegistry::getOperators() const {
+    std::shared_lock<std::shared_mutex> lock(impl->mOperatorMutex);
     return impl->mLandOperators;
 }
 
 
 PlayerSettings& LandRegistry::getOrCreatePlayerSettings(mce::UUID const& uuid) {
-    std::shared_lock<std::shared_mutex> lock(impl->mMutex);
+    std::unique_lock<std::shared_mutex> lock(impl->mSettingsMutex);
 
     auto iter = impl->mPlayerSettings.find(uuid);
     if (iter == impl->mPlayerSettings.end()) {
@@ -544,12 +566,12 @@ PlayerSettings& LandRegistry::getOrCreatePlayerSettings(mce::UUID const& uuid) {
 LandTemplatePermTable& LandRegistry::getLandTemplatePermTable() const { return *impl->mLandTemplatePermTable; }
 
 bool LandRegistry::hasLand(LandID id) const {
-    std::shared_lock<std::shared_mutex> lock(impl->mMutex);
+    std::shared_lock<std::shared_mutex> lock(impl->mDataMutex);
     return impl->mLandCache.find(id) != impl->mLandCache.end();
 }
 
 void LandRegistry::refreshLandRange(std::shared_ptr<Land> const& ptr) {
-    std::unique_lock<std::shared_mutex> lock(impl->mMutex);
+    std::unique_lock<std::shared_mutex> lock(impl->mDataMutex);
     impl->mDimensionChunkMap.refreshRange(ptr);
 }
 
@@ -557,11 +579,14 @@ ll::Expected<> LandRegistry::addOrdinaryLand(std::shared_ptr<Land> const& land) 
     if (!land->isOrdinaryLand()) {
         return ll::makeStringError("This land is not an ordinary land and cannot be added via addOrdinaryLand");
     }
+    // 注意：validator 调用可能会访问 LandRegistry 的查询接口（如 ensureNoLandRangeConflict），
+    // 这些查询接口各自加 shared_lock，与下面的 unique_lock 不会死锁，但存在 TOCTOU 窗口。
     if (!LandCreateValidator::ensureLandRangeIsLegal(land->getAABB(), land->getDimensionId(), land->is3D())
         || !LandCreateValidator::ensureLandNotInForbiddenRange(land->getAABB(), land->getDimensionId())
         || !LandCreateValidator::ensureNoLandRangeConflict(*this, land)) {
         return ll::makeStringError("The land AABB is illegal or conflicts with existing land");
     }
+    std::unique_lock lock(impl->mDataMutex);
     return impl->addLand(land);
 }
 ll::Expected<> LandRegistry::removeOrdinaryLand(std::shared_ptr<Land> const& ptr) {
@@ -569,7 +594,7 @@ ll::Expected<> LandRegistry::removeOrdinaryLand(std::shared_ptr<Land> const& ptr
         return ll::makeStringError("This land is not an ordinary land and cannot be removed via removeOrdinaryLand");
     }
 
-    std::unique_lock lock(impl->mMutex); // 获取锁
+    std::unique_lock lock(impl->mDataMutex); // 获取锁
     return impl->deleteLand(ptr);
 }
 
@@ -577,7 +602,7 @@ ll::Expected<> LandRegistry::executeTransaction(
     std::unordered_set<std::shared_ptr<Land>> const& participants,
     TransactionCallback const&                       executor
 ) {
-    std::unique_lock lock{impl->mMutex};
+    std::unique_lock lock{impl->mDataMutex};
 
     struct TransactionGuard {
         TransactionGuard() { g_isInTransaction = true; }
@@ -640,7 +665,7 @@ ll::Expected<> LandRegistry::executeTransaction(
 }
 
 std::shared_ptr<Land> LandRegistry::getLand(LandID id) const {
-    std::shared_lock lock(impl->mMutex);
+    std::shared_lock lock(impl->mDataMutex);
 
     auto landIt = impl->mLandCache.find(id);
     if (landIt != impl->mLandCache.end()) {
@@ -649,7 +674,7 @@ std::shared_ptr<Land> LandRegistry::getLand(LandID id) const {
     return nullptr;
 }
 std::vector<std::shared_ptr<Land>> LandRegistry::getLands() const {
-    std::shared_lock lock(impl->mMutex);
+    std::shared_lock lock(impl->mDataMutex);
 
     std::vector<std::shared_ptr<Land>> lands;
     lands.reserve(impl->mLandCache.size());
@@ -659,7 +684,7 @@ std::vector<std::shared_ptr<Land>> LandRegistry::getLands() const {
     return lands;
 }
 std::vector<std::shared_ptr<Land>> LandRegistry::getLands(std::vector<LandID> const& ids) const {
-    std::shared_lock lock(impl->mMutex);
+    std::shared_lock lock(impl->mDataMutex);
 
     std::vector<std::shared_ptr<Land>> lands;
     for (auto id : ids) {
@@ -670,7 +695,7 @@ std::vector<std::shared_ptr<Land>> LandRegistry::getLands(std::vector<LandID> co
     return lands;
 }
 std::vector<std::shared_ptr<Land>> LandRegistry::getLands(LandDimid dimid) const {
-    std::shared_lock lock(impl->mMutex);
+    std::shared_lock lock(impl->mDataMutex);
 
     std::vector<std::shared_ptr<Land>> lands;
     for (auto& land : impl->mLandCache) {
@@ -681,7 +706,7 @@ std::vector<std::shared_ptr<Land>> LandRegistry::getLands(LandDimid dimid) const
     return lands;
 }
 std::vector<std::shared_ptr<Land>> LandRegistry::getLands(mce::UUID const& uuid, bool includeShared) const {
-    std::shared_lock lock(impl->mMutex);
+    std::shared_lock lock(impl->mDataMutex);
 
     std::vector<std::shared_ptr<Land>> lands;
 
@@ -711,7 +736,7 @@ std::vector<std::shared_ptr<Land>> LandRegistry::getLands(mce::UUID const& uuid,
     return lands;
 }
 std::vector<std::shared_ptr<Land>> LandRegistry::getLands(mce::UUID const& uuid, LandDimid dimid) const {
-    std::shared_lock lock(impl->mMutex);
+    std::shared_lock lock(impl->mDataMutex);
 
     std::vector<std::shared_ptr<Land>> lands;
 
@@ -729,7 +754,7 @@ std::vector<std::shared_ptr<Land>> LandRegistry::getLands(mce::UUID const& uuid,
     return lands;
 }
 std::unordered_map<mce::UUID, std::unordered_set<std::shared_ptr<Land>>> LandRegistry::getLandsByOwner() const {
-    std::shared_lock lock(impl->mMutex);
+    std::shared_lock lock(impl->mDataMutex);
 
     std::unordered_map<mce::UUID, std::unordered_set<std::shared_ptr<Land>>> result;
     result.reserve(impl->mOwnerIdx.forward_map().size());
@@ -748,12 +773,17 @@ std::unordered_map<mce::UUID, std::unordered_set<std::shared_ptr<Land>>> LandReg
 
 
 LandPermType LandRegistry::getPermType(mce::UUID const& uuid, LandID id, bool includeOperator) const {
-    std::shared_lock lock(impl->mMutex);
+    std::shared_lock lock(impl->mDataMutex);
 
-    if (includeOperator && isOperator(uuid)) return LandPermType::Admin;
+    if (includeOperator) {
+        std::shared_lock opLock(impl->mOperatorMutex);
+        if (std::find(impl->mLandOperators.begin(), impl->mLandOperators.end(), uuid) != impl->mLandOperators.end()) {
+            return LandPermType::Admin;
+        }
+    }
 
-    if (auto land = getLand(id); land) {
-        return land->getPermType(uuid);
+    if (auto it = impl->mLandCache.find(id); it != impl->mLandCache.end()) {
+        return it->second->getPermType(uuid);
     }
 
     return LandPermType::Actor;
@@ -761,7 +791,7 @@ LandPermType LandRegistry::getPermType(mce::UUID const& uuid, LandID id, bool in
 
 
 std::shared_ptr<Land> LandRegistry::getLandAt(BlockPos const& pos, LandDimid dimid) const {
-    std::shared_lock<std::shared_mutex>       lock(impl->mMutex);
+    std::shared_lock<std::shared_mutex>       lock(impl->mDataMutex);
     std::unordered_set<std::shared_ptr<Land>> result;
 
     auto landsIds = impl->mDimensionChunkMap.queryLand(dimid, internal::ChunkEncoder::encode(pos.x >> 4, pos.z >> 4));
@@ -799,7 +829,7 @@ std::shared_ptr<Land> LandRegistry::getLandAt(BlockPos const& pos, LandDimid dim
 }
 std::unordered_set<std::shared_ptr<Land>>
 LandRegistry::getLandAt(BlockPos const& center, int radius, LandDimid dimid) const {
-    std::shared_lock<std::shared_mutex> lock(impl->mMutex);
+    std::shared_lock<std::shared_mutex> lock(impl->mDataMutex);
 
     if (!impl->mDimensionChunkMap.hasDimension(dimid)) {
         return {};
@@ -839,7 +869,7 @@ LandRegistry::getLandAt(BlockPos const& center, int radius, LandDimid dimid) con
 }
 std::unordered_set<std::shared_ptr<Land>>
 LandRegistry::getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid dimid) const {
-    std::shared_lock<std::shared_mutex> lock(impl->mMutex);
+    std::shared_lock<std::shared_mutex> lock(impl->mDataMutex);
 
     if (!impl->mDimensionChunkMap.hasDimension(dimid)) {
         return {};
@@ -879,7 +909,7 @@ LandRegistry::getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid di
 }
 
 std::vector<std::shared_ptr<Land>> LandRegistry::getLandsWhere(CustomFilter const& filter) const {
-    std::shared_lock<std::shared_mutex> lock(impl->mMutex);
+    std::shared_lock<std::shared_mutex> lock(impl->mDataMutex);
 
     std::vector<std::shared_ptr<Land>> result;
     for (auto const& [id, land] : impl->mLandCache) {
