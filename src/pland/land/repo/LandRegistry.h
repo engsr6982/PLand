@@ -33,7 +33,7 @@ class LandRegistry final {
 
     friend class TransactionContext;
 
-    LandID _allocateNextId();
+    [[nodiscard]] LandID _allocateNextId();
 
 public:
     LD_DISABLE_COPY_AND_MOVE(LandRegistry);

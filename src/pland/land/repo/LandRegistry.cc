@@ -1,7 +1,6 @@
 #include "LandRegistry.h"
 #include "TransactionContext.h"
 #include "internal/LandDimensionChunkMap.h"
-#include "internal/LandIdAllocator.h"
 #include "internal/LandMigrator.h"
 
 #include "pland/Global.h"
@@ -60,12 +59,15 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
     std::vector<mce::UUID>                             mLandOperators;  // 领地操作员
     std::unordered_map<mce::UUID, PlayerSettings>      mPlayerSettings; // 玩家设置
     absl::flat_hash_map<LandID, std::shared_ptr<Land>> mLandCache;      // 领地缓存
-    mutable std::shared_mutex                  mDataMutex;     // mLandCache, mDimensionChunkMap, mOwnerIdx, mMemberIdx
-    mutable std::shared_mutex                  mOperatorMutex; // mLandOperators
-    mutable std::shared_mutex                  mSettingsMutex; // mPlayerSettings
-    std::unique_ptr<internal::LandIdAllocator> mLandIdAllocator{nullptr};       // 领地ID分配器
-    internal::LandDimensionChunkMap            mDimensionChunkMap;              // 维度区块映射
-    std::unique_ptr<LandTemplatePermTable>     mLandTemplatePermTable{nullptr}; // 领地模板权限表
+
+    mutable std::shared_mutex mDataMutex;     // mLandCache, mDimensionChunkMap, mOwnerIdx, mMemberIdx
+    mutable std::shared_mutex mOperatorMutex; // mLandOperators
+    mutable std::shared_mutex mSettingsMutex; // mPlayerSettings
+
+    std::atomic<LandID> mNextLandID{INVALID_LAND_ID};
+
+    internal::LandDimensionChunkMap        mDimensionChunkMap;              // 维度区块映射
+    std::unique_ptr<LandTemplatePermTable> mLandTemplatePermTable{nullptr}; // 领地模板权限表
 
     ll::coro::InterruptableSleep mInterruptableSleep; // 中断等待
     std::atomic_bool             mCoroAbort{false};   // 协程中断标志
@@ -186,7 +188,6 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
 
         auto& landMigrator = internal::LandMigrator::getInstance();
 
-        LandID safeId{0};
         for (auto [key, value] : iter) {
             if (!isLandData(key)) continue;
 
@@ -199,15 +200,13 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
             land->load(json);
 
             // 保证landID唯一
-            if (safeId <= land->getId()) {
-                safeId = land->getId() + 1;
+            if (mNextLandID.load(std::memory_order_relaxed) <= land->getId()) {
+                mNextLandID.store(land->getId() + 1, std::memory_order_relaxed);
             }
 
             initIndex(land);
             mLandCache.emplace(land->getId(), std::move(land));
         }
-
-        mLandIdAllocator = std::make_unique<internal::LandIdAllocator>(safeId); // 初始化ID分配器
     }
 
     void loadTemplatePermTable(ll::io::Logger& logger) {
@@ -341,12 +340,14 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
         }
     }
 
+    [[nodiscard]] LandID allocateLandID() { return mNextLandID.fetch_add(1, std::memory_order_relaxed); }
+
     ll::Expected<> addLand(std::shared_ptr<Land> land, bool allocateId = true) {
         if (!land || (allocateId && land->getId() != INVALID_LAND_ID)) {
             return ll::makeStringError("Invalid land pointer or land ID is already allocated");
         }
         if (allocateId) {
-            land->_setLandId(mLandIdAllocator->nextId());
+            land->_setLandId(allocateLandID());
         }
 
         auto result = mLandCache.emplace(land->getId(), land);
@@ -391,7 +392,7 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
     }
 };
 
-LandID LandRegistry::_allocateNextId() { return impl->mLandIdAllocator->nextId(); }
+LandID LandRegistry::_allocateNextId() { return impl->allocateLandID(); }
 
 LandRegistry::LandRegistry(PLand& mod) : impl(std::make_unique<Impl>()) {
     auto& logger = mod.getSelf().getLogger();
