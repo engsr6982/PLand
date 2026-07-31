@@ -9,7 +9,6 @@
 #include "pland/land/Land.h"
 #include "pland/land/LandResizeSettlement.h"
 #include "pland/land/repo/LandRegistry.h"
-#include "pland/land/repo/StorageError.h"
 #include "pland/selector/ABSelector.h"
 #include "pland/selector/SelectorManager.h"
 #include "pland/selector/land/LandResizeSelector.h"

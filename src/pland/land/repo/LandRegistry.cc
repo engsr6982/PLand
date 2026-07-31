@@ -1,5 +1,4 @@
 #include "LandRegistry.h"
-#include "StorageError.h"
 #include "TransactionContext.h"
 #include "internal/LandDimensionChunkMap.h"
 #include "internal/LandIdAllocator.h"
@@ -327,7 +326,7 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
 
     ll::Expected<> addLand(std::shared_ptr<Land> land, bool allocateId = true) {
         if (!land || (allocateId && land->getId() != INVALID_LAND_ID)) {
-            return StorageError::make(StorageError::ErrorCode::InvalidLand, "The land is invalid or land ID is not -1");
+            return ll::makeStringError("Invalid land pointer or land ID is already allocated");
         }
         if (allocateId) {
             land->_setLandId(mLandIdAllocator->nextId());
@@ -335,7 +334,9 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
 
         auto result = mLandCache.emplace(land->getId(), land);
         if (!result.second) {
-            return StorageError::make(StorageError::ErrorCode::CacheMapError, "Failed to insert land into cache map");
+            return ll::makeStringError(
+                fmt::format("Failed to insert land {} into cache: duplicate ID detected", land->getId())
+            );
         }
 
         mDimensionChunkMap.addLand(land);
@@ -349,14 +350,14 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
         if (!mLandCache.erase(ptr->getId())) {
             mDimensionChunkMap.addLand(ptr);
             initIndex(ptr);
-            return StorageError::make(StorageError::ErrorCode::CacheMapError, "Failed to erase land from cache");
+            return ll::makeStringError(fmt::format("Failed to erase land {} from cache", ptr->getId()));
         }
 
         if (!this->mDB->del(std::to_string(ptr->getId()))) {
             mLandCache.emplace(ptr->getId(), ptr); // rollback
             mDimensionChunkMap.addLand(ptr);
             initIndex(ptr);
-            return StorageError::make(StorageError::ErrorCode::DatabaseError, "Failed to delete land from database");
+            return ll::makeStringError(fmt::format("Failed to delete land {} from database", ptr->getId()));
         }
         return {};
     }
@@ -554,24 +555,18 @@ void LandRegistry::refreshLandRange(std::shared_ptr<Land> const& ptr) {
 
 ll::Expected<> LandRegistry::addOrdinaryLand(std::shared_ptr<Land> const& land) {
     if (!land->isOrdinaryLand()) {
-        return StorageError::make(
-            StorageError::ErrorCode::LandTypeMismatch,
-            "The land type does not match the required type"
-        );
+        return ll::makeStringError("This land is not an ordinary land and cannot be added via addOrdinaryLand");
     }
     if (!LandCreateValidator::ensureLandRangeIsLegal(land->getAABB(), land->getDimensionId(), land->is3D())
         || !LandCreateValidator::ensureLandNotInForbiddenRange(land->getAABB(), land->getDimensionId())
         || !LandCreateValidator::ensureNoLandRangeConflict(*this, land)) {
-        return StorageError::make(StorageError::ErrorCode::LandRangeIllegal, "The land range is illegal");
+        return ll::makeStringError("The land AABB is illegal or conflicts with existing land");
     }
     return impl->addLand(land);
 }
 ll::Expected<> LandRegistry::removeOrdinaryLand(std::shared_ptr<Land> const& ptr) {
     if (!ptr->isOrdinaryLand()) {
-        return StorageError::make(
-            StorageError::ErrorCode::LandTypeMismatch,
-            "The land type does not match the required type"
-        );
+        return ll::makeStringError("This land is not an ordinary land and cannot be removed via removeOrdinaryLand");
     }
 
     std::unique_lock lock(impl->mMutex); // 获取锁
@@ -613,7 +608,7 @@ ll::Expected<> LandRegistry::executeTransaction(
             auto snapshot = snapshots[land.get()];
             land->_reinit(std::move(snapshot.context), snapshot.dirtyCount);
         }
-        return StorageError::make(StorageError::ErrorCode::TransactionError, "Transaction aborted.");
+        return ll::makeStringError("Transaction aborted: executor returned false or threw an exception");
     }
 
     // === 提交 (Commit) ===
