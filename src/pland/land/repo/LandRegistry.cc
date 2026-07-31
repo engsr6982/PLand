@@ -1,7 +1,7 @@
 #include "LandRegistry.h"
 #include "TransactionContext.h"
 #include "internal/LandDimensionChunkMap.h"
-#include "internal/LandMigrator.h"
+#include "internal/LegacyLandMigrator.h"
 
 #include "pland/Global.h"
 #include "pland/PLand.h"
@@ -186,7 +186,7 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
     void loadLands() {
         ll::coro::Generator<std::pair<std::string_view, std::string_view>> iter = mDB->iter();
 
-        auto& landMigrator = internal::LandMigrator::getInstance();
+        auto& landMigrator = internal::LegacyLandMigrator::getInstance();
 
         for (auto [key, value] : iter) {
             if (!isLandData(key)) continue;
