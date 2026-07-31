@@ -1,8 +1,5 @@
 #include "ConfigMigrator.h"
 
-#include "pland/drawer/DrawerType.h"
-
-#include <magic_enum.hpp>
 #include <nlohmann/json.hpp>
 
 namespace land {
