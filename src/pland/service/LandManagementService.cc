@@ -206,8 +206,8 @@ ll::Expected<> LandManagementService::handleChangeRange(
 }
 
 
-ll::Expected<> LandManagementService::ensurePlayerLandCountLimit(mce::UUID const& uuid) const {
-    return LandCreateValidator::ensurePlayerLandCountNotExceeded(impl->mRegistry, uuid);
+ll::Expected<> LandManagementService::ensurePlayerLandCountLimit(mce::UUID const& uuid, std::string_view locale) const {
+    return LandCreateValidator::ensurePlayerLandCountNotExceeded(impl->mRegistry, uuid, locale);
 }
 ll::Expected<>
 LandManagementService::setLandTeleportPos(Player& player, std::shared_ptr<Land> const& land, Vec3 point) {
@@ -281,11 +281,7 @@ LandManagementService::transferLand(Player& player, std::shared_ptr<Land> const&
         return ll::makeStringError("不能将领地转让给自己, 左手倒右手哦!"_trl(player.getLocaleCode()));
     }
 
-    if (auto expected = ensurePlayerLandCountLimit(target); !expected) {
-        if (expected.error().isA<LandCreateValidator::ValidateError>()) {
-            auto& error = expected.error().as<LandCreateValidator::ValidateError>();
-            return ll::makeStringError(error.translateError(player.getLocaleCode()));
-        }
+    if (auto expected = ensurePlayerLandCountLimit(target, player.getLocaleCode()); !expected) {
         return expected;
     }
 
@@ -376,12 +372,8 @@ ll::Expected<> LandManagementService::_ensureChangeRangelegal(
     LandAABB const&                 newRange,
     std::optional<std::string_view> localeCode
 ) {
-    if (auto res = LandCreateValidator::validateChangeLandRange(impl->mRegistry, land, newRange); !res) {
-        if (res.error().isA<LandCreateValidator::ValidateError>()) {
-            auto& error = res.error().as<LandCreateValidator::ValidateError>();
-            return ll::makeStringError(error.translateError(localeCode.value_or(ll::i18n::getDefaultLocaleCode()).data()
-            ));
-        }
+    auto locale = localeCode.value_or(ll::i18n::getDefaultLocaleCode());
+    if (auto res = LandCreateValidator::validateChangeLandRange(impl->mRegistry, land, newRange, locale); !res) {
         return res;
     }
     return {};
@@ -422,10 +414,6 @@ ll::Expected<std::shared_ptr<Land>> LandManagementService::_payMoneyAndCreateOrd
 ll::Expected<> LandManagementService::_addOrdinaryLand(Player& player, std::shared_ptr<Land> ptr) {
     assert(ptr != nullptr);
     if (auto res = LandCreateValidator::validateCreateOrdinaryLand(impl->mRegistry, player, ptr); !res) {
-        if (res.error().isA<LandCreateValidator::ValidateError>()) {
-            auto& error = res.error().as<LandCreateValidator::ValidateError>();
-            return ll::makeStringError(error.translateError(player.getLocaleCode()));
-        }
         return res;
     }
     return impl->mRegistry.addOrdinaryLand(ptr);
@@ -469,12 +457,7 @@ ll::Expected<> LandManagementService::_ensureAndAttachSubLand(
         expected = impl->mHierarchyService.attachSubLand(parent, sub);
     }
 
-    // 检查错误
     if (!expected) {
-        if (expected.error().isA<LandCreateValidator::ValidateError>()) {
-            auto& error = expected.error().as<LandCreateValidator::ValidateError>();
-            return ll::makeStringError(error.translateError(player.getLocaleCode()));
-        }
         return expected;
     }
     return {};

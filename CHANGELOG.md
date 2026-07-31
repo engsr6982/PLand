@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 补充遗漏的实体、方块权限配置 @engsr6982 [#216](https://github.com/IceBlcokMC/PLand/issues/216) [#212](https://github.com/IceBlcokMC/PLand/issues/212)
 - 改进配置文件合并逻辑 @engsr6982
+- 删除一堆脱裤子放屁的代码 @engsr6982
 
 ### 🐛 问题修复
 

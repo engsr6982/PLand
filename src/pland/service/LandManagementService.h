@@ -99,10 +99,9 @@ public:
     /**
      * 确保玩家领地数量不超过上限
      * @param uuid 玩家UUID
-     * @return 是否成功
-     * @note 如果失败，此函数返回 ValidateError
+     * @param locale 用于 i18n 错误消息
      */
-    LDNDAPI ll::Expected<> ensurePlayerLandCountLimit(mce::UUID const& uuid) const;
+    LDNDAPI ll::Expected<> ensurePlayerLandCountLimit(mce::UUID const& uuid, std::string_view locale = {}) const;
 
     LDNDAPI ll::Expected<> setLandTeleportPos(Player& player, std::shared_ptr<Land> const& land, Vec3 point);
 

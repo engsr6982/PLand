@@ -513,11 +513,7 @@ LeasingService::leaseLand(Player& player, OrdinaryLandCreateSelector* selector, 
 
     if (auto res = LandCreateValidator::validateCreateOrdinaryLand(impl->mRegistry, player, land); !res) {
         (void)economy->add(player.getUuid(), totalCost);
-        if (res.error().isA<LandCreateValidator::ValidateError>()) {
-            auto& error = res.error().as<LandCreateValidator::ValidateError>();
-            return ll::makeStringError(error.translateError(player.getLocaleCode()));
-        }
-        return ll::makeStringError(res.error().message());
+        return ll::forwardError(res.error());
     }
 
     if (auto res = impl->mRegistry.addOrdinaryLand(land); !res) {
