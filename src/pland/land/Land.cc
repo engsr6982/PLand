@@ -17,8 +17,8 @@
 namespace land {
 
 struct Land::Impl {
-    LandContext  mContext;
-    DirtyCounter mDirtyCounter;
+    LandContext          mContext;
+    std::atomic_uint32_t mDirtyCounter;
 
     observer::ILandObserver* mObserver{nullptr};
 
@@ -60,7 +60,7 @@ LandPos const& Land::getTeleportPos() const { return impl->mContext.mTeleportPos
 bool           Land::setTeleportPos(LandPos const& pos) {
     if (getAABB().hasPos(pos.as<>())) {
         impl->mContext.mTeleportPos = pos;
-        impl->mDirtyCounter.increment();
+        markDirty();
         return true;
     }
     return false;
@@ -72,7 +72,7 @@ LandDimid Land::getDimensionId() const { return impl->mContext.mLandDimid; }
 LandPermTable const& Land::getPermTable() const { return impl->mContext.mLandPermTable; }
 void                 Land::setPermTable(LandPermTable permTable) {
     impl->mContext.mLandPermTable = permTable;
-    impl->mDirtyCounter.increment();
+    markDirty();
 }
 
 mce::UUID const& Land::getOwner() const {
@@ -140,13 +140,13 @@ void Land::clearMembers() {
 std::string const& Land::getName() const { return impl->mContext.mLandName; }
 void               Land::setName(std::string const& name) {
     impl->mContext.mLandName = name;
-    impl->mDirtyCounter.increment();
+    markDirty();
 }
 
 int  Land::getOriginalBuyPrice() const { return impl->mContext.mOriginalBuyPrice; }
 void Land::setOriginalBuyPrice(int price) {
     impl->mContext.mOriginalBuyPrice = price;
-    impl->mDirtyCounter.increment();
+    markDirty();
 }
 
 LandHoldType Land::getHoldType() const { return impl->mContext.mHoldType; }
@@ -161,13 +161,13 @@ time_t Land::getLeaseEndAt() const { return impl->mContext.mLeasing.mEndAt; }
 
 void Land::setHoldType(LandHoldType type) {
     impl->mContext.mHoldType = type;
-    impl->mDirtyCounter.increment();
+    markDirty();
 }
 void Land::setLeaseState(LeaseState state) {
     auto old = impl->mContext.mLeasing.mState;
     if (old != state) {
         impl->mContext.mLeasing.mState = state;
-        impl->mDirtyCounter.increment();
+        markDirty();
         if (auto observer = tryGetObserver()) {
             observer->onLeaseStateChanged(shared_from_this(), old, state);
         }
@@ -175,23 +175,23 @@ void Land::setLeaseState(LeaseState state) {
 }
 void Land::setLeaseStartAt(time_t ts) {
     impl->mContext.mLeasing.mStartAt = ts;
-    impl->mDirtyCounter.increment();
+    markDirty();
 }
 void Land::setLeaseEndAt(time_t ts) {
     impl->mContext.mLeasing.mEndAt = ts;
-    impl->mDirtyCounter.increment();
+    markDirty();
 }
 
-bool                Land::is3D() const { return impl->mContext.mIs3DLand; }
-bool                Land::isOwner(mce::UUID const& uuid) const { return impl->mCacheOwner == uuid; }
-bool                Land::isMember(mce::UUID const& uuid) const { return impl->mCacheMembers.contains(uuid); }
-bool                Land::isConvertedLand() const { return impl->mContext.mIsConvertedLand; }
-bool                Land::isOwnerDataIsXUID() const { return impl->mContext.mOwnerDataIsXUID; }
-bool                Land::isDirty() const { return impl->mDirtyCounter.isDirty(); }
-void                Land::markDirty() { impl->mDirtyCounter.increment(); }
-void                Land::rollbackDirty() { impl->mDirtyCounter.decrement(); }
-DirtyCounter&       Land::getDirtyCounter() { return impl->mDirtyCounter; }
-DirtyCounter const& Land::getDirtyCounter() const { return impl->mDirtyCounter; }
+bool     Land::is3D() const { return impl->mContext.mIs3DLand; }
+bool     Land::isOwner(mce::UUID const& uuid) const { return impl->mCacheOwner == uuid; }
+bool     Land::isMember(mce::UUID const& uuid) const { return impl->mCacheMembers.contains(uuid); }
+bool     Land::isConvertedLand() const { return impl->mContext.mIsConvertedLand; }
+bool     Land::isOwnerDataIsXUID() const { return impl->mContext.mOwnerDataIsXUID; }
+bool     Land::isDirty() const { return impl->mDirtyCounter.load(std::memory_order_relaxed) > 0; }
+void     Land::markDirty() { impl->mDirtyCounter.fetch_add(1, std::memory_order_relaxed); }
+void     Land::rollbackDirty() { impl->mDirtyCounter.fetch_sub(1, std::memory_order_relaxed); }
+uint32_t Land::getDirtyCount() const { return impl->mDirtyCounter.load(std::memory_order_relaxed); }
+void Land::resetDirtyCounter(uint32_t counter) const { impl->mDirtyCounter.store(counter, std::memory_order_relaxed); }
 
 LandType Land::getType() const {
     if (isOrdinaryLand()) [[likely]] {
@@ -268,7 +268,7 @@ void Land::migrateOwner(mce::UUID const& ownerUUID) {
     if (isConvertedLand() && isOwnerDataIsXUID()) {
         setOwner(ownerUUID);
         impl->mContext.mOwnerDataIsXUID = false;
-        impl->mDirtyCounter.increment();
+        markDirty();
     }
 }
 
@@ -281,13 +281,13 @@ nlohmann::json Land::toJson() const { return json_util::struct_to_json(impl->mCo
 bool Land::operator==(Land const& other) const { return impl->mContext.mLandID == other.impl->mContext.mLandID; }
 
 
-// friend LandHierarchyService API
+// friend API
 LandContext& Land::_getContext() const { return impl->mContext; }
 void         Land::_setCachedNestedLevel(int level) { impl->mCacheNestedLevel = level; }
 void         Land::_setLandId(LandID id) { impl->mContext.mLandID = id; }
 void         Land::_reinit(LandContext context, unsigned int dirtyDiff) {
     impl->mContext = std::move(context);
-    impl->mDirtyCounter.reset(dirtyDiff);
+    resetDirtyCounter(dirtyDiff);
     impl->initCache();
 }
 bool Land::_setAABB(LandAABB const& newRange) {

@@ -366,7 +366,7 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
             return true; // 没有变化，且非强制保存
         }
         if (mDB->set(std::to_string(land->getId()), land->toJson().dump())) {
-            land->getDirtyCounter().reset();
+            land->resetDirtyCounter();
             return true;
         }
         return false;
@@ -591,12 +591,12 @@ ll::Expected<> LandRegistry::executeTransaction(
 
     struct Snapshot {
         LandContext context;
-        int         dirtyCount;
+        uint32_t    dirtyCount;
     };
     std::unordered_map<Land*, Snapshot> snapshots;
     snapshots.reserve(participants.size());
     for (auto& land : participants) {
-        snapshots[land.get()] = {land->_getContext(), land->getDirtyCounter().getCounter()};
+        snapshots[land.get()] = {land->_getContext(), land->getDirtyCount()};
     }
 
     TransactionContext ctx(*this);
