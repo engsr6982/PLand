@@ -67,8 +67,8 @@ template <typename T, typename J = json_t>
 
 /// @brief 从 JSON 对象反序列化填充 C++ 结构体
 template <typename T, typename J = json_t>
-inline void json_to_struct(const J& json, T& obj) {
-    ll::reflection::deserialize(obj, json).value();
+inline auto json_to_struct(const J& json, T& obj) {
+    return ll::reflection::deserialize(obj, json);
 }
 
 // ============================================================================

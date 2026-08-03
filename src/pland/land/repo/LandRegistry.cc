@@ -1,7 +1,10 @@
 #include "LandRegistry.h"
 #include "TransactionContext.h"
+#include "internal/LandDatabase.h"
 #include "internal/LandDimensionChunkMap.h"
-#include "internal/LegacyLandMigrator.h"
+#include "internal/LandMigrator.h"
+#include "internal/LegacyLandDatabaseReader.h"
+#include "internal/LegacyLandDatabaseUpgrader.h"
 
 #include "pland/Global.h"
 #include "pland/PLand.h"
@@ -12,41 +15,41 @@
 #include "pland/land/observer/LandEventPublisher.h"
 #include "pland/land/repo/LandContext.h"
 #include "pland/land/validator/LandCreateValidator.h"
+#include "pland/reflect/SerializeType.h"
 #include "pland/utils/JsonUtil.h"
 #include "pland/utils/TimeUtils.h"
-
 
 #include "ll/api/Expected.h"
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/coro/InterruptableSleep.h"
 #include "ll/api/data/KeyValueDB.h"
 #include "ll/api/thread/ThreadPoolExecutor.h"
+#include <ll/api/io/FileUtils.h>
+#include <ll/api/thread/ServerThreadExecutor.h>
 
 #include "mc/platform/UUID.h"
 #include "mc/world/level/BlockPos.h"
 
-#include "nlohmann/json_fwd.hpp"
-
 #include "absl/container/flat_hash_map.h"
 
+#include "fmt/chrono.h"
 #include "fmt/core.h"
+#include "fmt/format.h"
 
 #include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <filesystem>
-#include <ll/api/io/FileUtils.h>
-#include <ll/api/thread/ServerThreadExecutor.h>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
-
 
 namespace land {
 
@@ -55,8 +58,8 @@ thread_local bool g_isInTransaction = false;
 }
 
 struct LandRegistry::Impl : public observer::LandEventPublisher {
-    std::unique_ptr<ll::data::KeyValueDB>              mDB;             // 领地数据库
-    std::vector<mce::UUID>                             mLandOperators;  // 领地操作员
+    std::unique_ptr<internal::LandDatabase>            mDB;             // 领地数据库
+    std::vector<mce::UUID>                             mAdmins;         // 领地操作员
     std::unordered_map<mce::UUID, PlayerSettings>      mPlayerSettings; // 玩家设置
     absl::flat_hash_map<LandID, std::shared_ptr<Land>> mLandCache;      // 领地缓存
 
@@ -152,52 +155,50 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
     // 数据加载
     // ===========================
 
-    void loadOperators(ll::io::Logger& logger) {
-        if (!mDB->has(DbOperatorDataKey)) {
-            mDB->set(DbOperatorDataKey, "[]"); // empty array
+    ll::Expected<> loadAdmins() {
+        if (mDB->has(internal::LandDatabase::kAdminsKey)) {
+            if (auto ok = mDB->readTo(internal::LandDatabase::kAdminsKey, mAdmins); !ok) {
+                return ll::makeStringError(fmt::format("Failed to load admins data: {}", ok.error().message()));
+            }
         }
-        auto ops = nlohmann::json::parse(*mDB->get(DbOperatorDataKey));
-        for (auto& op : ops) {
-            auto uuidStr = op.get<std::string>();
-            if (!mce::UUID::canParse(uuidStr)) {
-                logger.warn("Invalid operator UUID: {}", uuidStr);
+        return {};
+    }
+    ll::Expected<> loadPlayerSettings() {
+        if (mDB->has(internal::LandDatabase::kPlayerSettingsKey)) {
+            if (auto ok = mDB->readTo(internal::LandDatabase::kPlayerSettingsKey, mPlayerSettings); !ok) {
+                return ll::makeStringError(fmt::format("Failed to load player settings: {}", ok.error().message()));
+            }
+        }
+        return {};
+    }
+    void loadLands(ll::io::Logger& logger) {
+        auto iter = mDB->iter(internal::LandDatabase::kLandContextPrefix);
+        for (auto view : iter) {
+            auto json = view.as_json();
+            if (!json) {
+                logger
+                    .error("Failed to decode land record ({} bytes): {}", view.as_str().size(), json.error().message());
                 continue;
             }
-            mLandOperators.emplace_back(uuidStr);
-        }
-    }
 
-    void loadPlayerSettings() {
-        if (!mDB->has(DbPlayerSettingDataKey)) {
-            mDB->set(DbPlayerSettingDataKey, "{}"); // empty object
-        }
-        auto settings = nlohmann::json::parse(*mDB->get(DbPlayerSettingDataKey));
-        if (!settings.is_object()) [[unlikely]] {
-            throw std::runtime_error("player settings is not an object");
-        }
-
-        for (auto& [key, value] : settings.items()) {
-            PlayerSettings obj;
-            json_util::merge_and_deserialize(value, obj);
-            mPlayerSettings.emplace(key, obj);
-        }
-    }
-
-    void loadLands() {
-        ll::coro::Generator<std::pair<std::string_view, std::string_view>> iter = mDB->iter();
-
-        auto& landMigrator = internal::LegacyLandMigrator::getInstance();
-
-        for (auto [key, value] : iter) {
-            if (!isLandData(key)) continue;
-
-            auto json = nlohmann::json::parse(value);
-            if (auto expected = landMigrator.migrate(json, LandSchemaVersion); !expected) {
-                throw std::runtime_error{expected.error().message()};
+            auto migrateResult = internal::LandMigrator::getInstance().migrate(*json, kLandSchemaVersion);
+            if (!migrateResult) {
+                logger.error("Failed to migrate land record: {}", migrateResult.error().message());
+                continue;
             }
 
-            auto land = Land::make();
-            land->load(json);
+            LandContext ctx;
+            try {
+                json_util::merge_versioned_and_deserialize<LandContext, nlohmann::json>(*json, ctx);
+            } catch (std::exception const& e) {
+                logger.error("Failed to deserialize land record: {}", e.what());
+                continue;
+            }
+
+            auto land = Land::make(std::move(ctx));
+            if (migrateResult.value() == infra::MigrateResult::Success) {
+                land->markDirty();
+            }
 
             // 保证landID唯一
             if (mNextLandID.load(std::memory_order_relaxed) <= land->getId()) {
@@ -208,129 +209,121 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
             mLandCache.emplace(land->getId(), std::move(land));
         }
     }
+    ll::Expected<> loadTemplatePermTable() {
+        auto tab = LandPermTable{};
 
-    void loadTemplatePermTable(ll::io::Logger& logger) {
-        if (!mDB->has(DbTemplatePermKey)) {
-            auto t = LandPermTable{};
-            mDB->set(DbTemplatePermKey, json_util::struct_to_json(t).dump());
+        if (!mDB->has(internal::LandDatabase::kTemplatePermTableKey)) {
+            (void)mDB->save(internal::LandDatabase::kTemplatePermTableKey, tab); // 初始化默认数据
+            mLandTemplatePermTable = std::make_unique<LandTemplatePermTable>(tab);
+            return {};
         }
 
-        auto rawJson = mDB->get(DbTemplatePermKey);
-        try {
-            auto json = nlohmann::json::parse(*rawJson);
-            if (!json.is_object()) [[unlikely]] {
-                throw std::runtime_error("Template perm table is not an object");
-            }
+        auto expected          = mDB->readTo(internal::LandDatabase::kTemplatePermTableKey, tab);
+        mLandTemplatePermTable = std::make_unique<LandTemplatePermTable>(tab); // load default
 
-            auto t = LandPermTable{};
-            json_util::merge_and_deserialize(json, t); // 反射并补丁
-
-            mLandTemplatePermTable = std::make_unique<LandTemplatePermTable>(t);
-        } catch (...) {
-            mLandTemplatePermTable = std::make_unique<LandTemplatePermTable>(LandPermTable{});
-            logger.error("Failed to load template perm table, using default perm table instead");
+        if (!expected) {
+            return ll::makeStringError(
+                fmt::format("Failed to load template perm table: {}", expected.error().message())
+            );
         }
+        return {};
     }
 
 
     // ===========================
     // 数据库
     // ===========================
+    void openDatabase(PLand& mod) {
+        namespace fs = std::filesystem;
 
-    /**
-     * @brief 对数据库进行快照
-     * @note 此任务会阻塞线程，请投递到线程池中执行
-     */
-    std::pair<std::string, int> snapshotDatabase(std::optional<std::string> const& dirName) const {
-        auto& mod      = PLand::getInstance();
-        auto  baseDir  = mod.getSelf().getDataDir() / SnapshotDir;
-        auto  name     = dirName.value_or(std::to_string(time_utils::nowSeconds()));
-        auto  finalDir = baseDir / name;
+        auto& self    = mod.getSelf();
+        auto& logger  = self.getLogger();
+        auto& dataDir = self.getDataDir();
 
-        int count = 0;
-        {
-            auto snapshot = std::make_unique<ll::data::KeyValueDB>(finalDir);
-            ll::file_utils::writeFile(finalDir / ".incomplete", "");
+        auto const newDbDir    = internal::LandDatabase::getDatabasePath(dataDir);             // database_v2
+        auto const legacyDbDir = internal::LegacyLandDatabaseReader::getDatabasePath(dataDir); // db (旧版)
 
-            // iter() 底层会调用 leveldb::DB::NewIterator。
-            // LevelDB 在底层生成了一个 MVCC（多版本并发控制）的只读快照，这里可以安全的跨线程读取。
-            auto iter = mDB->iter();
-            for (auto [key, value] : iter) {
-                snapshot->set(key, value);
-                count++;
-            }
-
-            std::filesystem::remove(finalDir / ".incomplete");
-        }
-        return {name, count};
-    }
-
-    enum class VersionState { VersionMatch, VersionTooHigh, VersionTooLow };
-    std::pair<VersionState, int> ensureDatabaseVersion(ll::data::KeyValueDB& db, bool isNewDb) {
-        if (!db.has(DbVersionKey)) {
-            if (isNewDb) {
-                db.set(DbVersionKey, std::to_string(LandSchemaVersion)); // 设置初始版本号
-            } else {
-                db.set(DbVersionKey, "-1"); // 数据库存在，但没有版本号，表示是旧版数据库(v0.8.1之前)
-            }
-        }
-
-        auto version = std::stoi(*db.get(DbVersionKey));
-        if (version != LandSchemaVersion) {
-            auto state = version > LandSchemaVersion ? VersionState::VersionTooHigh : VersionState::VersionTooLow;
-            return {state, version};
-        }
-        return {VersionState::VersionMatch, version};
-    }
-
-    void connectDatabase(PLand& mod) {
-        auto&       self    = mod.getSelf();
-        auto&       logger  = self.getLogger();
-        auto const& dataDir = self.getDataDir();
-        auto const  dbDir   = dataDir / DatabaseDir;
-
-        bool const isNewCreatedDB = !std::filesystem::exists(dbDir); // 是否是新建的数据库
-
-        auto backup = [&]() {
-            auto const backupDir = dataDir / ("backup_db_" + std::to_string(time_utils::nowSeconds()));
+        auto backup_db = [](fs::path const& sou, fs::path const& tarBaseDir, std::string_view dbName) {
+            auto dirName   = fmt::format("backup_{}_{}", dbName, time_utils::nowSeconds());
+            auto targetDir = tarBaseDir / dirName;
             std::filesystem::copy(
-                dbDir,
-                backupDir,
+                sou,
+                targetDir,
                 std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing
             );
         };
 
-        if (!mDB) {
-            mDB = std::make_unique<ll::data::KeyValueDB>(dbDir);
+        bool const legacyDbExists = fs::exists(legacyDbDir);
+        bool const newDbExists    = fs::exists(newDbDir);
+
+        // 旧, 新
+        // v, v => 中断加载
+        // v, x => 升级数据
+        // x, v => 正常加载
+        // x, x => 新数据库
+
+        if (newDbExists && legacyDbExists) {
+            static auto last_write_time = [](fs::path const& path) {
+                auto ftime = fs::last_write_time(path);
+                using namespace std::chrono;
+                auto sys_now  = system_clock::now();
+                auto file_now = std::filesystem::file_time_type::clock::now();
+                return sys_now + duration_cast<system_clock::duration>(ftime - file_now);
+            };
+
+            auto legacyTime = last_write_time(legacyDbDir);
+            auto newTime    = last_write_time(newDbDir);
+            logger.fatal(
+                "CRITICAL: Both new database ({}) and legacy database ({}) exist simultaneously!\n"
+                "  - Legacy DB last modified: {:%Y-%m-%d %H:%M:%S}\n"
+                "  - New DB last modified: {:%Y-%m-%d %H:%M:%S}\n"
+                "To prevent state desynchronization and data loss, startup has been aborted.\n"
+                "Please manually inspect, backup, and remove one of the database directories.",
+                legacyDbDir.string(),
+                newDbDir.string(),
+                legacyTime,
+                newTime
+            );
+            throw std::runtime_error("Data consistency error: conflicting database environments detected.");
         }
 
-        auto state = ensureDatabaseVersion(*mDB, isNewCreatedDB);
-        switch (state.first) {
-        case VersionState::VersionMatch:
-            return;
-        case VersionState::VersionTooHigh: {
+        mDB = std::make_unique<internal::LandDatabase>(newDbDir);
+        if (legacyDbExists && !newDbExists) {
+            logger.info("Old version of the database detected, starting data migration...");
+            auto legacyDb = std::make_unique<ll::data::KeyValueDB>(legacyDbDir);
+            if (auto ok = internal::LegacyLandDatabaseUpgrader::upgrade(std::move(legacyDb), *mDB); !ok) {
+                logger.fatal("Failed to migrate the database: {}", ok.error().message());
+                throw std::runtime_error("Failed to migrate the database");
+            }
+            auto archiveName = fmt::format("legacy_{}", internal::LegacyLandDatabaseReader::kDatabaseDir);
+            fs::rename(legacyDbDir, dataDir / archiveName);
+        }
+        if (!legacyDbExists && !newDbExists) {
+            (void)mDB->setVersion(kLandSchemaVersion); // 新的空数据库
+        }
+
+        // 版本校验
+        auto version = mDB->getVersion();
+        if (version > kLandSchemaVersion) {
             logger.fatal(
                 "The database version is too high, current version: {}, expected version: {}. In order to "
                 "keep the data safe, the plugin refuses to load!",
-                state.second,
-                LandSchemaVersion
+                *version,
+                kLandSchemaVersion
             );
-            throw std::runtime_error("The database versions do not match");
+            throw std::runtime_error("The database version is too high");
         }
-        case VersionState::VersionTooLow: {
+        if (version < kLandSchemaVersion) {
             logger.warn(
-                "The database version is too low, the current version: {}, the expected version: {}, the "
-                "plugin will try to back up and upgrade the database...",
-                state.second,
-                LandSchemaVersion
+                "The database version is too low, current version: {}, expected version: {}. Backing up and "
+                "upgrading the database...",
+                *version,
+                kLandSchemaVersion
             );
-            mDB.reset();
-            backup();
-            mDB = std::make_unique<ll::data::KeyValueDB>(dbDir);
-            mDB->set(DbVersionKey, std::to_string(LandSchemaVersion)); // 更新版本号
-            // 这里只需要修改版本号以及备份，其它兼容转换操作将在 LandMigrator 中进行
-            break;
-        }
+            mDB.reset(); // 先释放文件锁再冷拷贝
+            backup_db(newDbDir, dataDir, internal::LandDatabase::kDatabaseDirName);
+            mDB = std::make_unique<internal::LandDatabase>(newDbDir);
+            (void)mDB->setVersion(kLandSchemaVersion); // 数据迁移由加载时的 LandMigrator 逐条完成
         }
     }
 
@@ -371,7 +364,7 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
             return ll::makeStringError(fmt::format("Failed to erase land {} from cache", ptr->getId()));
         }
 
-        if (!this->mDB->del(std::to_string(ptr->getId()))) {
+        if (!this->mDB->del(internal::LandDatabase::buildLandContextKey(ptr->getId()))) {
             mLandCache.emplace(ptr->getId(), ptr); // rollback
             mDimensionChunkMap.addLand(ptr);
             initIndex(ptr);
@@ -384,7 +377,7 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
         if (!land->isDirty() && !force) {
             return true; // 没有变化，且非强制保存
         }
-        if (mDB->set(std::to_string(land->getId()), land->toJson().dump())) {
+        if (mDB->save(internal::LandDatabase::buildLandContextKey(land->getId()), land->_getContext())) {
             land->resetDirtyCounter();
             return true;
         }
@@ -397,32 +390,25 @@ LandID LandRegistry::_allocateNextId() { return impl->allocateLandID(); }
 LandRegistry::LandRegistry(PLand& mod) : impl(std::make_unique<Impl>()) {
     auto& logger = mod.getSelf().getLogger();
 
-    logger.trace("打开数据库...");
-    impl->connectDatabase(mod);
+    impl->openDatabase(mod);
 
-    auto lock = std::unique_lock<std::shared_mutex>(impl->mDataMutex);
-    logger.info("加载管理员...");
-    impl->loadOperators(logger);
-    logger.info("已加载 {} 位管理员", impl->mLandOperators.size());
+    auto lock = std::unique_lock(impl->mDataMutex);
+    impl->loadAdmins();
+    logger.info("已加载 {} 位管理员", impl->mAdmins.size());
 
-    logger.info("加载玩家个人设置...");
     impl->loadPlayerSettings();
     logger.info("已加载 {} 位玩家的个人设置", impl->mPlayerSettings.size());
 
-    logger.info("加载领地数据...");
-    impl->loadLands();
+    impl->loadLands(logger);
     logger.info("已加载 {} 个领地", impl->mLandCache.size());
 
-    logger.info("加载领地默认权限模板...");
-    impl->loadTemplatePermTable(logger);
+    impl->loadTemplatePermTable();
     logger.info("领地默认权限模板加载完成");
 
-    logger.info("构建领地空间索引...");
     impl->buildDimensionChunkMap();
     logger.info("领地空间索引构建完成");
 
     lock.unlock();
-    logger.info("构建领地层级缓存...");
     {
         std::unordered_set<std::shared_ptr<Land>> familyTreeRoot{};
         for (auto& land : impl->mLandCache | std::views::values) {
@@ -480,12 +466,24 @@ LandRegistry::~LandRegistry() {
 void LandRegistry::createSnapshot(std::optional<std::string> const& dirName) {
     auto& mod = PLand::getInstance();
     ll::coro::keepThis([this, dirName]() -> ll::coro::CoroTask<> {
-        save(); // 强制内存数据落盘
+        save(); // 强制内存数据落盘 // TODO: 移除
 
-        auto& logger = PLand::getInstance().getSelf().getLogger();
+        auto& mod           = PLand::getInstance();
+        auto& logger        = mod.getSelf().getLogger();
+        auto  snapshotDir   = mod.getSelf().getDataDir() / SnapshotDir;
+        auto  outputDirName = dirName.value_or(std::to_string(time_utils::nowSeconds()));
+        auto  finalPath     = snapshotDir / outputDirName;
         try {
-            auto [name, count] = impl->snapshotDatabase(dirName);
-            logger.info("Database snapshot [{}] created successfully ({} records).", name, count);
+            auto newDatabase = std::make_unique<ll::data::KeyValueDB>(finalPath);
+            ll::file_utils::writeFile(finalPath / ".incomplete", "");
+
+            auto count = impl->mDB->snapshotTo(*newDatabase);
+            if (!count) {
+                logger.error("Failed to snapshot database: {}", count.error().message());
+            }
+
+            std::filesystem::remove(finalPath / ".incomplete");
+            logger.info("Database snapshot [{}] created successfully ({} records).", finalPath, *count);
         } catch (std::exception const& exception) {
             logger.error("Failed to create database snapshot: {}", exception.what());
         }
@@ -494,23 +492,18 @@ void LandRegistry::createSnapshot(std::optional<std::string> const& dirName) {
 }
 
 
-bool LandRegistry::isLandData(std::string_view key) {
-    return key != DbVersionKey && key != DbOperatorDataKey && key != DbPlayerSettingDataKey && key != DbTemplatePermKey;
-}
-
 void LandRegistry::save() {
     // 锁顺序: mDataMutex → mOperatorMutex → mSettingsMutex
     std::shared_lock dataLock(impl->mDataMutex);
     std::shared_lock opLock(impl->mOperatorMutex);
     std::shared_lock settingsLock(impl->mSettingsMutex);
 
-    impl->mDB->set(DbOperatorDataKey, json_util::struct_to_json(impl->mLandOperators).dump());
-
-    impl->mDB->set(DbPlayerSettingDataKey, json_util::struct_to_json(impl->mPlayerSettings).dump());
+    (void)impl->mDB->save(internal::LandDatabase::kAdminsKey, impl->mAdmins);
+    (void)impl->mDB->save(internal::LandDatabase::kPlayerSettingsKey, impl->mPlayerSettings);
 
     // LandTemplatePermTable 自带内部锁，不需要额外保护
     if (impl->mLandTemplatePermTable->isDirty()) {
-        if (impl->mDB->set(DbTemplatePermKey, json_util::struct_to_json(impl->mLandTemplatePermTable->get()).dump())) {
+        if (impl->mDB->save(internal::LandDatabase::kTemplatePermTableKey, impl->mLandTemplatePermTable->get())) {
             impl->mLandTemplatePermTable->resetDirty();
         }
     }
@@ -528,29 +521,29 @@ bool LandRegistry::save(std::shared_ptr<Land> const& land, bool force) const {
 
 bool LandRegistry::isOperator(mce::UUID const& uuid) const {
     std::shared_lock<std::shared_mutex> lock(impl->mOperatorMutex);
-    return std::find(impl->mLandOperators.begin(), impl->mLandOperators.end(), uuid) != impl->mLandOperators.end();
+    return std::find(impl->mAdmins.begin(), impl->mAdmins.end(), uuid) != impl->mAdmins.end();
 }
 bool LandRegistry::addOperator(mce::UUID const& uuid) {
     std::unique_lock<std::shared_mutex> lock(impl->mOperatorMutex);
-    if (std::find(impl->mLandOperators.begin(), impl->mLandOperators.end(), uuid) != impl->mLandOperators.end()) {
+    if (std::find(impl->mAdmins.begin(), impl->mAdmins.end(), uuid) != impl->mAdmins.end()) {
         return false;
     }
-    impl->mLandOperators.push_back(uuid);
+    impl->mAdmins.push_back(uuid);
     return true;
 }
 bool LandRegistry::removeOperator(mce::UUID const& uuid) {
     std::unique_lock<std::shared_mutex> lock(impl->mOperatorMutex); // 获取锁
 
-    auto iter = std::find(impl->mLandOperators.begin(), impl->mLandOperators.end(), uuid);
-    if (iter == impl->mLandOperators.end()) {
+    auto iter = std::find(impl->mAdmins.begin(), impl->mAdmins.end(), uuid);
+    if (iter == impl->mAdmins.end()) {
         return false;
     }
-    impl->mLandOperators.erase(iter);
+    impl->mAdmins.erase(iter);
     return true;
 }
 std::vector<mce::UUID> LandRegistry::getOperators() const {
     std::shared_lock<std::shared_mutex> lock(impl->mOperatorMutex);
-    return impl->mLandOperators;
+    return impl->mAdmins;
 }
 
 
@@ -778,7 +771,7 @@ LandPermType LandRegistry::getPermType(mce::UUID const& uuid, LandID id, bool in
 
     if (includeOperator) {
         std::shared_lock opLock(impl->mOperatorMutex);
-        if (std::find(impl->mLandOperators.begin(), impl->mLandOperators.end(), uuid) != impl->mLandOperators.end()) {
+        if (std::find(impl->mAdmins.begin(), impl->mAdmins.end(), uuid) != impl->mAdmins.end()) {
             return LandPermType::Admin;
         }
     }

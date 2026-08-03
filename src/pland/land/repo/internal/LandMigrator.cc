@@ -1,17 +1,17 @@
-#include "LegacyLandMigrator.h"
+#include "LandMigrator.h"
 
 #include <nlohmann/json.hpp>
 
 namespace land {
 namespace internal {
 
-LegacyLandMigrator& LegacyLandMigrator::getInstance() {
-    static LegacyLandMigrator instance;
+LandMigrator& LandMigrator::getInstance() {
+    static LandMigrator instance;
     return instance;
 }
 
-LegacyLandMigrator::LegacyLandMigrator() {
-    registerMigrationUnit(15, [](LegacyLandMigrator::container_t& data) -> bool {
+LandMigrator::LandMigrator() {
+    registerMigrationUnit(15, [](LandMigrator::container_t& data) -> bool {
         static constexpr std::string_view LegacyMaxKey = "mMax_B";
         static constexpr std::string_view LegacyMinKey = "mMin_A";
         static constexpr std::string_view NewMaxKey    = "max";
@@ -32,7 +32,7 @@ LegacyLandMigrator::LegacyLandMigrator() {
     });
 
     // 25/26 -> 27
-    registerMigrationUnit(27, [](LegacyLandMigrator::container_t& data) -> bool {
+    registerMigrationUnit(27, [](LandMigrator::container_t& data) -> bool {
         if (!data.contains("mLandPermTable")) return true;
 
         // 1. 读取并备份旧权限数据
@@ -40,8 +40,8 @@ LegacyLandMigrator::LegacyLandMigrator() {
         if (!oldPerms.is_object()) return true; // 防御性检查
 
         // 2. 准备新的分层结构
-        LegacyLandMigrator::container_t newEnv  = LegacyLandMigrator::container_t::object();
-        LegacyLandMigrator::container_t newRole = LegacyLandMigrator::container_t::object();
+        LandMigrator::container_t newEnv  = LandMigrator::container_t::object();
+        LandMigrator::container_t newRole = LandMigrator::container_t::object();
 
         // --- 辅助 Lambda ---
 
@@ -56,7 +56,7 @@ LegacyLandMigrator::LegacyLandMigrator() {
         // 创建角色权限 Entry (member, guest)
         // isPrivilege: true 表示这是特权(如破坏/开箱)，成员默认为 true；
         //              false 表示这是规则(如PvP/火焰)，成员跟随 v25 设置
-        auto makeEntry = [&](bool v25Val, bool isPrivilege) -> LegacyLandMigrator::container_t {
+        auto makeEntry = [&](bool v25Val, bool isPrivilege) -> LandMigrator::container_t {
             return {
                 { "guest",                      v25Val},
                 {"member", isPrivilege ? true : v25Val}
@@ -200,7 +200,7 @@ LegacyLandMigrator::LegacyLandMigrator() {
         return true;
     });
 
-    registerMigrationUnit(31, [](LegacyLandMigrator::container_t& root) -> bool {
+    registerMigrationUnit(31, [](LandMigrator::container_t& root) -> bool {
         if (!root.contains("mLandPermTable")) {
             return true;
         }
