@@ -47,10 +47,6 @@ public:
      */
     LDAPI void createSnapshot(std::optional<std::string> const& dirName = std::nullopt);
 
-    LDAPI void save();
-
-    LDAPI bool save(std::shared_ptr<Land> const& land, bool force = false) const;
-
 public:
     LDNDAPI bool isOperator(mce::UUID const& uuid) const;
 

@@ -120,6 +120,21 @@ bool LandDatabase::saveBinary(std::string_view key, std::string buffer) {
     return mDb->set(key, buffer);
 }
 
+bool LandDatabase::writeBatch(
+    std::vector<std::pair<std::string, std::string>> puts,
+    std::vector<std::string>                         dels
+) {
+    ll::data::KeyValueDB::WriteBatch batch;
+    for (auto& [key, val] : puts) {
+        appendChecksum(val); // 与 saveBinary 保持一致的校验头格式
+        batch.set(key, val);
+    }
+    for (auto const& key : dels) {
+        batch.del(key);
+    }
+    return mDb->write(batch);
+}
+
 std::optional<std::string> LandDatabase::readBinary(std::string_view key) const {
     auto raw = mDb->get(key);
     if (!raw) return std::nullopt;

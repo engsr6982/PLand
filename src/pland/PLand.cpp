@@ -160,9 +160,6 @@ bool PLand::disable() {
 
     mImpl->mServiceLocator.reset();
 
-    logger.debug("Saving land registry...");
-    mImpl->mLandRegistry->save();
-
     logger.debug("Destroying resources...");
     mImpl->mLandScheduler.reset();
     mImpl->mEventListener.reset();

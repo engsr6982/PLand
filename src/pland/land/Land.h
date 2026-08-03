@@ -271,8 +271,9 @@ public:
      */
     [[deprecated]] LDAPI void migrateOwner(mce::UUID const& ownerUUID);
 
-    LDAPI void load(nlohmann::json& json); // 加载数据
-    LDAPI nlohmann::json toJson() const;   // 导出数据
+    /// 非必要请不要从此接口修改数据，它会导致 observer 无法观察，进而导致 LandRegistry 索引失效
+    [[deprecated]] LDAPI void load(nlohmann::json& json);
+    [[deprecated]] LDAPI nlohmann::json toJson() const;
 
     LDAPI bool operator==(Land const& other) const;
 

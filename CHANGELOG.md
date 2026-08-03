@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🚀 性能优化
 
 - 改进对实体受伤、玩家攻击时的动态实体分组，减少不必要的多次查表并优化调试日志 @engsr6982
+- 优化缓存数据回写，降低崩溃丢失数据概率 @engsr6982 [#215](https://github.com/IceBlcokMC/PLand/issues/215)
+- 更换数据库存储格式，降低磁盘占用，提升读写性能 @engsr6982 [#215](https://github.com/IceBlcokMC/PLand/issues/215)
 
 ### 🧩 其他改动
 

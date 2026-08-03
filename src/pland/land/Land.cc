@@ -182,13 +182,18 @@ void Land::setLeaseEndAt(time_t ts) {
     markDirty();
 }
 
-bool     Land::is3D() const { return impl->mContext.mIs3DLand; }
-bool     Land::isOwner(mce::UUID const& uuid) const { return impl->mCacheOwner == uuid; }
-bool     Land::isMember(mce::UUID const& uuid) const { return impl->mCacheMembers.contains(uuid); }
-bool     Land::isConvertedLand() const { return impl->mContext.mIsConvertedLand; }
-bool     Land::isOwnerDataIsXUID() const { return impl->mContext.mOwnerDataIsXUID; }
-bool     Land::isDirty() const { return impl->mDirtyCounter.load(std::memory_order_relaxed) > 0; }
-void     Land::markDirty() { impl->mDirtyCounter.fetch_add(1, std::memory_order_relaxed); }
+bool Land::is3D() const { return impl->mContext.mIs3DLand; }
+bool Land::isOwner(mce::UUID const& uuid) const { return impl->mCacheOwner == uuid; }
+bool Land::isMember(mce::UUID const& uuid) const { return impl->mCacheMembers.contains(uuid); }
+bool Land::isConvertedLand() const { return impl->mContext.mIsConvertedLand; }
+bool Land::isOwnerDataIsXUID() const { return impl->mContext.mOwnerDataIsXUID; }
+bool Land::isDirty() const { return impl->mDirtyCounter.load(std::memory_order_relaxed) > 0; }
+void Land::markDirty() {
+    impl->mDirtyCounter.fetch_add(1, std::memory_order_relaxed);
+    if (auto obs = tryGetObserver()) {
+        obs->onMarkDirty(shared_from_this());
+    }
+}
 void     Land::rollbackDirty() { impl->mDirtyCounter.fetch_sub(1, std::memory_order_relaxed); }
 uint32_t Land::getDirtyCount() const { return impl->mDirtyCounter.load(std::memory_order_relaxed); }
 void Land::resetDirtyCounter(uint32_t counter) const { impl->mDirtyCounter.store(counter, std::memory_order_relaxed); }

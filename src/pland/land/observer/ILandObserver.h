@@ -26,6 +26,8 @@ public:
     virtual void onMembersCleared(std::shared_ptr<Land> const& land) = 0;
 
     virtual void onLeaseStateChanged(std::shared_ptr<Land> const& land, LeaseState oldState, LeaseState newState) = 0;
+
+    virtual void onMarkDirty(std::shared_ptr<Land> const& land) = 0;
 };
 
 } // namespace land::observer

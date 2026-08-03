@@ -11,6 +11,8 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 
 namespace ll::data {
 class KeyValueDB;
@@ -72,14 +74,33 @@ public:
 
     template <typename T>
     [[nodiscard]] bool save(std::string_view key, T const& data) {
-        auto j      = json_util::struct_to_json<T, nlohmann::json>(data);
-        auto buffer = nlohmann::json::to_cbor(j);
-        if (buffer.empty()) [[unlikely]] {
+        auto strBuf = serialize(data);
+        if (strBuf.empty()) [[unlikely]] {
             return false;
         }
-        auto strBuf = std::string{buffer.begin(), buffer.end()};
         return saveBinary(key, std::move(strBuf));
     }
+
+    /**
+     * @brief 序列化为存储载荷 (CBOR, 不含校验头)
+     * @note 序列化不依赖数据库状态, 可在任意线程调用
+     */
+    template <typename T>
+    static std::string serialize(T const& data) {
+        auto j      = json_util::struct_to_json<T, nlohmann::json>(data);
+        auto buffer = nlohmann::json::to_cbor(j);
+        return {buffer.begin(), buffer.end()};
+    }
+
+    /**
+     * @brief 批量写入已序列化的原始载荷, 单次 LevelDB Write (一次 WAL 追加)
+     * @param puts 键值对; @param dels 待删除的键
+     * @note 载荷会被追加校验头后写入, 与 save/saveBinary 格式一致
+     */
+    [[nodiscard]] bool writeBatch(
+        std::vector<std::pair<std::string, std::string>> puts,
+        std::vector<std::string>                         dels
+    );
 
     template <typename T>
     [[nodiscard]] ll::Expected<> readTo(std::string_view key, T& object) const {

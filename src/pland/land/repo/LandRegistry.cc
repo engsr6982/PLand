@@ -2,6 +2,7 @@
 #include "TransactionContext.h"
 #include "internal/LandDatabase.h"
 #include "internal/LandDimensionChunkMap.h"
+#include "internal/LandFlushQueue.h"
 #include "internal/LandMigrator.h"
 #include "internal/LegacyLandDatabaseReader.h"
 #include "internal/LegacyLandDatabaseUpgrader.h"
@@ -21,7 +22,6 @@
 
 #include "ll/api/Expected.h"
 #include "ll/api/coro/CoroTask.h"
-#include "ll/api/coro/InterruptableSleep.h"
 #include "ll/api/data/KeyValueDB.h"
 #include "ll/api/thread/ThreadPoolExecutor.h"
 #include <ll/api/io/FileUtils.h>
@@ -38,7 +38,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <chrono>
 #include <filesystem>
 #include <memory>
 #include <mutex>
@@ -57,6 +56,7 @@ namespace {
 thread_local bool g_isInTransaction = false;
 }
 
+
 struct LandRegistry::Impl : public observer::LandEventPublisher {
     std::unique_ptr<internal::LandDatabase>            mDB;             // 领地数据库
     std::vector<mce::UUID>                             mAdmins;         // 领地操作员
@@ -72,9 +72,7 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
     internal::LandDimensionChunkMap        mDimensionChunkMap;              // 维度区块映射
     std::unique_ptr<LandTemplatePermTable> mLandTemplatePermTable{nullptr}; // 领地模板权限表
 
-    ll::coro::InterruptableSleep mInterruptableSleep; // 中断等待
-    std::atomic_bool             mCoroAbort{false};   // 协程中断标志
-
+    std::unique_ptr<internal::LandFlushQueue> mFlushQueue; // 异步落盘队列
 
     internal::BidirectionalMap<mce::UUID, LandID> mOwnerIdx;  // 领地主人索引
     internal::BidirectionalMap<mce::UUID, LandID> mMemberIdx; // 领地成员索引
@@ -127,6 +125,26 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
         }
         LandEventPublisher::onMembersCleared(land);
     }
+    void onMarkDirty(std::shared_ptr<Land> const& land) override {
+        // 事务内抑制入队: 中间态可能被回滚, 提交阶段会统一入队最终快照
+        if (g_isInTransaction) {
+            return;
+        }
+        enqueueLandSnapshot(land);
+    }
+
+    /**
+     * @brief 入队一块领地的序列化快照并唤醒 worker
+     * @note 主线程是唯一的 Land 写者, 在 setter 调用链内序列化快照是安全的;
+     *       worker 只消费载荷, 绝不触碰 Land 对象, 从而避免跨线程数据竞争
+     */
+    void enqueueLandSnapshot(std::shared_ptr<Land> const& land) {
+        auto payload = internal::LandDatabase::serialize(land->_getContext());
+        mFlushQueue->enqueueLand(land->getId(), land->getDirtyCount(), std::move(payload));
+    }
+
+    /// @brief 通知 worker 有 meta 键 (操作员等) 修改, 触发一次批量落盘
+    void notifyMetaDirty() { mFlushQueue->notifyMetaDirty(); }
 
     void reverseClearMemberIdx(std::shared_ptr<Land> const& land) {
         // 特殊情况: 成员被清空, 不知道 key, 使用双向表反查此领地关联的成员(key)
@@ -196,16 +214,16 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
             }
 
             auto land = Land::make(std::move(ctx));
-            if (migrateResult.value() == infra::MigrateResult::Success) {
-                land->markDirty();
-            }
 
             // 保证landID唯一
             if (mNextLandID.load(std::memory_order_relaxed) <= land->getId()) {
                 mNextLandID.store(land->getId() + 1, std::memory_order_relaxed);
             }
 
-            initIndex(land);
+            initIndex(land); // 先挂 observer, 迁移产生的 markDirty 才能被入队持久化
+            if (migrateResult.value() == infra::MigrateResult::Success) {
+                land->markDirty();
+            }
             mLandCache.emplace(land->getId(), std::move(land));
         }
     }
@@ -364,24 +382,72 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
             return ll::makeStringError(fmt::format("Failed to erase land {} from cache", ptr->getId()));
         }
 
-        if (!this->mDB->del(internal::LandDatabase::buildLandContextKey(ptr->getId()))) {
-            mLandCache.emplace(ptr->getId(), ptr); // rollback
-            mDimensionChunkMap.addLand(ptr);
-            initIndex(ptr);
-            return ll::makeStringError(fmt::format("Failed to delete land {} from database", ptr->getId()));
-        }
+        // 异步删除: 入队删除任务, 由 flush worker 落盘, 不在主线程阻塞
+        mFlushQueue->enqueueDelete(ptr->getId());
         return {};
     }
 
-    bool _save(std::shared_ptr<Land> const& land, bool force = false) const {
-        if (!land->isDirty() && !force) {
-            return true; // 没有变化，且非强制保存
+    /**
+     * @brief 消费一批去重后的任务并落盘 (LandFlushQueue 注入的 consumer)
+     * @note 只在线程池线程上运行; 消费的是入队时序列化的快照载荷,
+     *       不读取任何 Land 对象字段, 与主线程的 Land 修改无数据竞争
+     */
+    bool consumeFlushBatch(std::vector<internal::FlushTask> const& tasks) {
+        std::vector<std::pair<std::string, std::string>> puts;
+        std::vector<std::string>                         dels;
+        puts.reserve(tasks.size() + 3);
+        dels.reserve(4);
+
+        for (auto const& t : tasks) {
+            if (t.mKind == internal::FlushTask::Kind::kLand) {
+                // 任务所有权留在队列 (失败需重入队), 这里拷贝载荷
+                puts.emplace_back(internal::LandDatabase::buildLandContextKey(t.mId), t.mPayload);
+            } else {
+                dels.push_back(internal::LandDatabase::buildLandContextKey(t.mId));
+            }
         }
-        if (mDB->save(internal::LandDatabase::buildLandContextKey(land->getId()), land->_getContext())) {
-            land->resetDirtyCounter();
-            return true;
+
+        // meta 键受互斥锁保护, worker 可安全序列化
+        {
+            std::shared_lock opLock(mOperatorMutex);
+            puts.emplace_back(
+                std::string{internal::LandDatabase::kAdminsKey},
+                internal::LandDatabase::serialize(mAdmins)
+            );
         }
-        return false;
+        {
+            std::shared_lock stLock(mSettingsMutex);
+            puts.emplace_back(
+                std::string{internal::LandDatabase::kPlayerSettingsKey},
+                internal::LandDatabase::serialize(mPlayerSettings)
+            );
+        }
+        if (mLandTemplatePermTable->isDirty()) {
+            puts.emplace_back(
+                std::string{internal::LandDatabase::kTemplatePermTableKey},
+                internal::LandDatabase::serialize(mLandTemplatePermTable->get())
+            );
+        }
+
+        if (!mDB->writeBatch(std::move(puts), std::move(dels))) {
+            return false; // 由 LandFlushQueue 重新入队重试
+        }
+
+        // 精确回写脏计数: 仅清除"已落盘快照"覆盖的标记, 保留快照之后的新标记。
+        // 事务提交依赖 isDirty() 决定是否入队, 若此处无条件清零会丢失提交
+        std::shared_lock lock(mDataMutex);
+        for (auto const& t : tasks) {
+            if (t.mKind != internal::FlushTask::Kind::kLand) {
+                continue;
+            }
+            if (auto it = mLandCache.find(t.mId); it != mLandCache.end()) {
+                auto before   = it->second->getDirtyCount();
+                auto snapshot = t.mDirtyCount;
+                it->second->resetDirtyCounter(before >= snapshot ? before - snapshot : 0);
+            }
+        }
+        mLandTemplatePermTable->resetDirty();
+        return true;
     }
 };
 
@@ -389,6 +455,11 @@ LandID LandRegistry::_allocateNextId() { return impl->allocateLandID(); }
 
 LandRegistry::LandRegistry(PLand& mod) : impl(std::make_unique<Impl>()) {
     auto& logger = mod.getSelf().getLogger();
+
+    // 必须在 loadLands 之前创建: 加载时挂上的 observer 会立即触发 enqueue
+    impl->mFlushQueue = std::make_unique<internal::LandFlushQueue>(
+        [this](std::vector<internal::FlushTask> const& tasks) { return impl->consumeFlushBatch(tasks); }
+    );
 
     impl->openDatabase(mod);
 
@@ -436,37 +507,17 @@ LandRegistry::LandRegistry(PLand& mod) : impl(std::make_unique<Impl>()) {
         logger.info("构建完成，共处理 {} 个领地组", familyTreeRoot.size());
     }
 
-    ll::coro::keepThis([this]() -> ll::coro::CoroTask<> {
-        while (!impl->mCoroAbort) {
-            co_await impl->mInterruptableSleep.sleepFor(std::chrono::minutes{2});
-            if (impl->mCoroAbort) {
-                break;
-            }
-            save();
-        }
-        co_return;
-    }).launch(mod.getThreadPool());
+    impl->mFlushQueue->start(mod.getThreadPool());
 }
 
 LandRegistry::~LandRegistry() {
-    impl->mCoroAbort.store(true);
-    impl->mInterruptableSleep.interrupt(true);
-    try {
-        save();
-    } catch (std::exception const& exception) {
-        PLand::getInstance().getSelf().getLogger().error(
-            "Failed to save land registry during shutdown: {}",
-            exception.what()
-        );
-    } catch (...) {
-        PLand::getInstance().getSelf().getLogger().error("Failed to save land registry during shutdown: unknown error");
-    }
+    impl->mFlushQueue->stop(); // 等待 worker 完全退出 (含最终落盘), 避免 UAF
 }
 
 void LandRegistry::createSnapshot(std::optional<std::string> const& dirName) {
     auto& mod = PLand::getInstance();
     ll::coro::keepThis([this, dirName]() -> ll::coro::CoroTask<> {
-        save(); // 强制内存数据落盘 // TODO: 移除
+        impl->mFlushQueue->flushAndWait(); // 等待异步队列完全落盘, 保证快照包含内存中的最新数据
 
         auto& mod           = PLand::getInstance();
         auto& logger        = mod.getSelf().getLogger();
@@ -492,33 +543,6 @@ void LandRegistry::createSnapshot(std::optional<std::string> const& dirName) {
 }
 
 
-void LandRegistry::save() {
-    // 锁顺序: mDataMutex → mOperatorMutex → mSettingsMutex
-    std::shared_lock dataLock(impl->mDataMutex);
-    std::shared_lock opLock(impl->mOperatorMutex);
-    std::shared_lock settingsLock(impl->mSettingsMutex);
-
-    (void)impl->mDB->save(internal::LandDatabase::kAdminsKey, impl->mAdmins);
-    (void)impl->mDB->save(internal::LandDatabase::kPlayerSettingsKey, impl->mPlayerSettings);
-
-    // LandTemplatePermTable 自带内部锁，不需要额外保护
-    if (impl->mLandTemplatePermTable->isDirty()) {
-        if (impl->mDB->save(internal::LandDatabase::kTemplatePermTableKey, impl->mLandTemplatePermTable->get())) {
-            impl->mLandTemplatePermTable->resetDirty();
-        }
-    }
-
-    for (auto const& land : impl->mLandCache | std::views::values) {
-        (void)impl->_save(land, false);
-    }
-}
-
-bool LandRegistry::save(std::shared_ptr<Land> const& land, bool force) const {
-    std::unique_lock lock(impl->mDataMutex);
-    return impl->_save(land, force);
-}
-
-
 bool LandRegistry::isOperator(mce::UUID const& uuid) const {
     std::shared_lock<std::shared_mutex> lock(impl->mOperatorMutex);
     return std::find(impl->mAdmins.begin(), impl->mAdmins.end(), uuid) != impl->mAdmins.end();
@@ -529,6 +553,7 @@ bool LandRegistry::addOperator(mce::UUID const& uuid) {
         return false;
     }
     impl->mAdmins.push_back(uuid);
+    impl->notifyMetaDirty(); // 触发一次批量落盘, 操作员修改即时持久化
     return true;
 }
 bool LandRegistry::removeOperator(mce::UUID const& uuid) {
@@ -539,6 +564,7 @@ bool LandRegistry::removeOperator(mce::UUID const& uuid) {
         return false;
     }
     impl->mAdmins.erase(iter);
+    impl->notifyMetaDirty(); // 触发一次批量落盘, 操作员修改即时持久化
     return true;
 }
 std::vector<mce::UUID> LandRegistry::getOperators() const {
@@ -647,13 +673,15 @@ ll::Expected<> LandRegistry::executeTransaction(
 
         if (justAllocated) {
             // 新领地，直接入库
-            // 注意：_addLand 内部不要再分配 ID 了，因为已经分过了
+            // 注意：addLand 内部不要再分配 ID 了，因为已经分过了
             if (auto res = impl->addLand(land, false /* don't allocate id */); !res) {
                 return res;
             }
-        } else if (land->isDirty()) {
-            (void)impl->_save(land, false);
+        } else if (!land->isDirty()) {
+            continue;
         }
+        // 事务内的 markDirty 被抑制, 提交阶段统一入队最终快照
+        impl->enqueueLandSnapshot(land);
     }
     return {};
 }
