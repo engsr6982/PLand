@@ -61,11 +61,15 @@ void LandFlushQueue::start(ll::thread::ThreadPoolExecutor& executor) {
 }
 
 void LandFlushQueue::stop() {
+    if (!mFlushDone) {
+        return; // 从未 start, 或已停止
+    }
+    auto done  = mFlushDone;
+    mFlushDone = nullptr; // 幂等: get_future 只能调用一次, 重复 stop 直接返回
+
     mFlushTaskAbort.store(true);
     mInterruptableSleep.interrupt(true); // 在主线程原地 resume, 完成最终 drain
-    if (mFlushDone) {
-        mFlushDone->get_future().wait(); // 等待 worker 完全退出 (含最终落盘), 避免 UAF
-    }
+    done->get_future().wait();           // 等待 worker 完全退出 (含最终落盘), 避免 UAF
 }
 
 void LandFlushQueue::notifyWorker() {
