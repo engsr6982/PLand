@@ -306,7 +306,7 @@ bool Land::_setAABB(LandAABB const& newRange) {
 
 observer::ILandObserver* Land::tryGetObserver() const { return impl->mObserver; }
 void                     Land::setObserver(observer::ILandObserver* observer) {
-    assert(observer != nullptr);
+    // nullptr 表示解除观察 (领地从注册表移除后调用, 防止删除后的修改被"幽灵写回")
     impl->mObserver = observer;
 }
 

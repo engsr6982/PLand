@@ -67,7 +67,8 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
     mutable std::shared_mutex mOperatorMutex; // mLandOperators
     mutable std::shared_mutex mSettingsMutex; // mPlayerSettings
 
-    std::atomic<LandID> mNextLandID{INVALID_LAND_ID};
+    // 从 0 开始分配: INVALID_LAND_ID(-1) 是"未分配"哨兵, 不能作为首个领地 ID
+    std::atomic<LandID> mNextLandID{0};
 
     internal::LandDimensionChunkMap        mDimensionChunkMap;              // 维度区块映射
     std::unique_ptr<LandTemplatePermTable> mLandTemplatePermTable{nullptr}; // 领地模板权限表
@@ -139,6 +140,21 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
      *       worker 只消费载荷, 绝不触碰 Land 对象, 从而避免跨线程数据竞争
      */
     void enqueueLandSnapshot(std::shared_ptr<Land> const& land) {
+        // 未分配 ID 的领地尚未注册进缓存, 数据会在 addLand/事务提交时重新入队,
+        // 此处入队会写出 data:land_ctx:-1 的脏记录
+        if (land->getId() == INVALID_LAND_ID) {
+            PLand::getInstance().getSelf().getLogger().warn(
+                "Skip enqueueing snapshot of land without an allocated ID "
+                "(dirtyCount={}, owner={}, name={}, dim={}, parent={}, is3D={})",
+                land->getDirtyCount(),
+                land->getOwner().asString(),
+                land->getName(),
+                land->getDimensionId(),
+                land->getParentLandID(),
+                land->is3D()
+            );
+            return;
+        }
         auto payload = internal::LandDatabase::serialize(land->_getContext());
         mFlushQueue->enqueueLand(land->getId(), land->getDirtyCount(), std::move(payload));
     }
@@ -214,6 +230,13 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
             }
 
             auto land = Land::make(std::move(ctx));
+
+            // 防御: 无效 ID 记录直接跳过。加载阶段分配器尚未定锚 (mNextLandID 依赖已加载
+            // 记录推进), 此时分配新 ID 可能与后续加载的原生 ID 冲突造成数据覆盖
+            if (land->getId() == INVALID_LAND_ID) {
+                logger.warn("Skipping land record without a valid ID ({} bytes)", view.as_str().size());
+                continue;
+            }
 
             // 保证landID唯一
             if (mNextLandID.load(std::memory_order_relaxed) <= land->getId()) {
@@ -384,6 +407,7 @@ struct LandRegistry::Impl : public observer::LandEventPublisher {
 
         // 异步删除: 入队删除任务, 由 flush worker 落盘, 不在主线程阻塞
         mFlushQueue->enqueueDelete(ptr->getId());
+        ptr->setObserver(nullptr); // 解除观察: 防止删除后的 setter 把领地"幽灵写回"数据库
         return {};
     }
 
