@@ -15,11 +15,10 @@
 namespace land::internal::interceptor {
 
 void EventInterceptor::setupLLEntityListeners() {
-    auto& config   = InterceptorConfig::cfg.listeners;
-    auto  registry = &PLand::getInstance().getLandRegistry();
-    auto  bus      = &ll::event::EventBus::getInstance();
+    auto registry = &PLand::getInstance().getLandRegistry();
+    auto bus      = &ll::event::EventBus::getInstance();
 
-    registerListenerIf(config.SpawnedMobEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::SpawnedMobEvent>([bus, registry]() {
         return bus->emplaceListener<ll::event::SpawnedMobEvent>([registry](ll::event::SpawnedMobEvent& ev) {
             TRACE_THIS_EVENT(ll::event::SpawnedMobEvent);
 
@@ -49,7 +48,7 @@ void EventInterceptor::setupLLEntityListeners() {
         });
     });
 
-    registerListenerIf(config.ActorHurtEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::ActorHurtEvent>([bus, registry]() {
         return bus->emplaceListener<ll::event::ActorHurtEvent>([registry](ll::event::ActorHurtEvent& ev) {
             TRACE_THIS_EVENT(ll::event::ActorHurtEvent);
 

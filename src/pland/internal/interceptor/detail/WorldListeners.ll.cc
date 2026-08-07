@@ -11,11 +11,10 @@
 namespace land::internal::interceptor {
 
 void EventInterceptor::setupLLWorldListeners() {
-    auto& config   = InterceptorConfig::cfg.listeners;
-    auto  registry = &PLand::getInstance().getLandRegistry();
-    auto  bus      = &ll::event::EventBus::getInstance();
+    auto registry = &PLand::getInstance().getLandRegistry();
+    auto bus      = &ll::event::EventBus::getInstance();
 
-    registerListenerIf(config.FireSpreadEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::FireSpreadEvent>([bus, registry]() {
         return bus->emplaceListener<ll::event::FireSpreadEvent>([registry](ll::event::FireSpreadEvent& ev) {
             auto& pos = ev.pos();
 

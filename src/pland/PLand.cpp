@@ -122,8 +122,8 @@ bool PLand::enable() {
     mImpl->mConfigReloadListener = ll::event::EventBus::getInstance().emplaceListener<events::ConfigReloadEvent>(
         [this](events::ConfigReloadEvent& ev [[maybe_unused]]) {
             internal::interceptor::InterceptorConfig::load(getSelf().getConfigDir());
-            mImpl->mEventListener.reset();
-            mImpl->mEventListener = std::make_unique<internal::interceptor::EventInterceptor>();
+
+            mImpl->mEventListener->reload();
 
             EconomySystem::getInstance().reload();
 

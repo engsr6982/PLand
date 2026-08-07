@@ -18,11 +18,10 @@
 namespace land::internal::interceptor {
 
 void EventInterceptor::setupIlaPlayerListeners() {
-    auto& config   = InterceptorConfig::cfg.listeners;
-    auto  registry = &PLand::getInstance().getLandRegistry();
-    auto  bus      = &ll::event::EventBus::getInstance();
+    auto registry = &PLand::getInstance().getLandRegistry();
+    auto bus      = &ll::event::EventBus::getInstance();
 
-    registerListenerIf(config.PlayerInteractEntityBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::PlayerInteractEntityBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::PlayerInteractEntityBeforeEvent>(
             [registry](ila::mc::PlayerInteractEntityBeforeEvent& ev) {
                 TRACE_THIS_EVENT(ila::mc::PlayerInteractEntityBeforeEvent);
@@ -40,7 +39,7 @@ void EventInterceptor::setupIlaPlayerListeners() {
         );
     });
 
-    registerListenerIf(config.ArmorStandSwapItemBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::ArmorStandSwapItemBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::ArmorStandSwapItemBeforeEvent>(
             [registry](ila::mc::ArmorStandSwapItemBeforeEvent& ev) {
                 TRACE_THIS_EVENT(ila::mc::ArmorStandSwapItemBeforeEvent);
@@ -59,7 +58,7 @@ void EventInterceptor::setupIlaPlayerListeners() {
         );
     });
 
-    registerListenerIf(config.PlayerDropItemBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::PlayerDropItemBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::PlayerDropItemBeforeEvent>(
             [registry](ila::mc::PlayerDropItemBeforeEvent& ev) {
                 TRACE_THIS_EVENT(ila::mc::PlayerDropItemBeforeEvent);
@@ -81,7 +80,7 @@ void EventInterceptor::setupIlaPlayerListeners() {
         );
     });
 
-    registerListenerIf(config.PlayerOperatedItemFrameBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::PlayerOperatedItemFrameBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::PlayerOperatedItemFrameBeforeEvent>(
             [registry](ila::mc::PlayerOperatedItemFrameBeforeEvent& ev) {
                 TRACE_THIS_EVENT(ila::mc::PlayerOperatedItemFrameBeforeEvent);
@@ -99,7 +98,7 @@ void EventInterceptor::setupIlaPlayerListeners() {
         );
     });
 
-    registerListenerIf(config.PlayerEditSignBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::PlayerEditSignBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::PlayerEditSignBeforeEvent>(
             [registry](ila::mc::PlayerEditSignBeforeEvent& ev) {
                 TRACE_THIS_EVENT(ila::mc::PlayerEditSignBeforeEvent);

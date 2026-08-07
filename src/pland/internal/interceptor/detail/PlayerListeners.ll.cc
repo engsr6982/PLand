@@ -36,11 +36,10 @@
 namespace land::internal::interceptor {
 
 void EventInterceptor::setupLLPlayerListeners() {
-    auto& config   = InterceptorConfig::cfg.listeners;
-    auto  registry = &PLand::getInstance().getLandRegistry();
-    auto  bus      = &ll::event::EventBus::getInstance();
+    auto registry = &PLand::getInstance().getLandRegistry();
+    auto bus      = &ll::event::EventBus::getInstance();
 
-    registerListenerIf(config.PlayerDestroyBlockEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::PlayerDestroyBlockEvent>([bus, registry]() {
         return bus->emplaceListener<ll::event::PlayerDestroyBlockEvent>(
             [registry](ll::event::PlayerDestroyBlockEvent& ev) {
                 TRACE_THIS_EVENT(ll::event::PlayerDestroyBlockEvent);
@@ -57,7 +56,7 @@ void EventInterceptor::setupLLPlayerListeners() {
         );
     });
 
-    registerListenerIf(config.PlayerPlacingBlockEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::PlayerPlacingBlockEvent>([bus, registry]() {
         return bus->emplaceListener<ll::event::PlayerPlacingBlockEvent>(
             [registry](ll::event::PlayerPlacingBlockEvent& ev) {
                 TRACE_THIS_EVENT(ll::event::PlayerPlacingBlockEvent);
@@ -74,8 +73,7 @@ void EventInterceptor::setupLLPlayerListeners() {
         );
     });
 
-
-    registerListenerIf(config.PlayerInteractBlockEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::PlayerInteractBlockEvent>([bus, registry]() {
         return bus->emplaceListener<ll::event::PlayerInteractBlockEvent>(
             [registry](ll::event::PlayerInteractBlockEvent& ev) {
                 TRACE_THIS_EVENT(ll::event::PlayerInteractBlockEvent);
@@ -178,10 +176,8 @@ void EventInterceptor::setupLLPlayerListeners() {
                             ev.cancel();
                             return;
                         }
-                    } else if (
-                        vftable == BlastFurnaceBlock::$vftable() || vftable == FurnaceBlock::$vftable()
-                        || vftable == SmokerBlock::$vftable()
-                    ) {
+                    } else if (vftable == BlastFurnaceBlock::$vftable() || vftable == FurnaceBlock::$vftable()
+                               || vftable == SmokerBlock::$vftable()) {
                         if (!hasMemberOrGuestPermission<&RolePerms::useFurnaces>(land, uuid)) {
                             ev.cancel();
                             return;
@@ -209,7 +205,7 @@ void EventInterceptor::setupLLPlayerListeners() {
         );
     });
 
-    registerListenerIf(config.PlayerAttackEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::PlayerAttackEvent>([bus, registry]() {
         return bus->emplaceListener<ll::event::PlayerAttackEvent>([registry](ll::event::PlayerAttackEvent& ev) {
             TRACE_THIS_EVENT(ll::event::PlayerAttackEvent);
 
@@ -254,7 +250,7 @@ void EventInterceptor::setupLLPlayerListeners() {
             };
         });
     });
-    registerListenerIf(config.PlayerPickUpItemEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::PlayerPickUpItemEvent>([bus, registry]() {
         return bus->emplaceListener<ll::event::PlayerPickUpItemEvent>([registry](ll::event::PlayerPickUpItemEvent& ev) {
             TRACE_THIS_EVENT(ll::event::PlayerPickUpItemEvent);
 
@@ -271,7 +267,7 @@ void EventInterceptor::setupLLPlayerListeners() {
         });
     });
 
-    registerListenerIf(config.PlayerUseItemEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::PlayerUseItemEvent>([bus, registry]() {
         return bus->emplaceListener<ll::event::PlayerUseItemEvent>([registry](ll::event::PlayerUseItemEvent& ev) {
             TRACE_THIS_EVENT(ll::event::PlayerUseItemEvent);
 

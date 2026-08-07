@@ -25,11 +25,10 @@
 namespace land::internal::interceptor {
 
 void EventInterceptor::setupIlaWorldListeners() {
-    auto& config   = InterceptorConfig::cfg.listeners;
-    auto  registry = &PLand::getInstance().getLandRegistry();
-    auto  bus      = &ll::event::EventBus::getInstance();
+    auto registry = &PLand::getInstance().getLandRegistry();
+    auto bus      = &ll::event::EventBus::getInstance();
 
-    registerListenerIf(config.ExplosionBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::ExplosionBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::ExplosionBeforeEvent>([registry](ila::mc::ExplosionBeforeEvent& ev) {
             TRACE_THIS_EVENT(ila::mc::ExplosionBeforeEvent);
 
@@ -76,7 +75,7 @@ void EventInterceptor::setupIlaWorldListeners() {
         });
     });
 
-    registerListenerIf(config.PistonPushBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::PistonPushBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::PistonPushBeforeEvent>([registry](ila::mc::PistonPushBeforeEvent& ev) {
             auto& pistonPos = ev.pistonPos();
             auto& pushPos   = ev.pushPos();
@@ -114,7 +113,7 @@ void EventInterceptor::setupIlaWorldListeners() {
         });
     });
 
-    registerListenerIf(config.RedstoneUpdateBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::RedstoneUpdateBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::RedstoneUpdateBeforeEvent>(
             [registry](ila::mc::RedstoneUpdateBeforeEvent& ev) {
                 auto& blockSource = ev.blockSource();
@@ -128,7 +127,7 @@ void EventInterceptor::setupIlaWorldListeners() {
         );
     });
 
-    registerListenerIf(config.BlockFallBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::BlockFallBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::BlockFallBeforeEvent>([registry](ila::mc::BlockFallBeforeEvent& ev) {
             auto& blockSource = ev.blockSource();
             auto& blockPos    = ev.pos();
@@ -141,7 +140,7 @@ void EventInterceptor::setupIlaWorldListeners() {
         });
     });
 
-    registerListenerIf(config.WitherDestroyBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::WitherDestroyBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::WitherDestroyBeforeEvent>(
             [registry](ila::mc::WitherDestroyBeforeEvent& ev) {
                 TRACE_THIS_EVENT(ila::mc::WitherDestroyBeforeEvent);
@@ -164,7 +163,7 @@ void EventInterceptor::setupIlaWorldListeners() {
         );
     });
 
-    registerListenerIf(config.MossGrowthBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::MossGrowthBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::MossGrowthBeforeEvent>([registry](ila::mc::MossGrowthBeforeEvent& ev) {
             auto& blockSource = ev.blockSource();
             auto& blockPos    = ev.pos();
@@ -184,7 +183,7 @@ void EventInterceptor::setupIlaWorldListeners() {
         });
     });
 
-    registerListenerIf(config.LiquidFlowBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::LiquidFlowBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::LiquidFlowBeforeEvent>([registry](ila::mc::LiquidFlowBeforeEvent& ev) {
             auto& blockSource = ev.blockSource();
             auto& fromPos     = ev.flowFromPos(); // 源头 (水流来的方向)
@@ -198,7 +197,7 @@ void EventInterceptor::setupIlaWorldListeners() {
         });
     });
 
-    registerListenerIf(config.DragonEggBlockTeleportBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::DragonEggBlockTeleportBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::DragonEggBlockTeleportBeforeEvent>(
             [registry](ila::mc::DragonEggBlockTeleportBeforeEvent& ev) {
                 auto& blockSource = ev.blockSource();
@@ -212,7 +211,7 @@ void EventInterceptor::setupIlaWorldListeners() {
         );
     });
 
-    registerListenerIf(config.SculkBlockGrowthBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::SculkBlockGrowthBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::SculkBlockGrowthBeforeEvent>(
             [registry](ila::mc::SculkBlockGrowthBeforeEvent& ev) {
                 auto& blockSource = ev.blockSource();
@@ -226,7 +225,7 @@ void EventInterceptor::setupIlaWorldListeners() {
         );
     });
 
-    registerListenerIf(config.SculkSpreadBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::SculkSpreadBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::SculkSpreadBeforeEvent>([registry](ila::mc::SculkSpreadBeforeEvent& ev) {
             auto& blockSource = ev.blockSource();
             auto& fromPos     = ev.selfPos();
