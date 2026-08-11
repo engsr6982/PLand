@@ -58,7 +58,7 @@ struct PLand::Impl {
 };
 
 bool ensureStableVersion() {
-    auto tag = land::BuildInfo::Tag;
+    auto tag = land::BuildInfo::kBuildTag;
     if (tag.find("-g") != std::string_view::npos) {
         return false;
     }
@@ -70,11 +70,23 @@ bool ensureStableVersion() {
 
 bool PLand::load() {
     auto& logger = getSelf().getLogger();
-    logger.info("{}-{}-{}", BuildInfo::Tag, BuildInfo::Branch, BuildInfo::Commit);
+    logger.info("PLand - Open-source project based on AGPL v3 license");
+    logger.info("Repository: https://github.com/IceBlcokMC/PLand");
+    logger.info("Issues:     https://github.com/IceBlcokMC/PLand/issues");
+    logger.info("Copyright (C) 2024-2026 IceBlcokMC Team and contributors");
+
+    logger.info(
+        "Build: {} (Branch: {}, Commit: {})",
+        BuildInfo::kBuildTag,
+        BuildInfo::kBuildBranch,
+        BuildInfo::kBuildCommit
+    );
+
     if (!ensureStableVersion()) {
-        logger.warn("This is a development build ({}). It may not be stable.", BuildInfo::Tag);
+        logger.warn("This is a development build ({}). It may not be stable.", BuildInfo::kBuildTag);
     }
 
+    logger.info("Loading PLand...");
     if (auto res = ll::i18n::getInstance().load(getSelf().getLangDir()); !res) {
         logger.error("Load language file failed, plugin will use default language.");
         res.error().log(logger);
@@ -82,10 +94,17 @@ bool PLand::load() {
 
     internal::interceptor::InterceptorConfig::tryMigrateLegacyConfig(getSelf().getConfigDir());
 
-    loadConfig();
-    internal::interceptor::InterceptorConfig::load(getSelf().getConfigDir());
+    if (!loadConfig()) {
+        logger.error("Failed to load config"); // loadConfig internal log the error message
+        return false;
+    }
 
-    mImpl->mThreadPoolExecutor = std::make_unique<ll::thread::ThreadPoolExecutor>("PLand-ThreadPool", 2);
+    if (auto ok = internal::interceptor::InterceptorConfig::load(getSelf().getConfigDir()); !ok) {
+        logger.error("Failed to load interceptor config, reason: {}", ok.error().message());
+        return false;
+    }
+
+    mImpl->mThreadPoolExecutor = std::make_unique<ll::thread::ThreadPoolExecutor>("PLand-ThreadPool", 4);
 
     try {
         mImpl->mLandRegistry = std::make_unique<land::LandRegistry>(*this);
