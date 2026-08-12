@@ -1,5 +1,5 @@
 #include "CodeEditor.h"
-#include "ImGuiColorTextEdit/TextEditor.h"
+#include "TextEditor.h"
 #include "fmt/compile.h"
 #include "imgui.h"
 #include <format>

@@ -23,6 +23,7 @@ add_requires("abseil 20250127.0")
 if has_config("devtool") then
     add_requires("imgui v1.92.7-docking", {configs = { opengl3 = true, glfw = true }})
     add_requires("glew 2.2.0")
+    add_requires("imgui_color_text_edit")
 end
 
 
@@ -94,8 +95,8 @@ target("PLand")
             "imgui",
             "glew"
         )
-        add_includedirs("src-devtool", "src-devtool/deps")
-        add_files("src-devtool/**.cc", "src-devtool/**.cpp")
+        add_includedirs("src-devtool")
+        add_files("src-devtool/**.cc")
         add_defines("LD_DEVTOOL")
     end
 

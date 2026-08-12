@@ -1,9 +1,8 @@
 #pragma once
 #include "IComponent.h"
-#include "ImGuiColorTextEdit/TextEditor.h"
 #include <string>
 
-
+#include "TextEditor.h"
 namespace devtool {
 
 
