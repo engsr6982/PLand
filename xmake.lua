@@ -21,7 +21,7 @@ add_requires("exprtk 0.0.3")
 add_requires("abseil 20250127.0")
 
 if has_config("devtool") then
-    add_requires("imgui v1.91.6-docking", {configs = { opengl3 = true, glfw = true }})
+    add_requires("imgui v1.92.7-docking", {configs = { opengl3 = true, glfw = true }})
     add_requires("glew 2.2.0")
 end
 

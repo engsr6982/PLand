@@ -116,8 +116,10 @@ struct DevToolApp::Impl {
             );
 
             io.Fonts->Build();
-            ImGui_ImplOpenGL3_DestroyFontsTexture();
-            ImGui_ImplOpenGL3_CreateFontsTexture();
+
+            // Since 1.92, the OpenGL3 backend handles font texture (re)creation automatically
+            // via the ImTextureData request protocol; ImGui_ImplOpenGL3_CreateFontsTexture()
+            // and ImGui_ImplOpenGL3_DestroyFontsTexture() were removed from the public API.
 
             auto style = ImGuiStyle();
             style.ScaleAllSizes(xScale);
