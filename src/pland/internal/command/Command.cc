@@ -724,14 +724,21 @@ bool LandCommand::setup() {
         .execute(&handlers::admin_snapshot_db);
 
 #ifdef LD_DEVTOOL
-    // pland devtool
+    // pland devtool [on|off] 显示/隐藏开发者工具(省略 state 默认显示)
     if (ConfigProvider::isDevToolsEnabled()) {
-        h.overload().text("devtool").execute([](CommandOrigin const& ori, CommandOutput&) {
-            if (ori.getOriginType() == CommandOriginType::DedicatedServer) {
-                auto& mod = PLand::getInstance();
-                mod.setDevToolVisible(true);
-            }
-        });
+        h.runtimeOverload()
+            .text("devtool")
+            .optional("state", ll::command::ParamKind::String)
+            .execute([](CommandOrigin const& ori, CommandOutput&, ll::command::RuntimeCommand const& param) {
+                if (ori.getOriginType() != CommandOriginType::DedicatedServer) {
+                    return;
+                }
+                bool visible = true;
+                if (auto& state = param["state"]) {
+                    visible = std::get<std::string>(state.value()) != "off";
+                }
+                PLand::getInstance().setDevToolVisible(visible);
+            });
     }
 #endif
 

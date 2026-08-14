@@ -1,5 +1,5 @@
 #pragma once
-#include "IComponent.h"
+#include "core/Window.h"
 #include <string>
 
 #include "TextEditor.h"

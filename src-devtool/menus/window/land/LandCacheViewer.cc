@@ -2,6 +2,7 @@
 #include "LandEditor.h"
 #include "LandTreeViewer.h"
 
+#include "core/WindowManager.h"
 #include "pland/PLand.h"
 #include "pland/land/repo/LandRegistry.h"
 
@@ -10,25 +11,72 @@
 #include "ll/api/service/PlayerInfo.h"
 
 #include <filesystem>
+#include <fmt/core.h>
+#include <fstream>
 #include <imgui_internal.h>
 #include <memory>
+#include <ranges>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 
+namespace devtool::menus {
 
-namespace devtool::viewer {
+// 领地缓存查看器; 动态窗口(LandEditor/LandTreeViewer)所有权在 WindowManager, 此处仅登记索引
+class LandCacheViewerWindow : public IWindow {
+    std::unordered_map<mce::UUID, std::unordered_set<std::shared_ptr<land::Land>>> lands_;     // 领地缓存
+    std::unordered_map<mce::UUID, std::string>                                     realNames_; // 玩家名缓存
+    std::unordered_map<mce::UUID, bool>                                            isShow_;    // 是否显示该玩家的领地
+    std::unordered_map<land::LandID, devtool::viewer::LandEditor*>                 editors_;   // 领地数据编辑器
+    std::unordered_map<land::LandID, devtool::viewer::LandTreeViewer*>             viewers_;   // 领地树形视图
 
-// LandCacheViewer
-LandCacheViewer::LandCacheViewer() : IMenuElement("领地缓存") { window_ = std::make_unique<LandCacheViewerWindow>(); }
+    WindowManager& wm_;
 
-bool* LandCacheViewer::getSelectFlag() { return window_->getVisibleFlag(); }
+    bool showAllPlayerLand_{true}; // 是否显示所有玩家的领地
+    bool showOrdinaryLand_{true};  // 是否显示普通领地
+    bool showParentLand_{true};    // 是否显示父领地
+    bool showMixLand_{true};       // 是否显示混合领地
+    bool showSubLand_{true};       // 是否显示子领地
+    int  dimensionFilter_{-1};     // 维度过滤
+    int  idFilter_{-1};            // 领地ID过滤
 
-bool LandCacheViewer::isSelected() const { return window_->visible(); }
+public:
+    LandCacheViewerWindow(std::string title, WindowManager& wm);
+    ~LandCacheViewerWindow() override;
 
-void LandCacheViewer::tick() { window_->tick(); }
+    enum Buttons {
+        EditLand,  // 编辑领地数据
+        ExportLand // 导出领地数据
+    };
+    void handleButtonClicked(Buttons bt, std::shared_ptr<land::Land> land);
+
+    void handleEditLand(std::shared_ptr<land::Land> land);
+    void handleExportLand(std::shared_ptr<land::Land> land);
+    void handleViewLandTree(std::shared_ptr<land::Land> land);
+
+    void renderCacheLand(); // 渲染缓存的领地
+
+    void renderToolBar(); // 渲染工具栏
+
+    void preBuildData(); // 预处理数据
+
+    void render() override;
+};
+
+LandCacheViewer::LandCacheViewer(WindowManager& wm) : IMenuElement("领地缓存") {
+    auto& wnd = wm.create<LandCacheViewerWindow>("领地缓存", wm);
+    this->setWindow(&wnd);
+}
 
 
 // LandCacheViewerWindow
-LandCacheViewerWindow::LandCacheViewerWindow() { this->setVisible(true); }
+LandCacheViewerWindow::LandCacheViewerWindow(std::string title, WindowManager& wm)
+: IWindow(std::move(title)),
+  wm_(wm) {
+    this->setVisible(true); // 默认打开(持久化配置可覆盖)
+}
+
 LandCacheViewerWindow::~LandCacheViewerWindow() = default;
 
 void LandCacheViewerWindow::handleButtonClicked(Buttons bt, std::shared_ptr<land::Land> land) {
@@ -44,11 +92,26 @@ void LandCacheViewerWindow::handleButtonClicked(Buttons bt, std::shared_ptr<land
 void LandCacheViewerWindow::handleEditLand(std::shared_ptr<land::Land> land) {
     auto id = land->getId();
     if (!editors_.contains(id)) {
-        editors_.emplace(id, std::make_unique<LandEditor>(land));
+        // 所有权移交 WindowManager, 并停靠进本窗口当前节点(父子停靠)
+        auto& editor = wm_.registerOwned(std::make_unique<devtool::viewer::LandEditor>(land));
+        wm_.requestDockInto(this, &editor);
+        editors_.emplace(id, &editor);
     }
-    auto const& editor = editors_[id];
-    editor->setVisible(!editor->visible());
+    editors_[id]->setVisible(!editors_[id]->visible());
 }
+
+void LandCacheViewerWindow::handleViewLandTree(std::shared_ptr<land::Land> land) {
+    auto id = land->getId();
+    if (!viewers_.contains(id)) {
+        auto& viewer = wm_.registerOwned(
+            std::make_unique<devtool::viewer::LandTreeViewer>(fmt::format("LandTreeViewer {}", id), id)
+        );
+        wm_.requestDockInto(this, &viewer);
+        viewers_.emplace(id, &viewer);
+    }
+    viewers_[id]->setVisible(true);
+}
+
 void LandCacheViewerWindow::handleExportLand(std::shared_ptr<land::Land> land) {
     namespace fs = std::filesystem;
     auto dir     = land::PLand::getInstance().getSelf().getModDir() / "devtool_exports";
@@ -95,12 +158,14 @@ void LandCacheViewerWindow::preBuildData() {
         }
         ++iter;
     }
-    // 移除不存在的窗口
+    // 移除不存在的窗口(注销后由 WindowManager 帧末销毁)
     for (auto iter = editors_.begin(); iter != editors_.end();) {
-        if (!iter->second->land_.lock()) {
-            iter = editors_.erase(iter); // weak ptr 解锁失败，窗口已移除
+        if (!iter->second->land_.lock()) { // weak ptr 解锁失败，窗口已移除
+            wm_.unregister(iter->second);
+            iter = editors_.erase(iter);
+        } else {
+            ++iter;
         }
-        ++iter;
     }
 }
 
@@ -209,11 +274,7 @@ void LandCacheViewerWindow::renderCacheLand() {
             if (ld->isParentLand()) {
                 ImGui::SameLine();
                 if (ImGui::Button(fmt::format("查看领地树##{}", ld->getId()).c_str())) {
-                    auto iter = viewers_.find(ld->getId());
-                    if (iter == viewers_.end()) {
-                        iter = viewers_.emplace(ld->getId(), std::make_unique<LandTreeViewer>(ld->getId())).first;
-                    }
-                    iter->second->setVisible(true);
+                    handleViewLandTree(ld);
                 }
             }
             ImGui::SameLine();
@@ -231,8 +292,8 @@ void LandCacheViewerWindow::renderCacheLand() {
 }
 
 void LandCacheViewerWindow::render() {
-    if (!ImGui::Begin("领地缓存", getVisibleFlag())) {
-        ImGui::End();
+    WindowScope scope(*this);
+    if (!scope.isOpen()) {
         return;
     }
     preBuildData();
@@ -241,18 +302,7 @@ void LandCacheViewerWindow::render() {
     ImGui::Separator();
     ImGui::Dummy(ImVec2(0, 5)); // 5像素下间距
     renderCacheLand();
-    ImGui::End();
-}
-
-void LandCacheViewerWindow::tick() {
-    IWindow::tick();
-    for (auto const& val : editors_ | std::views::values) {
-        val->tick();
-    }
-    for (auto const& val : viewers_ | std::views::values) {
-        val->tick();
-    }
 }
 
 
-} // namespace devtool::viewer
+} // namespace devtool::menus

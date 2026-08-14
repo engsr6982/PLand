@@ -1,10 +1,11 @@
 #pragma once
-#include "components/IComponent.h"
+#include "core/Window.h"
 #include "pland/Global.h"
 #include "pland/land/Land.h"
 
 #include <imgui.h>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace land {
@@ -18,7 +19,7 @@ namespace devtool::viewer {
 
 class LandTreeViewer : public IWindow {
 public:
-    explicit LandTreeViewer(land::LandID rootId);
+    LandTreeViewer(std::string title, land::LandID rootId);
     ~LandTreeViewer() = default;
 
     land::LandID getRootId() const { return mRootId; }

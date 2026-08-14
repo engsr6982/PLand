@@ -6,6 +6,7 @@
 #include "pland/service/ServiceLocator.h"
 #include <algorithm>
 #include <fmt/core.h>
+#include <utility>
 
 
 namespace devtool::viewer {
@@ -26,11 +27,11 @@ static const ImU32 C_MIX    = IM_COL32(200, 200, 100, 255); // Yellow
 static const ImU32 C_SUB    = IM_COL32(100, 150, 250, 255); // Blue
 
 
-LandTreeViewer::LandTreeViewer(land::LandID rootId) : mRootId(rootId) {}
+LandTreeViewer::LandTreeViewer(std::string title, land::LandID rootId) : IWindow(std::move(title)), mRootId(rootId) {}
 
 void LandTreeViewer::render() {
-    if (!ImGui::Begin(fmt::format("LandTreeViewer {}", mRootId).c_str(), getVisibleFlag())) {
-        ImGui::End();
+    WindowScope scope(*this);
+    if (!scope.isOpen()) {
         return;
     }
     ImGui::Text("Viewing Hierarchy Root: %lld", mRootId);
@@ -130,7 +131,6 @@ void LandTreeViewer::render() {
     }
 
     dl->PopClipRect();
-    ImGui::End();
 }
 
 std::unique_ptr<LandTreeViewer::NodeLayout>

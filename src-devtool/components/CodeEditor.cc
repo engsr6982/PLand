@@ -7,9 +7,10 @@
 namespace devtool {
 
 
-CodeEditor::CodeEditor(std::string const& code) {
+CodeEditor::CodeEditor(std::string const& code) : IWindow("") {
     static int NEXT_WINDOW_ID = 0;
     this->windowId_           = NEXT_WINDOW_ID++;
+    this->title_              = fmt::format("[{}] CodeEditor", windowId_);
 
     editor_.SetText(code);
     editor_.SetLanguage(TextEditor::Language::Json());
@@ -74,19 +75,13 @@ void CodeEditor::renderMenuBar() {
 }
 
 void CodeEditor::render() {
-    if (!ImGui::Begin(
-            fmt::format("[{}] CodeEditor", windowId_).data(),
-            this->getVisibleFlag(),
-            (ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_MenuBar)
-        )) {
-        ImGui::End();
+    WindowScope scope(*this, ImGuiWindowFlags_MenuBar); // 已移除 NoDocking, 支持停靠
+    if (!scope.isOpen()) {
         return;
     }
 
     renderMenuBar();
     editor_.Render(fmt::format("CodeEditor-Impl##{}", windowId_).data());
-
-    ImGui::End();
 }
 
 
