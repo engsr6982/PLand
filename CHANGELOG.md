@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 修复 PC 端选区时有概率多次触发选择 @engsr6982 [#228](https://github.com/IceBlcokMC/PLand/issues/228)
 - 移除不必要的维度校验，修复 DefaultParticle 后端绘制领地范围不显示 @engsr6982
+- 修复熄屏下开启 DevTool 工具启动服务端崩溃 @engsr6982 [#223](https://github.com/IceBlcokMC/PLand/issues/223)
 
 ## [0.21.1] - 2026-07-21
 

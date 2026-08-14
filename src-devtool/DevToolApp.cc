@@ -87,14 +87,15 @@ struct DevToolApp::Impl {
         glfwHideWindow(window);
     }
 
-    void _initImGuiAndOpenGlWithGLFW() {
+    bool _initImGuiAndOpenGlWithGLFW() {
         if (glfwWindow_) {
             throw std::runtime_error("GLFW window already initialized");
         }
 
         glfwSetErrorCallback(_handleGlfwError);
         if (!glfwInit()) {
-            throw std::runtime_error("Failed to initialize GLFW！");
+            land::PLand::getInstance().getSelf().getLogger().error("Failed to initialize GLFW");
+            return false;
         }
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // 设置OpenGL版本
@@ -106,7 +107,8 @@ struct DevToolApp::Impl {
             GLFWmonitor* monitor = glfwGetPrimaryMonitor(); // 获取主显示器
             if (!monitor) {
                 land::PLand::getInstance().getSelf().getLogger().error("Failed to get primary monitor");
-                return;
+                glfwTerminate();
+                return false;
             }
             glfwGetMonitorContentScale(monitor, &xScale, &yScale); // 获取主显示器缩放比例
             this->glfwWindow_ = glfwCreateWindow(
@@ -118,7 +120,8 @@ struct DevToolApp::Impl {
             );
             if (!this->glfwWindow_) {
                 land::PLand::getInstance().getSelf().getLogger().error("Failed to create GLFW window");
-                return;
+                glfwTerminate();
+                return false;
             }
 
             glfwSetWindowCloseCallback(this->glfwWindow_, _handleWindowClose); // 设置窗口关闭回调函数
@@ -131,7 +134,7 @@ struct DevToolApp::Impl {
                 glfwDestroyWindow(this->glfwWindow_);
                 glfwTerminate(); // 终止GLFW
                 this->glfwWindow_ = nullptr;
-                return;
+                return false;
             }
         }
 
@@ -147,6 +150,7 @@ struct DevToolApp::Impl {
         // 初始化ImGui与GLFW的绑定
         ImGui_ImplGlfw_InitForOpenGL(this->glfwWindow_, true); // ImGui <> GLFW
         ImGui_ImplOpenGL3_Init("#version 130");                // ImGui <> OpenGL
+        return true;
     }
 
     void _checkAndUpdateScale() {
@@ -190,7 +194,12 @@ struct DevToolApp::Impl {
     }
 
     void _render() {
-        _initImGuiAndOpenGlWithGLFW();
+        if (!_initImGuiAndOpenGlWithGLFW()) {
+            land::PLand::getInstance().getSelf().getLogger().error(
+                "DevTools failed to initialize, render thread exited (may happen when the display is off)"
+            );
+            return;
+        }
 
         while (!this->renderThreadStopFlag_.load()) {
             this->commands_.drain(); // 跨线程命令
