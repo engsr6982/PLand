@@ -3,7 +3,8 @@ on:
   push:
     paths:
       - ".github/workflows/build.yml"
-      - "src/**"
+      - "src-*/**"
+      - "src-*"
       - "xmake.lua"
   workflow_dispatch:
 
