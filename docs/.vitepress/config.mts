@@ -29,7 +29,8 @@ export default withMermaid(
                     items: [
                         { text: '安装', link: '/' },
                         { text: '指令', link: '/user_guide/CommandList' },
-                        { text: '配置文件', link: '/user_guide/Config' },
+                        { text: '领地配置文件', link: '/user_guide/Config' },
+                        { text: '拦截器配置文件', link: '/user_guide/InterceptorConfig' },
                         { text: 'FAQ', link: '/user_guide/FAQ' },
                     ],
                 },
