@@ -1,27 +1,30 @@
 # LDAPI
 
-?> `LDAPI` 为 PLand 导出的 API  
+::: tip `LDAPI` 为 PLand 导出的 API  
 `LDAPI` 的本质是一个宏，值为 `__declspec(dllimport)`  
 头文件中，标记 `LDAPI` 的函数您都能访问、调用
+:::
 
 ## class 指南
 
-?> 由于 PLand 尚未进入 v1.0.0 内部API变化频繁，本文档无法实时更新，请以 SDK 为准
+::: tip 由于 PLand 尚未进入 v1.0.0 内部API变化频繁，本文档无法实时更新，请以 SDK 为准
+:::
 
 | 类名               | 描述                                                           | 备注               |
 |:-----------------|:-------------------------------------------------------------|:-----------------|
 | `LandRegistry`   | LandRegistry 核心类(负责存储、查询)                                    | -                |
 | `Land`           | 领地代理类(提供对原始数据的封装 API)                                        | |
-| `PriceCalculate` | 价格公式解析、计算 ([calculate 计算公式](../md/Config.md#calculate-计算公式)) | -                |
+| `PriceCalculate` | 价格公式解析、计算 ([formula 价格表达式](../user_guide/Config.md#formula-价格表达式)) | -                |
 | `Config`         | 配置文件                                                         | -                |
 | `EconomySystem`  | 经济系统 (已封装对接双经济)                                              | -                |
 | `EventListener`  | 事件监听器(监听拦截 Mc 事件)                                            | -                |
-| `LandPos`        | 坐标基类 (负责处理 JSON 反射)                                          | -                |
+| `LandPos`        | 坐标基类 (负责 JSON 序列化)                                          | -                |
 | `LandAABB`       | 领地坐标 (一个领地的对角坐标)                                             | -                |
 | `LandSelector`   | 领地选区器(负责圈地、修改范围)                                             | -                |
 | `DrawHandle`     | 绘制管道 (管理领地绘制, 每个玩家都独立分配一个 DrawHandle)                        | -                |
 
-!> ⚠️：当您需要长期持有 `Land` 时建议使用 `std::weak_ptr<Land>` 弱引用。
+::: warning ⚠️：当您需要长期持有 `Land` 时建议使用 `std::weak_ptr<Land>` 弱引用。
+:::
 
 ## RAII 资源
 

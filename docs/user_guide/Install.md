@@ -17,7 +17,7 @@ lip install github.com/IceBlcokMC/PLand
 lip install github.com/IceBlcokMC/PLand@v1.0.0
 ```
 
-> 您可以使用一下命令更新 PLand
+> 您可以使用以下命令更新 PLand
 
 ```bash
 lip install --upgrade github.com/IceBlcokMC/PLand
@@ -44,7 +44,8 @@ lip install --upgrade github.com/IceBlcokMC/PLand
 > 在下载前置组件时，请确保您下载的版本与 PLand 的版本兼容  
 > 如果您不确定，我们建议您使用 Lip 安装
 
-!> 本文档默认您已经安装好了前置组件
+::: warning 本文档默认您已经安装好了前置组件
+:::
 
 1. 前往 Minebbs 或者 Github Release 下载 PLand 的最新版本
 

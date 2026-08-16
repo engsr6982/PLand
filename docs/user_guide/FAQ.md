@@ -45,14 +45,15 @@ PLand 的数据存储使用 Google 的 LevelDB 数据库，你可以使用 [QLev
 
 > Tip:  
 > 从 PLand v0.5.0 开始，PLand 内置了一个 `DevTool` 工具  
-> 如果您的设备拥有显示器(仅限 Windows 桌面环境)，可以在 `Config.internals.devTool` 中开启这个工具  
+> 如果您的设备拥有显示器(仅限 Windows 桌面环境)，可以在 `system.devTools` 中开启这个工具  
 > 然后使用 `/pland devtool` 唤起窗口，插件将会创建一个 Windows 窗口提供运行时可视化修改、查看。
 
-!> 请不要随意修改数据库内容，否则会导致插件反射异常，无法加载领地数据。
+::: warning 请不要随意修改数据库内容，否则会导致插件反序列化异常，无法加载领地数据。
+:::
 
 ## 关于子领地
 
-> [[Feature]: 子领地支持 #18](https://github.com/engsr6982/PLand/issues/18)
+> [[Feature]: 子领地支持 #18](https://github.com/IceBlcokMC/PLand/issues/18)
 
 | 状态       | 父领地 | 子领地 | 备注                |
 |----------|-----|-----|-------------------|
@@ -77,7 +78,7 @@ PLand 的数据存储使用 Google 的 LevelDB 数据库，你可以使用 [QLev
 
 ## 关于遥测
 
-> [[Feature]: 增加遥测支持 ](https://github.com/engsr6982/PLand/issues/90)
+> [[Feature]: 增加遥测支持 ](https://github.com/IceBlcokMC/PLand/issues/90)
 
 - Q: 遥测会收集哪些数据？
 
@@ -98,7 +99,7 @@ PLand 的数据存储使用 Google 的 LevelDB 数据库，你可以使用 [QLev
 
 - Q: 我可以关闭遥测吗？
 
-当然可以，你可以在 `config.json` 中关闭遥测功能 `Config.internals.telemetry`。
+当然可以，你可以在 `config.json` 中关闭遥测功能 `system.telemetry`。
 
 - Q: 遥测会收集额外的敏感信息吗？
 
