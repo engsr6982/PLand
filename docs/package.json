@@ -1,0 +1,17 @@
+{
+  "name": "pland-docs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PLand 文档站 (VitePress)",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "mermaid": "^11.16.1",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  }
+}
