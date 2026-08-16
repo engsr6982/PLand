@@ -125,7 +125,7 @@ bool PLand::load() {
 }
 
 bool PLand::enable() {
-    internal::LandCommand::setup();
+    internal::LandCommand::setupAll();
     mImpl->mLandScheduler     = std::make_unique<internal::LandScheduler>();
     mImpl->mEventListener     = std::make_unique<internal::interceptor::EventInterceptor>();
     mImpl->mSafeTeleport      = std::make_unique<internal::SafeTeleport>();
