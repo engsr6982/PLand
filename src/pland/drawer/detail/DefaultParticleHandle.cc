@@ -11,23 +11,10 @@
 #include "ll/api/thread/ServerThreadExecutor.h"
 
 #include "mc/network/packet/SpawnParticleEffectPacket.h"
-#include "mc/util/MolangVariable.h"
-#include "mc/util/MolangVariableMap.h"
 #include "mc/world/level/dimension/VanillaDimensions.h"
 
 #include <atomic>
-
-
-// Fix LNK2019: "public: __cdecl MolangVariableMap::MolangVariableMap(class MolangVariableMap const &)"
-// MolangVariableMap::MolangVariableMap(MolangVariableMap const& rhs) {
-//     mMapFromVariableIndexToVariableArrayOffset = rhs.mMapFromVariableIndexToVariableArrayOffset;
-//     mVariables                                 = {};
-//     for (auto& ptr : *rhs.mVariables) {
-//         mVariables->push_back(std::make_unique<MolangVariable>(*ptr));
-//     }
-//     mHasPublicVariables = rhs.mHasPublicVariables;
-// }
-MolangScriptArg::MolangScriptArg() = default;
+#include <optional>
 
 namespace land::drawer::detail {
 
@@ -47,10 +34,8 @@ public:
     ParticleSpawner& operator=(ParticleSpawner&&) noexcept = default;
 
     explicit ParticleSpawner(LandAABB const& aabb, LandDimid dimId) : mId(getNextGeoId()) {
-        static std::optional<MolangVariableMap> molang{std::nullopt};
-
         auto maybeDimid = VanillaDimensions::fromSerializedInt(dimId);
-        if (!maybeDimid.has_value()) {
+        if (!maybeDimid) {
             PLand::getInstance().getSelf().getLogger().error("[ParticleSpawner] Unknown dimension id: {}", dimId);
             return;
         }
@@ -61,7 +46,7 @@ public:
         auto points = aabb.getBorder();
         mPackets.reserve(points.size());
         for (auto& point : points) {
-            mPackets.emplace_back(Vec3{point.x + 0.5, point.y + 0.5, point.z + 0.5}, particle, dim, molang);
+            mPackets.emplace_back(Vec3{point.x + 0.5, point.y + 0.5, point.z + 0.5}, particle, dim, std::nullopt);
         }
     }
 

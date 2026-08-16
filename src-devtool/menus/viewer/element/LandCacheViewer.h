@@ -28,6 +28,7 @@ class LandCacheViewerWindow : public IWindow {
 
 public:
     explicit LandCacheViewerWindow();
+    ~LandCacheViewerWindow() override;
 
     enum Buttons {
         EditLand,  // 编辑领地数据

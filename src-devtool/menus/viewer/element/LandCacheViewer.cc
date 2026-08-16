@@ -29,6 +29,7 @@ void LandCacheViewer::tick() { window_->tick(); }
 
 // LandCacheViewerWindow
 LandCacheViewerWindow::LandCacheViewerWindow() { this->setVisible(true); }
+LandCacheViewerWindow::~LandCacheViewerWindow() = default;
 
 void LandCacheViewerWindow::handleButtonClicked(Buttons bt, std::shared_ptr<land::Land> land) {
     switch (bt) {

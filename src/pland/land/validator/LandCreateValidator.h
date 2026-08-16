@@ -117,7 +117,7 @@ public:
 
         explicit ValidateError(std::unique_ptr<ErrorContext> context) : mContext(std::move(context)) {}
 
-        LDAPI std::string message() const noexcept final;
+        LDAPI std::string message(std::string_view locale) const noexcept final;
 
         LDAPI void sendTo(Player& player) const;
         LDAPI std::string translateError(std::string const& localeCode) const;
