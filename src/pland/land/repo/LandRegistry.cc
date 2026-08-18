@@ -481,9 +481,10 @@ LandRegistry::LandRegistry(PLand& mod) : impl(std::make_unique<Impl>()) {
     auto& logger = mod.getSelf().getLogger();
 
     // 必须在 loadLands 之前创建: 加载时挂上的 observer 会立即触发 enqueue
-    impl->mFlushQueue = std::make_unique<internal::LandFlushQueue>(
-        [this](std::vector<internal::FlushTask> const& tasks) { return impl->consumeFlushBatch(tasks); }
-    );
+    impl->mFlushQueue =
+        std::make_unique<internal::LandFlushQueue>([this](std::vector<internal::FlushTask> const& tasks) {
+            return impl->consumeFlushBatch(tasks);
+        });
 
     impl->openDatabase(mod);
 
@@ -543,11 +544,37 @@ void LandRegistry::createSnapshot(std::optional<std::string> const& dirName) {
     ll::coro::keepThis([this, dirName]() -> ll::coro::CoroTask<> {
         impl->mFlushQueue->flushAndWait(); // 等待异步队列完全落盘, 保证快照包含内存中的最新数据
 
-        auto& mod           = PLand::getInstance();
-        auto& logger        = mod.getSelf().getLogger();
-        auto  snapshotDir   = mod.getSelf().getDataDir() / SnapshotDir;
-        auto  outputDirName = dirName.value_or(std::to_string(time_utils::nowSeconds()));
-        auto  finalPath     = snapshotDir / outputDirName;
+        auto& mod    = PLand::getInstance();
+        auto& logger = mod.getSelf().getLogger();
+
+        std::filesystem::path finalPath;
+        {
+            // unique output dir
+            auto const snapshotDir = mod.getSelf().getDataDir() / kSnapshotDir;
+
+            auto secStr = std::to_string(time_utils::nowSeconds());
+
+            auto outputDirName = dirName.value_or(secStr);
+            {
+                finalPath = snapshotDir / outputDirName;
+                if (std::filesystem::exists(snapshotDir / outputDirName)) {
+                    if (dirName) {
+                        outputDirName += fmt::format("_{}", secStr);
+                        finalPath      = snapshotDir / outputDirName;
+                        logger.warn(
+                            "Snapshot dir [{}] already exists, appending timestamp [{}] to avoid conflict",
+                            *dirName,
+                            secStr
+                        );
+                    }
+                }
+                if (std::filesystem::exists(finalPath)) {
+                    logger.error("Snapshot dir [{}] already exists", finalPath);
+                    co_return;
+                }
+            }
+        }
+
         try {
             auto newDatabase = std::make_unique<ll::data::KeyValueDB>(finalPath);
             ll::file_utils::writeFile(finalPath / ".incomplete", "");
