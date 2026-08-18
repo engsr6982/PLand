@@ -26,6 +26,18 @@
 namespace land::internal {
 
 
+// 可信"服务器自身"来源白名单：只有服务器自身的控制台才隐式拥有全部权限。
+inline constexpr bool isTrustedServerOrigin(CommandOriginType type) {
+    switch (type) {
+    case CommandOriginType::DedicatedServer: // 正式服控制台（服务器本体）
+    case CommandOriginType::DevConsole:      // 开发控制台
+        return true;
+    default:
+        return false;
+    }
+}
+
+
 template <CommandOriginType... AcceptOrigins>
 struct LandCommandAcceptOrigin {
     inline static constexpr size_t                                kCount   = sizeof...(AcceptOrigins);
@@ -33,6 +45,11 @@ struct LandCommandAcceptOrigin {
 
     inline static constexpr bool kAcceptDedicatedServer = isAccepted(CommandOriginType::DedicatedServer);
     inline static constexpr bool kAcceptPlayer          = isAccepted(CommandOriginType::Player);
+
+    // 带权限的命令若接受非玩家来源，该来源必须属于"可信服务器来源"白名单，
+    // 否则编译期直接拒绝注册，防止误接受命令方块/自动化客户端等导致权限绕过。
+    inline static constexpr bool kAllNonPlayerAcceptedAreTrusted =
+        ((AcceptOrigins == CommandOriginType::Player || isTrustedServerOrigin(AcceptOrigins)) && ...);
 
     inline static constexpr bool isAccepted(CommandOriginType type) {
         if constexpr (kCount == 0) return false;
@@ -53,6 +70,8 @@ struct LandCommandAcceptOrigin {
     }
 };
 
+// 命令权限位掩码，可叠加。
+// 叠加多个权限时按"满足其一即可"（OR）判定，见 detail::handleOrigin 中的注释，
 enum class LandCommandPermission {
     kNone              = 0,
     kMinecraftOperator = 1 << 0,
@@ -69,6 +88,15 @@ inline bool handleOrigin(CommandOrigin const& ori, CommandOutput& out) {
     static_assert(
         !requiresPermission || AcceptOrigin::kAcceptPlayer,
         "Command with permission requirement MUST accept Player origin!"
+    );
+    // 带权限的命令只能接受 Player 或可信服务器来源（DedicatedServer/DevConsole）。
+    // 若误接受了命令方块/自动化客户端等不可信的非玩家来源，
+    // 会在运行时绕过玩家权限检查造成越权，故编译期直接拒绝。
+    static_assert(
+        !requiresPermission || AcceptOrigin::kAllNonPlayerAcceptedAreTrusted,
+        "Permission-gated command accepts an untrusted non-player origin "
+        "(e.g. CommandBlock / AutomationPlayer) which would bypass player permission checks! "
+        "Only Player or trusted server origins (DedicatedServer / DevConsole) are permitted."
     );
 
     auto    type   = ori.getOriginType();
@@ -91,24 +119,41 @@ inline bool handleOrigin(CommandOrigin const& ori, CommandOutput& out) {
         return true;
     }
 
+    // 权限只针对玩家身份校验：
+    // 1) 可信服务器来源（DedicatedServer/DevConsole，即控制台）→ 隐式拥有全部权限，直接放行；
+    // 2) 其它非玩家来源（命令方块/自动化客户端/脚本/实体等）→ 不可信且无玩家身份可校验，
+    if (type != CommandOriginType::Player) {
+        if (isTrustedServerOrigin(type)) {
+            return true;
+        }
+        out.error("This command requires player permissions and cannot be executed by non-players."_trl(localeCode));
+        return false;
+    }
+
     if (!player) {
         out.error("This command requires player permissions and cannot be executed by non-players."_trl(localeCode));
         return false;
     }
 
-    if (hasFlag(P, LandCommandPermission::kMinecraftOperator)) {
-        if (!player->isOperator()) {
-            out.error("Requires Minecraft Operator permission."_trl(localeCode));
-            return false;
-        }
+    // 多权限叠加采用"满足其一即可"（OR）语义：任一指定权限命中即视为授权。
+    bool authorized = false;
+
+    if constexpr (hasFlag(P, LandCommandPermission::kMinecraftOperator)) {
+        authorized |= player->isOperator();
     }
 
-    if (hasFlag(P, LandCommandPermission::kLandAdmin)) {
-        auto& registry = PLand::getInstance().getLandRegistry();
-        if (!registry.isOperator(player->getUuid())) {
-            out.error("Requires Land Admin permission."_trl(localeCode));
-            return false;
+    if constexpr (hasFlag(P, LandCommandPermission::kLandAdmin)) {
+        authorized |= PLand::getInstance().getLandRegistry().isOperator(player->getUuid());
+    }
+
+    if (!authorized) {
+        if constexpr (hasFlag(P, LandCommandPermission::kMinecraftOperator)) {
+            out.error("Requires Minecraft Operator permission."_trl(localeCode));
         }
+        if constexpr (hasFlag(P, LandCommandPermission::kLandAdmin)) {
+            out.error("Requires Land Admin permission."_trl(localeCode));
+        }
+        return false;
     }
 
     return true;
