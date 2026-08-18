@@ -17,6 +17,19 @@
     --vp-button-brand-active-bg: #047857;
     --vp-button-brand-active-border: #047857;
     --vp-button-brand-active-text: #ffffff;
+
+    /* Mac 风格代码块 (浅色模式) */
+    --vp-code-header-bg: #eef0f2;
+    --vp-code-header-border: rgba(0, 0, 0, 0.09);
+    --vp-code-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+
+    /* 自定义容器强调色 (浅色模式) */
+    --cb-info: #2563eb;
+    --cb-tip: #059669;
+    --cb-warning: #d97706;
+    --cb-danger: #dc2626;
+    --cb-note: #7c3aed;
+    --cb-details: #64748b;
 }
 
 .dark {
@@ -36,4 +49,321 @@
     --vp-button-brand-active-bg: #6ee7b7;
     --vp-button-brand-active-border: #6ee7b7;
     --vp-button-brand-active-text: #052e22;
+
+    /* Mac 风格代码块 (深色模式) */
+    --vp-code-header-bg: rgba(255, 255, 255, 0.06);
+    --vp-code-header-border: rgba(255, 255, 255, 0.09);
+    --vp-code-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+
+    /* 自定义容器强调色 (深色模式) */
+    --cb-info: #60a5fa;
+    --cb-tip: #34d399;
+    --cb-warning: #fbbf24;
+    --cb-danger: #f87171;
+    --cb-note: #a78bfa;
+    --cb-details: #94a3b8;
+}
+
+/* ==========================================================================
+ * Mac 风格代码块
+ * ========================================================================== */
+
+/* 容器：为顶部标题栏留出空间，圆角裁切标题栏背景 */
+.vp-doc div[class*='language-'] {
+    padding-top: 38px;
+    overflow: hidden;
+    box-shadow: var(--vp-code-shadow);
+}
+
+@media (min-width: 640px) {
+    .vp-doc div[class*='language-'] {
+        border-radius: 10px;
+    }
+}
+
+/* 标题栏背景 */
+.vp-doc div[class*='language-']::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 2;
+    height: 38px;
+    background: var(--vp-code-header-bg);
+    border-bottom: 1px solid var(--vp-code-header-border);
+}
+
+/* 红黄绿灯 (经典 mac 窗口三键) */
+.vp-doc div[class*='language-']::after {
+    content: '';
+    position: absolute;
+    top: 13px;
+    left: 16px;
+    z-index: 3;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, #ff9a92, #ff5f57);
+    box-shadow:
+        20px 0 0 #febc2e,
+        40px 0 0 #28c840;
+}
+
+/* 语言标签：移入标题栏右侧 */
+.vp-doc div[class*='language-'] > span.lang {
+    top: 0;
+    right: 48px;
+    line-height: 38px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--vp-code-lang-color);
+}
+
+/* 无语言名的空标签不显示 */
+.vp-doc div[class*='language-'] > span.lang:empty {
+    display: none;
+}
+
+/* 复制按钮：缩小并移入标题栏右上角 */
+.vp-doc div[class*='language-'] > button.copy {
+    top: 6px;
+    right: 12px;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background-color: transparent;
+    border-color: transparent;
+    background-size: 16px;
+}
+
+.vp-doc div[class*='language-'] > button.copy:hover,
+.vp-doc div[class*='language-'] > button.copy.copied {
+    border-color: var(--vp-code-copy-code-hover-border-color);
+    background-color: var(--vp-code-copy-code-hover-bg);
+}
+
+.vp-doc div[class*='language-'] > button.copy.copied,
+.vp-doc div[class*='language-'] > button.copy:hover.copied {
+    border-radius: 6px;
+    background-color: var(--vp-c-brand-soft);
+    background-image: var(--vp-icon-copied);
+}
+
+/* “已复制”提示气泡适配小按钮 */
+.vp-doc div[class*='language-'] > button.copy.copied::before,
+.vp-doc div[class*='language-'] > button.copy:hover.copied::before {
+    height: 26px;
+    border-radius: 6px 0 0 6px;
+}
+
+/* 悬停复制按钮时语言标签不再隐藏 */
+.vp-doc div[class*='language-']:hover > button.copy + span.lang,
+.vp-doc div[class*='language-'] > button.copy:focus + span.lang {
+    opacity: 1;
+}
+
+/* 代码行号 (CSS 计数器) */
+.vp-doc div[class*='language-'] code {
+    counter-reset: vp-line;
+    padding-left: 3.75rem;
+}
+
+.vp-doc div[class*='language-'] code .line {
+    counter-increment: vp-line;
+}
+
+.vp-doc div[class*='language-'] code .line:not(.diff)::before {
+    content: counter(vp-line);
+    display: inline-block;
+    width: 2.25rem;
+    margin-right: 1rem;
+    margin-left: -3.25rem;
+    text-align: right;
+    color: var(--vp-code-line-number-color);
+    opacity: 0.55;
+    user-select: none;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 差异行保留 +/- 标记，不显示行号 */
+.vp-doc div[class*='language-'] code .line.diff::before {
+    content: none;
+}
+
+/* ==========================================================================
+ * 自定义容器 (提示块)
+ * ========================================================================== */
+
+.vp-doc .custom-block {
+    position: relative;
+    border: 1px solid color-mix(in srgb, var(--cb-accent, #888888) 30%, transparent);
+    border-left: 4px solid var(--cb-accent, #888888);
+    border-radius: 10px;
+    padding: 0.9rem 1.25rem 0.75rem;
+    background-color: color-mix(in srgb, var(--cb-accent, #888888) 8%, transparent);
+    line-height: 1.75;
+    color: var(--vp-c-text-1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    /* 长 URL/长词可折断，避免移动端横向溢出 */
+    overflow-wrap: break-word;
+}
+
+/* 各类型强调色 + 图标 */
+.vp-doc .custom-block.tip {
+    --cb-accent: var(--cb-tip);
+    --cb-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Cpath d='M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6A4.997 4.997 0 0 1 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.79 3.09-2.15 4.1z'/%3E%3C/svg%3E");
+}
+
+.vp-doc .custom-block.info {
+    --cb-accent: var(--cb-info);
+    --cb-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E");
+}
+
+.vp-doc .custom-block.warning {
+    --cb-accent: var(--cb-warning);
+    --cb-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Cpath d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z'/%3E%3C/svg%3E");
+}
+
+.vp-doc .custom-block.danger {
+    --cb-accent: var(--cb-danger);
+    --cb-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Cpath d='M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z'/%3E%3C/svg%3E");
+}
+
+.vp-doc .custom-block.note {
+    --cb-accent: var(--cb-note);
+    --cb-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Cpath d='M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z'/%3E%3C/svg%3E");
+}
+
+/* 标题：类型色 + 图标
+ * 注意：这里保持正常的行内文本流（不要用 flex），
+ * 否则行内 <code> 会被当作不可收缩的 flex item，
+ * 导致长代码单行显示、撑宽容器，在移动端产生横向滚动条。
+ */
+.vp-doc .custom-block .custom-block-title {
+    margin-bottom: 0.5rem;
+    font-size: 1.05em;
+    font-weight: 700;
+    color: var(--cb-accent);
+    overflow-wrap: break-word;
+}
+
+.vp-doc .custom-block .custom-block-title::before {
+    content: '';
+    display: inline-block;
+    width: 1.15em;
+    height: 1.15em;
+    margin-right: 0.5em;
+    vertical-align: -0.25em;
+    background-color: currentColor;
+    -webkit-mask: var(--cb-icon) center / contain no-repeat;
+    mask: var(--cb-icon) center / contain no-repeat;
+}
+
+/* 容器内行内代码着色跟随类型 */
+.vp-doc .custom-block code {
+    color: var(--cb-accent);
+}
+
+/* 行内代码允许换行：长代码/URL 在移动端可折断，避免撑出横向滚动条。
+ * overflow-wrap: anywhere 同时会降低 min-content 宽度，
+ * 使行内代码即使身处 flex 容器也能被压缩换行。 */
+.vp-doc :not(pre) > code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.vp-doc .custom-block a {
+    color: var(--cb-accent);
+}
+
+/* 折叠块 (details) */
+.vp-doc .custom-block.details {
+    --cb-accent: var(--cb-details);
+    padding: 0.6rem 1.25rem;
+    border: 1px solid color-mix(in srgb, var(--cb-details) 25%, transparent);
+    border-left: 4px solid var(--cb-details);
+    background-color: var(--vp-c-default-soft);
+    box-shadow: none;
+}
+
+.vp-doc .custom-block.details summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0.35rem 0;
+    font-weight: 700;
+    color: var(--vp-c-text-1);
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.vp-doc .custom-block.details summary::-webkit-details-marker {
+    display: none;
+}
+
+/* 折叠箭头：闭合朝右，展开朝下 */
+.vp-doc .custom-block.details summary::before {
+    content: '';
+    flex-shrink: 0;
+    width: 0.65em;
+    height: 0.65em;
+    margin-right: 0.2em;
+    border-right: 2px solid var(--cb-details);
+    border-bottom: 2px solid var(--cb-details);
+    transform: rotate(-45deg);
+    transition: transform 0.2s ease;
+}
+
+.vp-doc .custom-block.details[open] summary::before {
+    transform: rotate(45deg);
+}
+
+/* ==========================================================================
+ * 回到顶部悬浮按钮
+ * ========================================================================== */
+
+.vp-back-to-top {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 12px;
+    background-color: var(--vp-c-bg-soft);
+    color: var(--vp-c-text-1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(16px);
+    pointer-events: none;
+    transition:
+        opacity 0.25s ease,
+        transform 0.25s ease,
+        border-color 0.25s,
+        background-color 0.25s,
+        color 0.25s;
+}
+
+.vp-back-to-top.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.vp-back-to-top:hover {
+    border-color: var(--vp-c-brand-1);
+    background-color: var(--vp-c-brand-soft);
+    color: var(--vp-c-brand-1);
 }

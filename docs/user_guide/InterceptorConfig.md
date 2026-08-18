@@ -1,21 +1,37 @@
 # 拦截器配置文件
 
-> 配置文件均为`json`格式，位于`plugins/PLand/config`目录下。
+> 配置文件位于 `plugins/PLand/config` 目录下。
 
-::: warning 配置文件为`json`格式，请勿使用记事本等不支持`json`格式的文本编辑器进行编辑，否则会导致配置文件损坏。
+::: warning 编辑提示
+- 请使用支持 JSON 的编辑器编辑，**不要使用记事本**，否则可能损坏配置文件。
 :::
 
-## InterceptorConfig.json
+## 什么是拦截器？
+
+PLand 通过**拦截游戏事件**来强制领地权限（比如：非领地成员不能破坏方块、不能开箱子等）。
+
+拦截器配置文件 `InterceptorConfig.json` 由三部分组成：
+
+| 配置项 | 作用 | 风险等级 |
+|:------|:----|:-------:|
+| [`listeners`](#listeners-事件监听器) | 开关各类**事件监听器**（玩家破坏、放置、交互、爆炸等） | ⚠️ 高 |
+| [`hooks`](#hooks-底层钩子) | 开关各类**底层 Hook**（修补部分事件监听覆盖不到的越权问题） | ⚠️ 高 |
+| [`rules`](#rules-特殊权限规则) | 定义特定物品/方块交互所需的权限，以及生物受伤白名单 | 低 |
+
+::: warning 非必要请勿关闭监听器和 Hook！
+- 关闭它们可能导致领地功能异常（越权破坏、偷取物品等）
+- 如果你不知道某个开关是做什么的，请不要关闭它
+- 提供的注释仅概括大致作用，具体行为请查看源码
+- 当然，如果某个开关导致游戏崩溃，你也可以选择关闭它
+:::
+
+## 完整配置示例
 
 ```json
 {
     "version": 2, // 配置文件版本
     "listeners": {
         // 事件监听器开关 true 为开启，false 为关闭
-        // 注意：非必要情况下，请勿关闭事件监听器，否则可能导致领地功能异常
-        // 如果您不知道某个事件监听器是做什么的，请不要关闭它
-        // 提供的注释仅概括了大致作用，具体行为请查看源码
-        // 当然，如果某个事件监听器导致游戏崩溃，您也可以选择关闭它
         "PlayerDestroyBlockEvent": true, // 玩家破坏方块事件
         "PlayerPlacingBlockEvent": true, // 玩家放置方块事件
         "PlayerInteractBlockEvent": true, // 玩家交互方块事件
@@ -52,10 +68,6 @@
         // Hook 技术指的是在软件运行过程中，通过拦截、修改或补充原有代码逻辑，实现对目标软件行为的影响和控制的技术手段
         // 这里的 Hook 用于 Patch 修补一些领地越权问题
         // 每个 Hook 对应一个或多个权限修复，true 为开启，false 为关闭
-        // 注意：非必要情况下，请勿关闭 Hook，否则可能导致领地功能异常
-        // 如果您不知道某个 Hook 是做什么的，请不要关闭它
-        // 提供的注释仅概括了大致作用，具体行为请查看源码
-        // 当然，如果 Hook 导致游戏崩溃，您也可以选择关闭它
         "FishingHookHitHook": true, // 钓鱼钩击中
         "LayEggGoalHook": true, // 海龟产卵
         "FireBlockBurnHook": true, // 火焰燃烧方块
@@ -119,9 +131,34 @@
 }
 ```
 
-## `rules.item` 和 `rules.block`
+## listeners 事件监听器
 
-此部分用于配置特定物品或方块交互所需的权限。这允许服主自定义哪些物品/方块在领地内可以被非成员使用。
+事件监听器负责拦截**最常见的越权行为**，按功能可以分为几类：
+
+| 分类 | 监听器 | 作用 |
+|:----|:------|:----|
+| **玩家破坏/放置** | `PlayerDestroyBlockEvent`、`PlayerPlacingBlockEvent` | 阻止非成员破坏、放置方块 |
+| **玩家交互** | `PlayerInteractBlockEvent`、`PlayerInteractEntityBeforeEvent` | 阻止非成员使用箱子、床、按钮等 |
+| **玩家战斗** | `PlayerAttackEvent` | 阻止非成员攻击（配合 PvP 权限） |
+| **玩家拾取/丢弃** | `PlayerPickUpItemEvent`、`PlayerDropItemBeforeEvent` | 阻止非成员拾取/丢弃物品 |
+| **生物行为** | `SpawnedMobEvent`、`ActorDestroyBlockEvent`、`MobTakeBlockBeforeEvent` 等 | 阻止生物破坏领地、取走物品等 |
+| **环境变化** | `FireSpreadEvent`、`ExplosionBeforeEvent`、`LiquidFlowBeforeEvent`、`PistonPushBeforeEvent` 等 | 阻止火灾蔓延、爆炸破坏、液体流动等影响领地 |
+| **其他** | `PlayerUseItemEvent`、`PlayerEditSignBeforeEvent` 等 | 剩余的特殊交互 |
+
+## hooks 底层钩子
+
+**Hook（钩子）** 是一种更底层的技术：在程序运行过程中，通过拦截、修改或补充原有代码逻辑，实现对目标行为的控制。
+
+PLand 使用 Hook 来**修补**一些事件监听器覆盖不到的越权问题（例如钓鱼钩、闪电、漏斗矿车吸物、经验球拾取等）。每个 Hook 对应一个或多个权限修复。
+
+::: warning 与 `listeners` 一样，非必要请勿关闭 Hook。
+:::
+
+## rules 特殊权限规则
+
+`rules` 用于配置**特定物品或方块交互所需的权限**，以及**生物受伤白名单**。这允许服主自定义哪些物品/方块在领地内可以被非成员使用。
+
+### `rules.item` 和 `rules.block`
 
 - `rules.item`: 定义了使用特定**物品**时所需的权限。键是物品的命名空间 ID，值是权限名称。
 - `rules.block`: 定义了与特定**方块**交互时所需的权限（通常是简单交互，如使用床、工作台、熔炉等）。键是方块的命名空间
@@ -129,7 +166,13 @@
 
 默认配置中包含了大部分原版物品和方块的权限设置，您可以根据需要进行修改、添加或删除。
 
-## 可用的权限值
+### `rules.mob` 生物受伤白名单
+
+- `allowHostileDamage`: 允许**敌对生物**在领地内受伤的白名单
+- `allowFriendlyDamage`: 允许**友好(中立)生物**在领地内受伤的白名单
+- `allowSpecialEntityDamage`: 允许**特殊生物**（Addon 生物、画、矿车等）在领地内受伤的白名单
+
+### 可用的权限值
 
 以下是所有可用于 `rules.item` 和 `rules.block` 的权限名称字符串：
 
