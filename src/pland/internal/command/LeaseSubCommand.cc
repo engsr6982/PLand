@@ -1,6 +1,7 @@
 #include "Command.h"
 
 #include "pland/PLand.h"
+#include "pland/internal/command/CommandHelper.h"
 #include "pland/land/Config.h"
 #include "pland/land/Land.h"
 #include "pland/land/repo/LandRegistry.h"
@@ -35,7 +36,10 @@ std::shared_ptr<Land> resolve_lease_land(
     RuntimeCommand const& param,
     std::string const&    idKey = "id"
 ) {
-    if (!LandCommand::ensure_origin_console_or_player(ori, out)) return nullptr;
+    {
+        auto type = ori.getOriginType();
+        assert(type == CommandOriginType::Player || type == CommandOriginType::DedicatedServer);
+    }
 
     auto& registry = PLand::getInstance().getLandRegistry();
 
@@ -73,8 +77,6 @@ std::shared_ptr<Land> resolve_lease_land(
 }
 
 void show_lease_info(CommandOrigin const& ori, CommandOutput& out, RuntimeCommand const& param) {
-    if (!LandCommand::ensure_origin_console_or_player(ori, out)) return;
-
     auto land = resolve_lease_land(ori, out, param);
     if (!land) return;
 
@@ -104,9 +106,6 @@ void show_lease_info(CommandOrigin const& ori, CommandOutput& out, RuntimeComman
 }
 
 void admin_set_lease_start_end(CommandOrigin const& ori, CommandOutput& out, RuntimeCommand const& param) {
-    if (!LandCommand::ensure_origin_console_or_player(ori, out)) return;
-    if (!LandCommand::ensure_admin(ori, out)) return;
-
     auto land = resolve_lease_land(ori, out, param);
     if (!land) return;
 
@@ -138,9 +137,6 @@ void admin_set_lease_start_end(CommandOrigin const& ori, CommandOutput& out, Run
 
 enum class AdminLeaseAddTimeUint { day, hour, min, sec };
 void admin_add_lease_time(CommandOrigin const& ori, CommandOutput& out, RuntimeCommand const& param) {
-    if (!LandCommand::ensure_origin_console_or_player(ori, out)) return;
-    if (!LandCommand::ensure_admin(ori, out)) return;
-
     auto land = resolve_lease_land(ori, out, param);
     if (!land) return;
 
@@ -189,9 +185,6 @@ enum class AdminLeaseForceTarget {
     force_recycle,
 };
 void admin_force_freeze_or_recycle(CommandOrigin const& ori, CommandOutput& out, RuntimeCommand const& param) {
-    if (!LandCommand::ensure_origin_console_or_player(ori, out)) return;
-    if (!LandCommand::ensure_admin(ori, out)) return;
-
     auto land = resolve_lease_land(ori, out, param);
     if (!land) return;
 
@@ -220,10 +213,7 @@ void admin_force_freeze_or_recycle(CommandOrigin const& ori, CommandOutput& out,
     }
 }
 
-void admin_clean_lease(CommandOrigin const& ori, CommandOutput& out, RuntimeCommand const& param) {
-    if (!LandCommand::ensure_origin_console_or_player(ori, out)) return;
-    if (!LandCommand::ensure_admin(ori, out)) return;
-
+void admin_clean_lease(CommandOrigin const& /* ori */, CommandOutput& out, RuntimeCommand const& param) {
     auto days = std::get<int>(param["days"].value());
 
     auto& service = PLand::getInstance().getServiceLocator().getLeasingService();
@@ -235,9 +225,6 @@ void admin_clean_lease(CommandOrigin const& ori, CommandOutput& out, RuntimeComm
 }
 
 void admin_to_bought(CommandOrigin const& ori, CommandOutput& out, RuntimeCommand const& param) {
-    if (!LandCommand::ensure_origin_console_or_player(ori, out)) return;
-    if (!LandCommand::ensure_admin(ori, out)) return;
-
     auto land = resolve_lease_land(ori, out, param);
     if (!land) return;
 
@@ -250,9 +237,6 @@ void admin_to_bought(CommandOrigin const& ori, CommandOutput& out, RuntimeComman
 }
 
 void admin_to_leased(CommandOrigin const& ori, CommandOutput& out, RuntimeCommand const& param) {
-    if (!LandCommand::ensure_origin_console_or_player(ori, out)) return;
-    if (!LandCommand::ensure_admin(ori, out)) return;
-
     auto land = resolve_lease_land(ori, out, param);
     if (!land) return;
 
@@ -281,7 +265,7 @@ void LandCommand::setupLeaseSubCommands(ll::command::CommandRegistrar& reg, ll::
         .text("lease")
         .text("info")
         .optional("id", ll::command::ParamKind::Int)
-        .execute(&show_lease_info);
+        .execute(wrapCommandHandler<&show_lease_info, LandCommandAcceptOrigin<CommandOriginType::Player>>());
 
     // pland admin lease <set_start|set_end> <timestamp|YYYY-MM-DD HH:mm:ss> [id] 设置领地租赁 开启/结束 时间
     if (!reg.hasEnum("pland_lease_set_target")) {
@@ -299,7 +283,12 @@ void LandCommand::setupLeaseSubCommands(ll::command::CommandRegistrar& reg, ll::
         .required("set_target", ll::command::ParamKind::Enum, "pland_lease_set_target")
         .required("date", ll::command::ParamKind::String)
         .optional("id", ll::command::ParamKind::Int)
-        .execute(&admin_set_lease_start_end);
+        .execute(
+            wrapCommandHandler<
+                &admin_set_lease_start_end,
+                LandCommandAcceptOrigin<CommandOriginType::Player, CommandOriginType::DedicatedServer>,
+                LandCommandPermission::kLandAdmin>()
+        );
 
     // pland admin lease add_time <amount> <day|hour|min|sec> [id] 增加领地租赁时间
     reg.tryRegisterRuntimeEnum<AdminLeaseAddTimeUint>();
@@ -310,7 +299,12 @@ void LandCommand::setupLeaseSubCommands(ll::command::CommandRegistrar& reg, ll::
         .required("amount", ll::command::ParamKind::Int)
         .required("uint", ll::command::ParamKind::Enum, ll::command::enum_name_v<AdminLeaseAddTimeUint>)
         .optional("id", ll::command::ParamKind::Int)
-        .execute(&admin_add_lease_time);
+        .execute(
+            wrapCommandHandler<
+                &admin_add_lease_time,
+                LandCommandAcceptOrigin<CommandOriginType::Player, CommandOriginType::DedicatedServer>,
+                LandCommandPermission::kLandAdmin>()
+        );
 
     // pland admin lease <force_freeze|force_recycle> [id] 强制冻结/回收领地
     reg.tryRegisterRuntimeEnum<AdminLeaseForceTarget>();
@@ -319,7 +313,12 @@ void LandCommand::setupLeaseSubCommands(ll::command::CommandRegistrar& reg, ll::
         .text("lease")
         .required("force_target", ll::command::ParamKind::Enum, ll::command::enum_name_v<AdminLeaseForceTarget>)
         .optional("id", ll::command::ParamKind::Int)
-        .execute(&admin_force_freeze_or_recycle);
+        .execute(
+            wrapCommandHandler<
+                &admin_force_freeze_or_recycle,
+                LandCommandAcceptOrigin<CommandOriginType::Player, CommandOriginType::DedicatedServer>,
+                LandCommandPermission::kLandAdmin>()
+        );
 
     // pland admin lease clean <days> 回收到期超过n天的领地
     h.runtimeOverload()
@@ -327,7 +326,12 @@ void LandCommand::setupLeaseSubCommands(ll::command::CommandRegistrar& reg, ll::
         .text("lease")
         .text("clean")
         .required("days", ll::command::ParamKind::Int)
-        .execute(&admin_clean_lease);
+        .execute(
+            wrapCommandHandler<
+                &admin_clean_lease,
+                LandCommandAcceptOrigin<CommandOriginType::Player, CommandOriginType::DedicatedServer>,
+                LandCommandPermission::kLandAdmin>()
+        );
 
     // pland admin lease to_bought [id] 将租赁领地转为购买领地
     h.runtimeOverload()
@@ -335,7 +339,12 @@ void LandCommand::setupLeaseSubCommands(ll::command::CommandRegistrar& reg, ll::
         .text("lease")
         .text("to_bought")
         .optional("id", ll::command::ParamKind::Int)
-        .execute(&admin_to_bought);
+        .execute(
+            wrapCommandHandler<
+                &admin_to_bought,
+                LandCommandAcceptOrigin<CommandOriginType::Player, CommandOriginType::DedicatedServer>,
+                LandCommandPermission::kLandAdmin>()
+        );
 
     // pland admin lease to_leased <days> [id] 将购买领地转为租赁领地
     h.runtimeOverload()
@@ -344,7 +353,12 @@ void LandCommand::setupLeaseSubCommands(ll::command::CommandRegistrar& reg, ll::
         .text("to_leased")
         .required("days", ll::command::ParamKind::Int)
         .optional("id", ll::command::ParamKind::Int)
-        .execute(&admin_to_leased);
+        .execute(
+            wrapCommandHandler<
+                &admin_to_leased,
+                LandCommandAcceptOrigin<CommandOriginType::Player, CommandOriginType::DedicatedServer>,
+                LandCommandPermission::kLandAdmin>()
+        );
 }
 
 

@@ -18,11 +18,6 @@ struct LandCommand {
     /// sub commands
 
     static void setupLeaseSubCommands(ll::command::CommandRegistrar& reg, ll::command::CommandHandle& h);
-
-    /// heleprs
-
-    static bool ensure_origin_console_or_player(CommandOrigin const& ori, CommandOutput& out);
-    static bool ensure_admin(CommandOrigin const& ori, CommandOutput& out);
 };
 
 
