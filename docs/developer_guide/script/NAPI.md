@@ -7,6 +7,11 @@ PLand-NAPI 目前处于**实验性**阶段，**只是一个理想的推荐方案
 - 生产环境建议使用稳定可用的 [PLand-LegacyRemoteCallApi](LegacyRemoteCallApi)
 :::
 
+::: danger 已知问题
+- **事件订阅**（EventBus）功能回调内无法访问 LSE 引擎接口。
+- 运行在 quickjs 后端的脚本**热重载**后，触发事件回调可能导致崩溃、内存泄漏。
+:::
+
 PLand 的**原生绑定 API**（Native Bind API），用于在 **LegacyScriptEngine（quickjs / nodejs 后端）** 中直接调用 PLand 的 C++ 接口。
 
 - 脚本可直接**持有**领地对象，性能接近原生调用
@@ -128,21 +133,6 @@ PLand-NAPI 随包发布完整的 **TypeScript 类型定义**（`.d.ts`），位�
 | `Event.d.ts` | 事件系统定义 |
 
 类型文件也会随 [Releases](https://github.com/IceBlcokMC/PLand-NAPI/releases) 一起发布，提供完整的编辑提示。
-
-## 从 PLand-LegacyRemoteCallApi 迁移（未来指引）
-
-::: tip 目前无需迁移
-PLand-LegacyRemoteCallApi 仍处于**维护期**并持续可用，暂不需要迁移。
-以下步骤供 **PLand-NAPI 正式启用后**需要迁移时参考。
-:::
-
-1. 卸载 `PLand-LegacyRemoteCallApi`
-2. 将脚本中所有 `import` PLand-LegacyRemoteCallApi 的地方改为导入 `pland-napi-<backend>`（见上方[导入方式](#导入方式)）
-3. 对照类型定义文件，将所有相关调用改为 PLand-NAPI 的调用
-
-::: tip 更多示例
-`tests` 文件夹下提供了各后端的完整测试脚本，可作为参考：`tests/test-qjs/`（quickjs）、`tests/test-node/`（nodejs）。
-:::
 
 ## 许可证
 

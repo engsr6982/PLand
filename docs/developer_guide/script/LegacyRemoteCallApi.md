@@ -1,11 +1,4 @@
-# PLand-LegacyRemoteCallApi <Badge type="danger" text="废弃" />
-
-::: danger 已标记为废弃（未来式）
-**PLand-LegacyRemoteCallApi 已被标记为废弃**，但请注意：**目前并不废弃，仍可放心使用**。
-
-- 它目前处于**维护期**：不再新增接口，但在 [PLand-NAPI](NAPI) **正式启用前会持续维护**
-- 正式的废弃/移除，需要等到 PLand-NAPI 离开实验期、功能成熟之后才可能进行，届时会提前在更新日志中通知
-:::
+# PLand-LegacyRemoteCallApi
 
 PLand 的 **LegacyRemoteCallApi（LRCA）** 实现，用于在 **LegacyScriptEngine-QuickJs/NodeJs** 中调用 PLand 的 API。
 
@@ -151,19 +144,4 @@ mc.listen("onServerStarted", () => {
 
 ::: tip 更多示例
 仓库 `test` 文件夹下提供了完整的测试代码（`test/Test.js`），可作为参考。
-:::
-
-## 迁移到 PLand-NAPI（未来指引）
-
-::: tip 目前无需迁移
-PLand-LegacyRemoteCallApi 目前处于**维护期**并持续可用。以下步骤仅供 **PLand-NAPI 正式启用后**需要迁移时参考。
-:::
-
-1. 卸载 `PLand-LegacyRemoteCallApi`
-2. 将脚本中所有 `import` 该模块的地方改为导入 `pland-napi-<backend>`（quickjs 用 `import`，nodejs 用 `require`）
-3. 对照 [PLand-NAPI 的类型定义](NAPI#类型定义)，将相关调用改为 PLand-NAPI 的调用
-
-::: tip 两个方案的核心区别
-- **LegacyRemoteCallApi**：走远程调用桥接，脚本侧只能拿到句柄
-- **PLand-NAPI**：原生绑定，脚本可直接持有领地对象，性能更好、调用更直接（实验性）
 :::
