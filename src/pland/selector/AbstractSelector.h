@@ -26,8 +26,12 @@ public:
 
     virtual void tick() = 0;
 
+    // 选区实例是否有效
+    // 如果选区实例无效，SelectorManager 将会销毁它
+    [[nodiscard]] inline virtual bool isValid() const { return true; }
+
     template <std::derived_from<AbstractSelector> T>
-    T* as() {
+    [[nodiscard]] inline T* as() {
         return dynamic_cast<T*>(this);
     }
 };

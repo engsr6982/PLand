@@ -260,7 +260,12 @@ void LandBuyGUI::_impl(Player& player, LandResizeSelector* selector) {
         return;
     }
 
-    auto      land          = selector->getLand();
+    auto land = selector->tryGetLand();
+    if (!land) {
+        feedback_utils::sendErrorText(player, "目标领地不存在，请重新选择");
+        return;
+    }
+
     int const originalPrice = land->getOriginalBuyPrice(); // 原始购买价格
 
     std::string content = "体积: {0}x{1}x{2} = {3}\n范围: {4}\n原购买价格: {5}"_trl(

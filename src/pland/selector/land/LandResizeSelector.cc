@@ -36,7 +36,8 @@ LandResizeSelector::~LandResizeSelector() {
     }
 }
 
-std::shared_ptr<Land> LandResizeSelector::getLand() const { return impl->mLand.lock(); }
+std::shared_ptr<Land> LandResizeSelector::tryGetLand() const { return impl->mLand.lock(); }
 
+bool LandResizeSelector::isValid() const { return impl->mLand.lock() != nullptr; }
 
 } // namespace land

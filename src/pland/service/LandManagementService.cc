@@ -170,7 +170,7 @@ ll::Expected<> LandManagementService::handleChangeRange(
     LandResizeSelector*         selector,
     LandResizeSettlement const& settlement
 ) {
-    auto land = selector->getLand();
+    auto land = selector->tryGetLand();
     if (!land) {
         return ll::makeStringError("获取领地失败"_trl(player.getLocaleCode()));
     }

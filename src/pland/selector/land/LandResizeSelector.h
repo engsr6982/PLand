@@ -16,7 +16,9 @@ public:
     LDAPI explicit LandResizeSelector(Player& player, std::shared_ptr<Land> land);
     LDAPI ~LandResizeSelector() override;
 
-    LDNDAPI std::shared_ptr<Land> getLand() const;
+    LDNDAPI std::shared_ptr<Land> tryGetLand() const;
+
+    LDAPI bool isValid() const override;
 };
 
 

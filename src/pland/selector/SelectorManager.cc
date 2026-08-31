@@ -86,7 +86,7 @@ SelectorManager::SelectorManager() : impl(std::make_unique<Impl>()) {
             }
 
             auto selector = getSelector(player);
-            if (!selector) {
+            if (!selector || !selector->isValid()) {
                 return;
             }
 
@@ -119,6 +119,10 @@ SelectorManager::SelectorManager() : impl(std::make_unique<Impl>()) {
                 auto& selector = iter->second;
 
                 try {
+                    if (!selector->isValid()) {
+                        impl->mSelectors.erase(iter++);
+                        continue;
+                    }
                     selector->tick();
                     ++iter;
                 } catch (std::exception const& e) {
