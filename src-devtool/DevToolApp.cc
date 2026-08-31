@@ -10,8 +10,6 @@
 #include <atomic>
 #include <cassert>
 #include <chrono>
-#include <filesystem>
-#include <fstream>
 #include <functional>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -27,16 +25,6 @@
 namespace devtool {
 
 namespace {
-
-// 校验 ini 是否包含有效停靠布局(防止空 ini 吞掉首次布局)
-bool fileContains(std::filesystem::path const& path, std::string_view needle) {
-    std::ifstream ifs(path);
-    if (!ifs) {
-        return false;
-    }
-    std::string content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-    return content.find(needle) != std::string::npos;
-}
 
 // BDS 主线程 -> render 线程的轻量命令队列
 struct CommandQueue {
@@ -74,9 +62,6 @@ struct DevToolApp::Impl {
     float                               prevScale_{0.0f};
     float                               appliedScale_{1.0f};
     ImGuiID                             dockspaceId_{0};
-    std::string                         iniFilename_; // io.IniFilename 指向的字符串, 须长期存活
-    std::filesystem::path               configDir_;
-    std::filesystem::path               iniPath_;
 
     static void _handleGlfwError(int error, const char* description) {
         land::PLand::getInstance().getSelf().getLogger().error("GLFW Error: {}: {}", error, description);
@@ -144,7 +129,7 @@ struct DevToolApp::Impl {
         ImGuiIO& io     = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // 启用键盘导航
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // 启用Docking
-        io.IniFilename  = this->iniFilename_.c_str();         // 停靠布局持久化
+        io.IniFilename  = nullptr;                            // 不持久化布局
         ImGui::StyleColorsDark();
 
         // 初始化ImGui与GLFW的绑定
@@ -390,14 +375,7 @@ std::unique_ptr<DevToolApp> DevToolApp::make() {
     auto  app_ = std::make_unique<DevToolApp>();
     auto& impl = *app_->impl;
 
-    impl.configDir_ = land::PLand::getInstance().getSelf().getConfigDir();
-    std::filesystem::create_directories(impl.configDir_);
-    impl.iniPath_     = impl.configDir_ / "devtool_imgui.ini";
-    impl.iniFilename_ = impl.iniPath_.string();
-
-    // 仅有有效停靠布局的 ini 才允许直接恢复; 空 ini(窗口从未显示时由 DestroyContext 写出)走默认布局
-    bool iniValid       = std::filesystem::exists(impl.iniPath_) && fileContains(impl.iniPath_, "[Docking][Data]");
-    impl.windowManager_ = std::make_unique<WindowManager>(impl.iniPath_, iniValid);
+    impl.windowManager_ = std::make_unique<WindowManager>();
 
     app_->registerMenu<WindowMenu>();
 

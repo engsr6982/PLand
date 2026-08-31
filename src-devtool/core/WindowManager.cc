@@ -26,10 +26,6 @@ ImGuiDir toImGuiDir(DockDirection dir) {
 
 } // namespace
 
-WindowManager::WindowManager(std::filesystem::path iniPath, bool iniValid)
-: iniValid_(iniValid),
-  iniPath_(std::move(iniPath)) {}
-
 IWindow& WindowManager::registerOwnedImpl(std::unique_ptr<IWindow> window) {
     auto* ptr = window.get();
     if (!byTitle_.emplace(ptr->title(), ptr).second) {
@@ -64,14 +60,10 @@ void WindowManager::frameBegin(ImGuiID dockspaceId) {
     dockspaceId_ = dockspaceId;
     ImGui::DockSpaceOverViewport(dockspaceId_, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
 
-    // 仅首次启动(无有效 ini)时按 DockSpec 构建默认布局, 并立即落盘
-    // (防止空 ini 吞掉首次布局: DestroyContext 会写出不含停靠数据的空 ini)
+    // 布局不持久化: 每 session 首次帧按 DockSpec 构建默认布局
     if (!layoutInitialized_) {
         layoutInitialized_ = true;
-        if (!iniValid_) {
-            buildLayoutFromSpecs();
-            ImGui::SaveIniSettingsToDisk(iniPath_.string().c_str());
-        }
+        buildLayoutFromSpecs();
     }
 }
 
@@ -158,11 +150,6 @@ void WindowManager::buildLayoutFromSpecs() {
     ImGui::DockBuilderFinish(dockspaceId_);
 }
 
-void WindowManager::resetLayout() {
-    std::error_code ec;
-    std::filesystem::remove(iniPath_, ec); // 删除旧 ini, 防止幽灵窗口/旧停靠恢复
-    buildLayoutFromSpecs();
-    ImGui::SaveIniSettingsToDisk(iniPath_.string().c_str());
-}
+void WindowManager::resetLayout() { buildLayoutFromSpecs(); }
 
 } // namespace devtool

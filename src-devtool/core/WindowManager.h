@@ -1,7 +1,6 @@
 #pragma once
 #include "core/Window.h"
 #include <concepts>
-#include <filesystem>
 #include <imgui.h>
 #include <memory>
 #include <string>
@@ -17,10 +16,8 @@ class WindowManager {
     std::vector<std::unique_ptr<IWindow>>     windows_; // 所有权(注册顺序即渲染顺序)
     std::unordered_map<std::string, IWindow*> byTitle_; // 标题索引(ImGui 要求标题唯一)
 
-    ImGuiID               dockspaceId_{0};
-    bool                  layoutInitialized_{false};
-    bool                  iniValid_{false}; // 启动时 ini 存在且含有效停靠布局
-    std::filesystem::path iniPath_;
+    ImGuiID dockspaceId_{0};
+    bool    layoutInitialized_{false};
 
     // 晚注册窗口(如 LandEditor)的定向停靠请求, 帧末处理
     struct PendingDock {
@@ -34,7 +31,7 @@ class WindowManager {
     IWindow& registerOwnedImpl(std::unique_ptr<IWindow> window);
 
 public:
-    explicit WindowManager(std::filesystem::path iniPath, bool iniValid);
+    WindowManager()                                = default;
     ~WindowManager()                               = default;
     WindowManager(WindowManager const&)            = delete;
     WindowManager& operator=(WindowManager const&) = delete;
@@ -54,6 +51,9 @@ public:
     // 注销窗口, 帧末销毁
     void     unregister(IWindow* window);
     IWindow* find(std::string_view title) const;
+
+    // 主停靠区 ID
+    [[nodiscard]] ImGuiID dockspaceId() const { return dockspaceId_; }
 
     // —— render 线程管线 ——
     void frameBegin(ImGuiID dockspaceId);                 // DockSpaceOverViewport + 首帧默认布局

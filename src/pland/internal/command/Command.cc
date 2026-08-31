@@ -410,11 +410,11 @@ bool LandCommand::setupAll() {
             .execute(
                 wrapCommandHandler<LandCommandAcceptOrigin<CommandOriginType::DedicatedServer>>(
                     [](CommandOrigin const& /* ori */, CommandOutput&, ll::command::RuntimeCommand const& param) {
-                bool visible = true;
-                if (auto& state = param["state"]) {
-                    visible = std::get<std::string>(state.value()) != "off";
-                }
-                PLand::getInstance().setDevToolVisible(visible);
+                        bool visible = true;
+                        if (auto& state = param["state"]) {
+                            visible = std::get<std::string>(state.value()) != "off";
+                        }
+                        PLand::getInstance().setDevToolVisible(visible);
                     }
                 )
             );
