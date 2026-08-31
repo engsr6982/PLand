@@ -262,7 +262,7 @@ void LandBuyGUI::_impl(Player& player, LandResizeSelector* selector) {
 
     auto land = selector->tryGetLand();
     if (!land) {
-        feedback_utils::sendErrorText(player, "目标领地不存在，请重新选择");
+        feedback_utils::sendErrorText(player, "目标领地不存在，请重新选择"_trl(localeCode));
         return;
     }
 
