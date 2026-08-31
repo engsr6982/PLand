@@ -426,8 +426,10 @@ LandManagementService::_payMoneyAndCreateSubLand(Player& player, SubLandCreateSe
     if (!economy.reduceChecked(player.getUuid(), money)) {
         return ll::makeStringError("您的余额不足，无法购买"_trl(player.getLocaleCode()));
     }
-    auto parent = selector->getParentLand();
-    assert(parent != nullptr);
+    auto parent = selector->tryGetParentLand();
+    if (!parent) {
+        return ll::makeStringError("操作失败，领地不存在"_trl(player.getLocaleCode()));
+    }
 
     auto sub = selector->newSubLand();
     sub->setOriginalBuyPrice(money);

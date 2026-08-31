@@ -80,7 +80,7 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
     SubLandCreateSelector* subSelector = nullptr;
     std::shared_ptr<Land>  parentLand  = nullptr;
     if (subSelector = selector->as<SubLandCreateSelector>(); subSelector) {
-        if (parentLand = subSelector->getParentLand(); parentLand) {
+        if (parentLand = subSelector->tryGetParentLand(); parentLand) {
             auto& aabb = parentLand->getAABB();
             fm.appendLabel(
                 "当前为子领地模式，子领地的Y轴范围不能超过父领地。\n父领地Y轴范围: {} ~ {}"_trl(

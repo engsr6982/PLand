@@ -14,9 +14,11 @@ public:
     LDAPI explicit SubLandCreateSelector(Player& player, std::shared_ptr<Land> parent);
     LDAPI ~SubLandCreateSelector() override;
 
-    LDNDAPI std::shared_ptr<Land> getParentLand() const;
+    LDNDAPI std::shared_ptr<Land> tryGetParentLand() const;
 
     LDNDAPI std::shared_ptr<Land> newSubLand() const;
+
+    LDAPI bool isValid() const override;
 };
 
 

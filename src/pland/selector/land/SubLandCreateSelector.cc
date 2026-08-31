@@ -37,14 +37,14 @@ SubLandCreateSelector::~SubLandCreateSelector() {
     }
 }
 
-std::shared_ptr<Land> SubLandCreateSelector::getParentLand() const { return impl->mParentLand.lock(); }
+std::shared_ptr<Land> SubLandCreateSelector::tryGetParentLand() const { return impl->mParentLand.lock(); }
 
 std::shared_ptr<Land> SubLandCreateSelector::newSubLand() const {
     if (!isPointABSet()) {
         return nullptr;
     }
 
-    auto parent = getParentLand();
+    auto parent = tryGetParentLand();
     if (!parent) {
         return nullptr;
     }
@@ -58,5 +58,8 @@ std::shared_ptr<Land> SubLandCreateSelector::newSubLand() const {
     land->markDirty();
     return land;
 }
+
+bool SubLandCreateSelector::isValid() const { return tryGetParentLand() != nullptr; }
+
 
 } // namespace land

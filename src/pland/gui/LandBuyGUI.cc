@@ -347,7 +347,13 @@ void LandBuyGUI::_impl(Player& player, SubLandCreateSelector* selector) {
         return;
     }
 
-    auto&       parentPos = selector->getParentLand()->getAABB();
+    auto parentLand = selector->tryGetParentLand();
+    if (!parentLand) {
+        feedback_utils::sendErrorText(player, "操作失败, 父领地不存在"_trl(localeCode));
+        return;
+    }
+
+    auto&       parentPos = parentLand->getAABB();
     std::string content   = "[父领地]\n体积: {}x{}x{}={}\n范围: {}\n\n[子领地]\n体积: {}x{}x{}={}\n范围: {}"_trl(
         localeCode,
         // 父领地
@@ -367,7 +373,7 @@ void LandBuyGUI::_impl(Player& player, SubLandCreateSelector* selector) {
     std::optional<int64_t> discountedPrice;
     if (ConfigProvider::isEconomySystemEnabled()) {
         auto& service = PLand::getInstance().getServiceLocator().getLandPriceService();
-        if (auto result = service.getSubLandPrice(*subLandRange, selector->getParentLand()->getDimensionId())) {
+        if (auto result = service.getSubLandPrice(*subLandRange, parentLand->getDimensionId())) {
             discountedPrice  = result->mDiscountedPrice;
             content         += "\n\n[价格]\n原价: {}\n折扣价: {}\n{}"_trl(
                 localeCode,
