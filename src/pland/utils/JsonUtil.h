@@ -114,8 +114,17 @@ inline MergeResult merge(const J& default_json, J& user_json, Pred&& is_custom_m
         type_t stype = s.type();
         type_t ttype = t.type();
 
+        // 数值类型的编码形态差异 (number_integer / number_unsigned / number_float) 不是类型冲突。
+        // 例如: 从 CBOR 解码的非负整数是 number_unsigned, 而 C++ 默认值序列化出来是 number_integer,
+        // 若按"类型不匹配"处理会拿默认值覆盖用户值, 导致数据丢失
+        // (典型: mLandID:0 被覆盖成默认 -1, 所有未达当前版本的库记录升级后被跳过)。
+        // 只有真正的类型冲突 (如 number vs string) 才回退默认值。
+        constexpr auto isNumeric = [](type_t t) {
+            return t == type_t::number_integer || t == type_t::number_unsigned || t == type_t::number_float;
+        };
+
         // 类型不匹配，优先参考 s (default_json)，覆盖非法输入
-        if (stype != ttype) {
+        if (stype != ttype && !(isNumeric(stype) && isNumeric(ttype))) {
             t      = s;
             result = MergeResult::Modified;
             continue;

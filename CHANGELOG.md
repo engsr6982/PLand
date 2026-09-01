@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.1] - 2026-09-01
+
+### 🐛 问题修复
+
+- 修复因数值类型不匹配导致旧数据库记录加载被全量跳过
+
 ## [0.22.0] - 2026-09-01
 
 > 注意: 此版本包含数据库存储格式变更，请务必先备份旧数据再升级
