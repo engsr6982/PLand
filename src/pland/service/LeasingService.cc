@@ -486,7 +486,7 @@ LeasingService::leaseLand(Player& player, OrdinaryLandCreateSelector* selector, 
     if (!range) {
         return ll::makeStringError("选区范围无效"_trl(player.getLocaleCode()));
     }
-    range->fix();
+    range->canonicalize();
 
     auto rentExp = impl->mLandPriceService.calculateDailyRent(*range, selector->getDimensionId(), selector->is3D());
     if (!rentExp) {

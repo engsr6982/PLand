@@ -18,11 +18,17 @@ public:
         requires std::constructible_from<LandAABB, Args...>
     static LandAABB make(Args&&... args) {
         auto aabb = LandAABB(std::forward<Args>(args)...);
-        aabb.fix();
+        aabb.canonicalize();
         return aabb;
     }
 
-    LDAPI void fix(); // fix min/max
+    [[deprecated("Use `canonicalize` instead")]] LDAPI void fix(); // fix min/max
+
+    /**
+     * Ensures the AABB is in canonical form (min <= max per axis).
+     * Does not alter the actual bounding volume.
+     */
+    LDAPI void canonicalize();
 
     LDNDAPI LandPos&       getMin();
     LDNDAPI LandPos const& getMin() const;

@@ -87,7 +87,7 @@ std::optional<LandAABB> ABSelector::newLandAABB() const {
     if (!isPointABSet()) return std::nullopt;
 
     auto aabb = LandAABB::make(LandPos::make(*impl->mPointA), LandPos::make(*impl->mPointB));
-    aabb.fix();
+    aabb.canonicalize();
     return aabb;
 }
 
