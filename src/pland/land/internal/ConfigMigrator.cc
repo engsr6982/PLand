@@ -1,15 +1,12 @@
 #include "ConfigMigrator.h"
 
-#include "pland/drawer/DrawerType.h"
-
-#include <magic_enum.hpp>
 #include <nlohmann/json.hpp>
 
 namespace land {
 namespace internal {
 
 ConfigMigrator::ConfigMigrator() {
-    registerMigrator(32, [](nlohmann::json& json) -> ll::Expected<> {
+    registerMigrationUnit(32, [](ConfigMigrator::container_t& json) -> bool {
         if (json.contains("land")) {
             auto& land = json["land"];
             if (land.contains("subLand")) {
@@ -25,10 +22,10 @@ ConfigMigrator::ConfigMigrator() {
                 }
             }
         }
-        return {};
+        return true;
     });
 
-    registerMigrator(34, [](nlohmann::json& root) -> ll::Expected<> {
+    registerMigrationUnit(34, [](ConfigMigrator::container_t& root) -> bool {
         constexpr Route routes[] = {
             // selector
             {                         "selector.tool",                              "selector.item"},
@@ -86,7 +83,7 @@ ConfigMigrator::ConfigMigrator() {
             mapPath(root, route);
         }
 
-        return {};
+        return true;
     });
 }
 

@@ -1,5 +1,7 @@
 #include "InterceptorConfig.h"
 
+#include "ll/api/Expected.h"
+#include "nlohmann/json_fwd.hpp"
 #include "pland/PLand.h"
 #include "pland/internal/interceptor/helper/EventTrace.h"
 #include "pland/land/repo/LandContext.h"
@@ -12,16 +14,52 @@
 #include "mc/world/item/VanillaItemNames.h"
 
 #include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <string_view>
 
 namespace land::internal::interceptor {
+struct MutableObjectPredicate {
+    static constexpr std::array<std::string_view, 2> kMutableObjectPaths = {"/rules/item", "/rules/block"};
 
-
-void InterceptorConfig::load(std::filesystem::path configDir) {
-    auto path = configDir / FileName;
-    if (!std::filesystem::exists(path) || !ll::config::loadConfig(cfg, path)) {
-        save(configDir);
+    bool operator()(std::string_view path, json_util::json_t const&) const {
+        return std::find(kMutableObjectPaths.begin(), kMutableObjectPaths.end(), path) != kMutableObjectPaths.end();
     }
-    _buildDynamicRuleMap();
+};
+static_assert(json_util::CustomMapPredicate<MutableObjectPredicate>);
+
+ll::Expected<> InterceptorConfig::load(std::filesystem::path configDir) {
+    auto path = configDir / FileName;
+
+    if (!std::filesystem::exists(path)) {
+        (void)save(configDir);
+        _buildDynamicRuleMap();
+        return {};
+    }
+
+    auto data = ll::file_utils::readFile(path);
+    if (!data) {
+        return ll::makeStringError("Failed to read config file: " + path.string());
+    }
+
+    try {
+        auto json = json_util::json_t::parse(data.value());
+
+        auto res = json_util::merge_versioned_and_deserialize(json, cfg, false, MutableObjectPredicate{});
+
+        // update merged config to disk
+        if (res == json_util::MergeResult::Modified) {
+            ll::file_utils::writeFile(path, json.dump(4));
+        }
+
+        _buildDynamicRuleMap();
+    } catch (std::exception const& e) {
+        return ll::makeStringError(fmt::format("Failed to parse config file: {}, error: {}", path.string(), e.what()));
+    }
+
+    return {};
 }
 
 void InterceptorConfig::save(std::filesystem::path configDir) {
@@ -29,83 +67,118 @@ void InterceptorConfig::save(std::filesystem::path configDir) {
     ll::config::saveConfig(cfg, path);
 }
 
+// TypeName -> RolePerms Member Pointer
 absl::flat_hash_map<HashedString, RolePerms::Entry RolePerms::*, HashedStringHash, HashedStringEq> DynamicRuleMap = {};
 
-void InterceptorConfig::_buildDynamicRuleMap() {
-#define DECL_PERM_FIELD(T) {reflect::getTemplateInnerLeafName<&T>(), &T}
-    static absl::flat_hash_map<std::string_view, RolePerms::Entry RolePerms::*> const PermStr2MemberPointer = {
-        DECL_PERM_FIELD(RolePerms::allowDestroy),
-        DECL_PERM_FIELD(RolePerms::allowPlace),
-        DECL_PERM_FIELD(RolePerms::useBucket),
-        DECL_PERM_FIELD(RolePerms::useAxe),
-        DECL_PERM_FIELD(RolePerms::useHoe),
-        DECL_PERM_FIELD(RolePerms::useShovel),
-        DECL_PERM_FIELD(RolePerms::placeBoat),
-        DECL_PERM_FIELD(RolePerms::placeMinecart),
-        DECL_PERM_FIELD(RolePerms::useButton),
-        DECL_PERM_FIELD(RolePerms::useDoor),
-        DECL_PERM_FIELD(RolePerms::useFenceGate),
-        DECL_PERM_FIELD(RolePerms::allowInteractEntity),
-        DECL_PERM_FIELD(RolePerms::useTrapdoor),
-        DECL_PERM_FIELD(RolePerms::editSign),
-        DECL_PERM_FIELD(RolePerms::useLever),
-        DECL_PERM_FIELD(RolePerms::useFurnaces),
-        DECL_PERM_FIELD(RolePerms::allowPlayerPickupItem),
-        DECL_PERM_FIELD(RolePerms::allowRideTrans),
-        DECL_PERM_FIELD(RolePerms::allowRideEntity),
-        DECL_PERM_FIELD(RolePerms::usePressurePlate),
-        DECL_PERM_FIELD(RolePerms::allowFishingRodAndHook),
-        DECL_PERM_FIELD(RolePerms::allowUseThrowable),
-        DECL_PERM_FIELD(RolePerms::useArmorStand),
-        DECL_PERM_FIELD(RolePerms::allowDropItem),
-        DECL_PERM_FIELD(RolePerms::useItemFrame),
-        DECL_PERM_FIELD(RolePerms::useFlintAndSteel),
-        DECL_PERM_FIELD(RolePerms::useBeacon),
-        DECL_PERM_FIELD(RolePerms::useBed),
-        DECL_PERM_FIELD(RolePerms::allowPvP),
-        DECL_PERM_FIELD(RolePerms::allowHostileDamage),
-        DECL_PERM_FIELD(RolePerms::allowFriendlyDamage),
-        DECL_PERM_FIELD(RolePerms::allowSpecialEntityDamage),
-        DECL_PERM_FIELD(RolePerms::useContainer),
-        DECL_PERM_FIELD(RolePerms::useWorkstation),
-        DECL_PERM_FIELD(RolePerms::useBell),
-        DECL_PERM_FIELD(RolePerms::useCampfire),
-        DECL_PERM_FIELD(RolePerms::useComposter),
-        DECL_PERM_FIELD(RolePerms::useDaylightDetector),
-        DECL_PERM_FIELD(RolePerms::useJukebox),
-        DECL_PERM_FIELD(RolePerms::useNoteBlock),
-        DECL_PERM_FIELD(RolePerms::useCake),
-        DECL_PERM_FIELD(RolePerms::useComparator),
-        DECL_PERM_FIELD(RolePerms::useRepeater),
-        DECL_PERM_FIELD(RolePerms::useLectern),
-        DECL_PERM_FIELD(RolePerms::useCauldron),
-        DECL_PERM_FIELD(RolePerms::useRespawnAnchor),
-        DECL_PERM_FIELD(RolePerms::useBoneMeal),
-        DECL_PERM_FIELD(RolePerms::useBeeNest),
-        DECL_PERM_FIELD(RolePerms::editFlowerPot),
-        DECL_PERM_FIELD(RolePerms::allowUseRangedWeapon),
-    };
-    DynamicRuleMap.clear();
+// allowHostileDamage, allowFriendlyDamage, allowSpecialEntityDamage -> TypeName -> Category
+absl::flat_hash_map<HashedString, InterceptorConfig::MobRecordCategory, HashedStringHash, HashedStringEq>
+    MobDynamicCategory = {};
 
+void InterceptorConfig::_buildDynamicRuleMap() {
     auto& logger = PLand::getInstance().getSelf().getLogger();
-    for (auto& [typeName, perm] : cfg.rules.item) {
-        auto iter = PermStr2MemberPointer.find(perm);
-        if (iter != PermStr2MemberPointer.end()) {
-            DynamicRuleMap.try_emplace(HashedString{typeName}, iter->second);
-        } else {
-            logger.warn("Unknown item permission: {} ({}: {})", perm, typeName, perm);
+
+    // lookupDynamicRule
+    {
+#define DECL_PERM_FIELD(T)                                                                                             \
+    { reflect::getTemplateInnerLeafName<&T>(), &T }
+
+        static absl::flat_hash_map<std::string_view, RolePerms::Entry RolePerms::*> const PermStr2MemberPointer = {
+            DECL_PERM_FIELD(RolePerms::allowDestroy),
+            DECL_PERM_FIELD(RolePerms::allowPlace),
+            DECL_PERM_FIELD(RolePerms::useBucket),
+            DECL_PERM_FIELD(RolePerms::useAxe),
+            DECL_PERM_FIELD(RolePerms::useHoe),
+            DECL_PERM_FIELD(RolePerms::useShovel),
+            DECL_PERM_FIELD(RolePerms::placeBoat),
+            DECL_PERM_FIELD(RolePerms::placeMinecart),
+            DECL_PERM_FIELD(RolePerms::useButton),
+            DECL_PERM_FIELD(RolePerms::useDoor),
+            DECL_PERM_FIELD(RolePerms::useFenceGate),
+            DECL_PERM_FIELD(RolePerms::allowInteractEntity),
+            DECL_PERM_FIELD(RolePerms::useTrapdoor),
+            DECL_PERM_FIELD(RolePerms::editSign),
+            DECL_PERM_FIELD(RolePerms::useLever),
+            DECL_PERM_FIELD(RolePerms::useFurnaces),
+            DECL_PERM_FIELD(RolePerms::allowPlayerPickupItem),
+            DECL_PERM_FIELD(RolePerms::allowRideTrans),
+            DECL_PERM_FIELD(RolePerms::allowRideEntity),
+            DECL_PERM_FIELD(RolePerms::usePressurePlate),
+            DECL_PERM_FIELD(RolePerms::allowFishingRodAndHook),
+            DECL_PERM_FIELD(RolePerms::allowUseThrowable),
+            DECL_PERM_FIELD(RolePerms::useArmorStand),
+            DECL_PERM_FIELD(RolePerms::allowDropItem),
+            DECL_PERM_FIELD(RolePerms::useItemFrame),
+            DECL_PERM_FIELD(RolePerms::useFlintAndSteel),
+            DECL_PERM_FIELD(RolePerms::useBeacon),
+            DECL_PERM_FIELD(RolePerms::useBed),
+            DECL_PERM_FIELD(RolePerms::allowPvP),
+            DECL_PERM_FIELD(RolePerms::allowHostileDamage),
+            DECL_PERM_FIELD(RolePerms::allowFriendlyDamage),
+            DECL_PERM_FIELD(RolePerms::allowSpecialEntityDamage),
+            DECL_PERM_FIELD(RolePerms::useContainer),
+            DECL_PERM_FIELD(RolePerms::useWorkstation),
+            DECL_PERM_FIELD(RolePerms::useBell),
+            DECL_PERM_FIELD(RolePerms::useCampfire),
+            DECL_PERM_FIELD(RolePerms::useComposter),
+            DECL_PERM_FIELD(RolePerms::useDaylightDetector),
+            DECL_PERM_FIELD(RolePerms::useJukebox),
+            DECL_PERM_FIELD(RolePerms::useNoteBlock),
+            DECL_PERM_FIELD(RolePerms::useCake),
+            DECL_PERM_FIELD(RolePerms::useComparator),
+            DECL_PERM_FIELD(RolePerms::useRepeater),
+            DECL_PERM_FIELD(RolePerms::useLectern),
+            DECL_PERM_FIELD(RolePerms::useCauldron),
+            DECL_PERM_FIELD(RolePerms::useRespawnAnchor),
+            DECL_PERM_FIELD(RolePerms::useBoneMeal),
+            DECL_PERM_FIELD(RolePerms::useBeeNest),
+            DECL_PERM_FIELD(RolePerms::editFlowerPot),
+            DECL_PERM_FIELD(RolePerms::allowUseRangedWeapon),
+        };
+
+#undef DECL_PERM_FIELD
+
+        DynamicRuleMap.clear();
+
+        for (auto& [typeName, perm] : cfg.rules.item) {
+            auto iter = PermStr2MemberPointer.find(perm);
+            if (iter != PermStr2MemberPointer.end()) {
+                DynamicRuleMap.try_emplace(HashedString{typeName}, iter->second);
+            } else {
+                logger.warn("Unknown item permission: {} ({}: {})", perm, typeName, perm);
+            }
+        }
+        for (auto& [typeName, perm] : cfg.rules.block) {
+            auto iter = PermStr2MemberPointer.find(perm);
+            if (iter != PermStr2MemberPointer.end()) {
+                DynamicRuleMap.try_emplace(HashedString{typeName}, iter->second);
+            } else {
+                logger.warn("Unknown block permission: {} ({}: {})", perm, typeName, perm);
+            }
         }
     }
-    for (auto& [typeName, perm] : cfg.rules.block) {
-        auto iter = PermStr2MemberPointer.find(perm);
-        if (iter != PermStr2MemberPointer.end()) {
-            DynamicRuleMap.try_emplace(HashedString{typeName}, iter->second);
-        } else {
-            logger.warn("Unknown block permission: {} ({}: {})", perm, typeName, perm);
+
+    // lookupMobDynamicCategory
+    {
+        auto& mob = cfg.rules.mob;
+
+        MobDynamicCategory.clear();
+
+        size_t n = mob.allowFriendlyDamage.size() + mob.allowHostileDamage.size() + mob.allowSpecialEntityDamage.size();
+        MobDynamicCategory.reserve(n);
+
+        for (auto& typeName : mob.allowFriendlyDamage) {
+            MobDynamicCategory.emplace(typeName, MobRecordCategory::Friendly);
+        }
+        for (auto& typeName : mob.allowHostileDamage) {
+            MobDynamicCategory.emplace(typeName, MobRecordCategory::Hostile);
+        }
+        for (auto& typeName : mob.allowSpecialEntityDamage) {
+            MobDynamicCategory.emplace(typeName, MobRecordCategory::SpecialEntity);
         }
     }
 }
-RolePerms::Entry RolePerms::*InterceptorConfig::lookupDynamicRule(HashedString const& typeName) {
+
+RolePerms::Entry RolePerms::* InterceptorConfig::lookupDynamicRule(HashedString const& typeName) {
     TRACE_ADD_SCOPE("lookupDynamicRule");
     TRACE_LOG("lookup typename: {}", typeName.c_str());
     auto iter = DynamicRuleMap.find(typeName);
@@ -133,8 +206,19 @@ RolePerms::Entry RolePerms::*InterceptorConfig::lookupDynamicRule(HashedString c
     TRACE_LOG("Not found");
     return nullptr;
 }
+InterceptorConfig::MobRecordCategory InterceptorConfig::lookupMobDynamicCategory(HashedString const& typeName) {
+    TRACE_ADD_SCOPE("lookupMobDynamicCategory");
+    auto iter = MobDynamicCategory.find(typeName);
+    if (iter != MobDynamicCategory.end()) {
+        TRACE_LOG("In the '{}' category find the mob {}", magic_enum::enum_name(iter->second), typeName.c_str());
+        return iter->second;
+    }
+    TRACE_LOG("Not found");
+    return InterceptorConfig::MobRecordCategory::Undefined;
+}
 
-void InterceptorConfig::tryMigrate(std::filesystem::path configDir) {
+
+void InterceptorConfig::tryMigrateLegacyConfig(std::filesystem::path configDir) {
     auto path = configDir / "Config.json";
     if (!std::filesystem::exists(path)) {
         return;
@@ -195,19 +279,16 @@ void InterceptorConfig::tryMigrate(std::filesystem::path configDir) {
         auto& protection = json["protection"];
         if (protection.contains("mob")) {
             auto& mob = protection["mob"];
-            json_util::json2structWithDiffPatch(mob["hostileMobTypeNames"], cfg.rules.mob.allowHostileDamage);
-            json_util::json2structWithDiffPatch(mob["passiveMobTypeNames"], cfg.rules.mob.allowFriendlyDamage);
-            json_util::json2structWithDiffPatch(mob["specialMobTypeNames"], cfg.rules.mob.allowSpecialEntityDamage);
-            json_util::json2structWithDiffPatch(
-                mob["customSpecialMobTypeNames"],
-                cfg.rules.mob.allowSpecialEntityDamage
-            );
+            json_util::merge_and_deserialize(mob["hostileMobTypeNames"], cfg.rules.mob.allowHostileDamage);
+            json_util::merge_and_deserialize(mob["passiveMobTypeNames"], cfg.rules.mob.allowFriendlyDamage);
+            json_util::merge_and_deserialize(mob["specialMobTypeNames"], cfg.rules.mob.allowSpecialEntityDamage);
+            json_util::merge_and_deserialize(mob["customSpecialMobTypeNames"], cfg.rules.mob.allowSpecialEntityDamage);
         }
         if (protection.contains("permissionMaps")) {
             auto& permissionMaps = protection["permissionMaps"];
-            json_util::json2structWithDiffPatch(permissionMaps["itemSpecific"], cfg.rules.item);
-            json_util::json2structWithDiffPatch(permissionMaps["blockSpecific"], cfg.rules.block);
-            json_util::json2structWithDiffPatch(permissionMaps["blockFunctional"], cfg.rules.block);
+            json_util::merge_and_deserialize(permissionMaps["itemSpecific"], cfg.rules.item);
+            json_util::merge_and_deserialize(permissionMaps["blockSpecific"], cfg.rules.block);
+            json_util::merge_and_deserialize(permissionMaps["blockFunctional"], cfg.rules.block);
         }
         json.erase("protection");
     }
@@ -251,19 +332,13 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
     auto useComparator       = std::string{reflect::getTemplateInnerLeafName<&RolePerms::useComparator>()};
     auto useRepeater         = std::string{reflect::getTemplateInnerLeafName<&RolePerms::useRepeater>()};
     auto useBeeNest          = std::string{reflect::getTemplateInnerLeafName<&RolePerms::useBeeNest>()};
+    auto editSign            = std::string{reflect::getTemplateInnerLeafName<&RolePerms::editSign>()};
     config.rules.block       = {
-        /*特殊方块关联*/
+        /* 特殊功能与交互方块 */
         {                       "minecraft:chest",        useContainer}, // 箱子
         {               "minecraft:trapped_chest",        useContainer}, // 陷阱箱
-        {        "minecraft:exposed_copper_chest",        useContainer},
-        {       "minecraft:oxidized_copper_chest",        useContainer},
-        {          "minecraft:waxed_copper_chest",        useContainer},
-        {  "minecraft:waxed_exposed_copper_chest",        useContainer},
-        { "minecraft:waxed_oxidized_copper_chest",        useContainer},
-        {"minecraft:waxed_weathered_copper_chest",        useContainer},
-        {      "minecraft:weathered_copper_chest",        useContainer},
-        {                    "minecraft:campfire",         useCampfire}, // 营火
-        {               "minecraft:soul_campfire",         useCampfire}, // 灵魂营火
+        {                    "minecraft:campfire",         useCampfire}, // 篝火
+        {               "minecraft:soul_campfire",         useCampfire}, // 灵魂篝火
         {                   "minecraft:composter",        useComposter}, // 堆肥桶
         {                   "minecraft:noteblock",        useNoteBlock}, // 音符盒
         {                     "minecraft:jukebox",          useJukebox}, // 唱片机
@@ -275,7 +350,8 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
         {              "minecraft:respawn_anchor",    useRespawnAnchor}, // 重生锚
         {                  "minecraft:flower_pot",       editFlowerPot}, // 花盆
         {            "minecraft:sweet_berry_bush",        allowDestroy}, // 甜莓丛
-        /*功能类方块关联*/
+
+        /* 功能类与工作台方块 */
         {           "minecraft:cartography_table",      useWorkstation}, // 制图台
         {              "minecraft:smithing_table",      useWorkstation}, // 锻造台
         {               "minecraft:brewing_stand",      useWorkstation}, // 酿造台
@@ -284,46 +360,36 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
         {            "minecraft:enchanting_table",      useWorkstation}, // 附魔台
         {                        "minecraft:loom",      useWorkstation}, // 织布机
         {           "minecraft:stonecutter_block",      useWorkstation}, // 切石机
-        {                     "minecraft:crafter",      useWorkstation}, // 合成器
+        {                     "minecraft:crafter",      useWorkstation}, // 自动合成器
         {          "minecraft:chiseled_bookshelf",        useContainer}, // 雕纹书架
+        {                      "minecraft:barrel",        useContainer}, // 木桶
 
-        {"minecraft:copper_chest", useContainer},
-        {"minecraft:exposed_copper_chest", useContainer},
-        {"minecraft:weathered_copper_chest", useContainer},
-        {"minecraft:oxidized_copper_chest", useContainer},
-        {"minecraft:waxed_copper_chest", useContainer},
-        {"minecraft:waxed_exposed_copper_chest", useContainer},
-        {"minecraft:waxed_weathered_copper_chest", useContainer},
-        {"minecraft:waxed_oxidized_copper_chest", useContainer},
-        {"minecraft:oak_shelf", useWorkstation},
-        {"minecraft:spruce_shelf", useWorkstation},
-        {"minecraft:birch_shelf", useWorkstation},
-        {"minecraft:jungle_shelf", useWorkstation},
-        {"minecraft:acacia_shelf", useWorkstation},
-        {"minecraft:dark_oak_shelf", useWorkstation},
-        {"minecraft:mangrove_shelf", useWorkstation},
-        {"minecraft:cherry_shelf", useWorkstation},
-        {"minecraft:pale_oak_shelf", useWorkstation},
-        {"minecraft:bamboo_shelf", useWorkstation},
-        {"minecraft:crimson_shelf", useWorkstation},
-        {"minecraft:warped_shelf", useWorkstation},
-        {"minecraft:barrel", useWorkstation},
+        /* 铜箱子系列 */
+        {                "minecraft:copper_chest",        useContainer}, // 铜箱子
+        {        "minecraft:exposed_copper_chest",        useContainer}, // 斑驳的铜箱子
+        {      "minecraft:weathered_copper_chest",        useContainer}, // 锈蚀的铜箱子
+        {       "minecraft:oxidized_copper_chest",        useContainer}, // 氧化铜箱子
+        {          "minecraft:waxed_copper_chest",        useContainer}, // 涂蜡铜箱子
+        {  "minecraft:waxed_exposed_copper_chest",        useContainer}, // 涂蜡斑驳铜箱子
+        {"minecraft:waxed_weathered_copper_chest",        useContainer}, // 涂蜡锈蚀铜箱子
+        { "minecraft:waxed_oxidized_copper_chest",        useContainer}, // 涂蜡氧化铜箱子
 
-        // 展示架
-        {                "minecraft:acacia_shelf",        useContainer},
-        {                "minecraft:bamboo_shelf",        useContainer},
-        {                 "minecraft:birch_shelf",        useContainer},
-        {                "minecraft:cherry_shelf",        useContainer},
-        {               "minecraft:crimson_shelf",        useContainer},
-        {              "minecraft:dark_oak_shelf",        useContainer},
-        {                "minecraft:jungle_shelf",        useContainer},
-        {              "minecraft:mangrove_shelf",        useContainer},
-        {                   "minecraft:oak_shelf",        useContainer},
-        {              "minecraft:pale_oak_shelf",        useContainer},
-        {                "minecraft:spruce_shelf",        useContainer},
-        {                "minecraft:warped_shelf",        useContainer},
-        /**/
+        /* 容器与展示架类方块 */
+        {               "minecraft:decorated_pot",        useContainer}, // 饰纹陶罐
+        {                "minecraft:acacia_shelf",        useContainer}, // 金合欢木展示架/书架
+        {                "minecraft:bamboo_shelf",        useContainer}, // 竹展示架/书架
+        {                 "minecraft:birch_shelf",        useContainer}, // 白桦木展示架/书架
+        {                "minecraft:cherry_shelf",        useContainer}, // 樱花木展示架/书架
+        {               "minecraft:crimson_shelf",        useContainer}, // 绯红木展示架/书架
+        {              "minecraft:dark_oak_shelf",        useContainer}, // 深色橡木展示架/书架
+        {                "minecraft:jungle_shelf",        useContainer}, // 丛林木展示架/书架
+        {              "minecraft:mangrove_shelf",        useContainer}, // 红树木展示架/书架
+        {                   "minecraft:oak_shelf",        useContainer}, // 橡木展示架/书架
+        {              "minecraft:pale_oak_shelf",        useContainer}, // 苍白橡木展示架/书架
+        {                "minecraft:spruce_shelf",        useContainer}, // 云杉木展示架/书架
+        {                "minecraft:warped_shelf",        useContainer}, // 诡异木展示架/书架
 
+        /* 红石与存储容器 */
         {                      "minecraft:hopper",        useContainer}, // 漏斗
         {                     "minecraft:dropper",        useContainer}, // 投掷器
         {                   "minecraft:dispenser",        useContainer}, // 发射器
@@ -331,63 +397,121 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
         {                      "minecraft:beacon",           useBeacon}, // 信标
         {                        "minecraft:cake",             useCake}, // 蛋糕
         {        "minecraft:unpowered_comparator",       useComparator}, // 红石比较器（未充能）
-        {          "minecraft:powered_comparator",       useComparator}, // 红石比较器（充能）
+        {          "minecraft:powered_comparator",       useComparator}, // 红石比较器（已充能）
         {          "minecraft:unpowered_repeater",         useRepeater}, // 红石中继器（未充能）
-        {            "minecraft:powered_repeater",         useRepeater}, // 红石中继器（充能）
+        {            "minecraft:powered_repeater",         useRepeater}, // 红石中继器（已充能）
         {                    "minecraft:bee_nest",          useBeeNest}, // 蜂巢
         {                     "minecraft:beehive",          useBeeNest}, // 蜂箱
+
+        // 悬挂告示牌
+        {            "minecraft:oak_hanging_sign",            editSign}, // 橡木悬挂告示牌
+        {         "minecraft:spruce_hanging_sign",            editSign}, // 云杉木悬挂告示牌
+        {          "minecraft:birch_hanging_sign",            editSign}, // 白桦木悬挂告示牌
+        {         "minecraft:jungle_hanging_sign",            editSign}, // 丛林木悬挂告示牌
+        {         "minecraft:acacia_hanging_sign",            editSign}, // 金合欢木悬挂告示牌
+        {       "minecraft:dark_oak_hanging_sign",            editSign}, // 深色橡木悬挂告示牌
+        {       "minecraft:mangrove_hanging_sign",            editSign}, // 红树木悬挂告示牌
+        {         "minecraft:cherry_hanging_sign",            editSign}, // 樱木悬挂告示牌
+        {       "minecraft:pale_oak_hanging_sign",            editSign}, // 淡色橡木悬挂告示牌
+        {         "minecraft:bamboo_hanging_sign",            editSign}, // 竹子悬挂告示牌
+        {        "minecraft:crimson_hanging_sign",            editSign}, // 绯红木悬挂告示牌
+        {         "minecraft:warped_hanging_sign",            editSign}, // 诡异木悬挂告示牌
     };
 
     config.rules.mob.allowHostileDamage = {
-        "minecraft:zombie",            // 僵尸
-        "minecraft:skeleton",          // 骷髅
-        "minecraft:creeper",           // 苦力怕
-        "minecraft:spider",            // 蜘蛛
-        "minecraft:enderman",          // 末影人
-        "minecraft:witch",             // 女巫
-        "minecraft:blaze",             // 烈焰人
-        "minecraft:ghast",             // 恶魂
-        "minecraft:magma_cube",        // 岩浆怪
-        "minecraft:silverfish",        // 银鱼
-        "minecraft:slime",             // 史莱姆
-        "minecraft:guardian",          // 守卫者
-        "minecraft:elder_guardian",    // 长老守卫者
-        "minecraft:wither_skeleton",   // 凋零骷髅
-        "minecraft:stray",             // 流浪者
-        "minecraft:husk",              // 干尸
-        "minecraft:zombie_villager",   // 僵尸村民
-        "minecraft:drowned",           // 溺尸
-        "minecraft:phantom",           // 幻翼
-        "minecraft:pillager",          // 掠夺者
-        "minecraft:vindicator",        // 守卫者
-        "minecraft:ravager",           // 劫掠兽
-        "minecraft:evocation_illager", // 召唤师
-        "minecraft:vex",               // 幽灵
-        "minecraft:shulker",           // 潜影贝
-        "minecraft:endermite",         // 末影螨
-        "minecraft:cave_spider",       // 洞穴蜘蛛
-        "minecraft:zoglin",            // 僵尸疣猪兽
-        "minecraft:piglin_brute",      // 野猪人暴徒
-        "minecraft:hoglin",            // 疣猪兽
-        "minecraft:wither",            // 凋零
-        "minecraft:ender_dragon",      // 末影龙
+        "minecraft:zombie",             // 僵尸
+        "minecraft:skeleton",           // 骷髅
+        "minecraft:creeper",            // 苦力怕
+        "minecraft:spider",             // 蜘蛛
+        "minecraft:enderman",           // 末影人
+        "minecraft:witch",              // 女巫
+        "minecraft:blaze",              // 烈焰人
+        "minecraft:ghast",              // 恶魂
+        "minecraft:magma_cube",         // 岩浆怪
+        "minecraft:silverfish",         // 银鱼
+        "minecraft:slime",              // 史莱姆
+        "minecraft:guardian",           // 守卫者
+        "minecraft:elder_guardian",     // 远古守卫者
+        "minecraft:wither_skeleton",    // 凋零骷髅
+        "minecraft:stray",              // 流浪者
+        "minecraft:husk",               // 干尸
+        "minecraft:zombie_villager",    // 僵尸村民(旧)
+        "minecraft:zombie_villager_v2", // 僵尸村民(新)
+        "minecraft:zombie_pigman",      // 僵尸猪灵 (基岩版专属ID)
+        "minecraft:drowned",            // 溺尸
+        "minecraft:phantom",            // 幻翼
+        "minecraft:pillager",           // 掠夺者
+        "minecraft:vindicator",         // 卫道士
+        "minecraft:ravager",            // 劫掠兽
+        "minecraft:evocation_illager",  // 唤魔者
+        "minecraft:vex",                // 恼鬼
+        "minecraft:shulker",            // 潜影贝
+        "minecraft:endermite",          // 末影螨
+        "minecraft:cave_spider",        // 洞穴蜘蛛
+        "minecraft:zoglin",             // 僵尸疣猪兽
+        "minecraft:piglin_brute",       // 猪灵残暴者
+        "minecraft:hoglin",             // 疣猪兽
+        "minecraft:wither",             // 凋零
+        "minecraft:ender_dragon",       // 末影龙
+        "minecraft:warden",             // 监守者
+        "minecraft:piglin",             // 猪灵
+        // --- 1.21.0+ ---
+        "minecraft:breeze",   // 旋风人
+        "minecraft:bogged",   // 沼泽骷髅
+        "minecraft:creaking", // 嘎吱怪
     };
+
     config.rules.mob.allowFriendlyDamage = {
-        "minecraft:cow",       // 牛
-        "minecraft:pig",       // 猪
-        "minecraft:sheep",     // 羊
-        "minecraft:chicken",   // 鸡
-        "minecraft:rabbit",    // 兔子
-        "minecraft:mooshroom", // 蘑菇牛
-        "minecraft:horse",     // 马
-        "minecraft:donkey",    // 驴
-        "minecraft:mule",      // 骡
-        "minecraft:ocelot",    // 猫
-        "minecraft:bat",       // 蝙蝠
-        "minecraft:sniffer",   // 探索者
-        "minecraft:camel",     // 骆驼
-        "minecraft:armadillo", // 犰狳
+        "minecraft:cow",            // 牛
+        "minecraft:pig",            // 猪
+        "minecraft:sheep",          // 羊
+        "minecraft:chicken",        // 鸡
+        "minecraft:rabbit",         // 兔子
+        "minecraft:mooshroom",      // 蘑菇牛
+        "minecraft:horse",          // 马
+        "minecraft:donkey",         // 驴
+        "minecraft:mule",           // 骡
+        "minecraft:camel",          // 骆驼
+        "minecraft:sniffer",        // 嗅探兽
+        "minecraft:armadillo",      // 犰狳
+        "minecraft:strider",        // 炽足兽
+        "minecraft:skeleton_horse", // 骷髅马
+        "minecraft:zombie_horse",   // 僵尸马
+
+        "minecraft:villager_v2",      // 村民 (基岩版新)
+        "minecraft:villager",         // 村民 (基岩版旧)
+        "minecraft:wandering_trader", // 流浪商人
+        "minecraft:iron_golem",       // 铁傀儡
+        "minecraft:snow_golem",       // 雪傀儡
+        "minecraft:allay",            // 悦灵
+
+        "minecraft:cat",    // 猫 (基岩版与豹猫分离)
+        "minecraft:ocelot", // 豹猫
+        "minecraft:wolf",   // 狼
+        "minecraft:parrot", // 鹦鹉
+
+        // --- 环境与水生生物 ---
+        "minecraft:bat",          // 蝙蝠
+        "minecraft:frog",         // 青蛙
+        "minecraft:tadpole",      // 蝌蚪
+        "minecraft:axolotl",      // 美西螈
+        "minecraft:goat",         // 山羊
+        "minecraft:fox",          // 狐狸
+        "minecraft:bee",          // 蜜蜂
+        "minecraft:panda",        // 熊猫
+        "minecraft:polar_bear",   // 北极熊
+        "minecraft:llama",        // 羊驼
+        "minecraft:trader_llama", // 行商羊驼
+        "minecraft:dolphin",      // 海豚
+        "minecraft:squid",        // 鱿鱼
+        "minecraft:glow_squid",   // 发光鱿鱼
+        "minecraft:cod",          // 鳕鱼
+        "minecraft:salmon",       // 鲑鱼
+        "minecraft:tropicalfish", // 热带鱼
+        "minecraft:pufferfish",   // 河豚
+        "minecraft:turtle",       // 海龟
     };
+
     config.rules.mob.allowSpecialEntityDamage = {
         "minecraft:painting",               // 画
         "minecraft:hopper_minecart",        // 漏斗矿车
@@ -398,6 +522,8 @@ decltype(InterceptorConfig::cfg) InterceptorConfig::cfg = [] {
         "minecraft:command_block_minecart", // 指令方块矿车
         "minecraft:boat",                   // 船
         "minecraft:ender_crystal",          // 末影水晶
+        "minecraft:chest_minecart",         // 运输矿车
+        "minecraft:tnt_minecart",           // TNT矿车
     };
     return config;
 }();

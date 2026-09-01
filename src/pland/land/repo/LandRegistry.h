@@ -1,8 +1,8 @@
 #pragma once
 #include "pland/Global.h"
+#include "pland/enums/LandRole.h"
 
 #include <memory>
-#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -32,7 +32,7 @@ class LandRegistry final {
 
     friend class TransactionContext;
 
-    LandID _allocateNextId();
+    [[nodiscard]] LandID _allocateNextId();
 
 public:
     LD_DISABLE_COPY_AND_MOVE(LandRegistry);
@@ -43,13 +43,11 @@ public:
      * 创建数据库快照
      * @param dirName 快照文件夹名称，如果为空，则使用当前时间戳
      * @note 创建的快照会被写入磁盘, SnapshotDir/<dirName.value_or(timestamp)>
+     * @note 如果指定的文件夹名称已存在，内部会对指定的文件夹名称添加时间戳后缀进行重试
+     * @note 如果重试失败，则控制台输出异常信息
      * @note 此任务为异步任务，如果任务未完成，文件夹下会存在 .incomplete 文件
      */
     LDAPI void createSnapshot(std::optional<std::string> const& dirName = std::nullopt);
-
-    LDAPI void save();
-
-    LDAPI bool save(std::shared_ptr<Land> const& land, bool force = false) const;
 
 public:
     LDNDAPI bool isOperator(mce::UUID const& uuid) const;
@@ -58,7 +56,7 @@ public:
 
     LDNDAPI bool removeOperator(mce::UUID const& uuid);
 
-    LDNDAPI std::vector<mce::UUID> const& getOperators() const;
+    LDNDAPI std::vector<mce::UUID> getOperators() const;
 
     LDNDAPI PlayerSettings& getOrCreatePlayerSettings(mce::UUID const& uuid);
 
@@ -115,14 +113,7 @@ public: // 领地查询API
     LDNDAPI std::vector<std::shared_ptr<Land>> getLandsWhere(CustomFilter const& filter) const;
 
 public:
-    static constexpr auto DatabaseDir = "db";        // 数据库目录名
-    static constexpr auto SnapshotDir = "snapshots"; // 快照目录名
-
-    static constexpr auto DbVersionKey           = "__version__";     // 数据库版本键
-    static constexpr auto DbOperatorDataKey      = "operators";       // 操作员数据键
-    static constexpr auto DbPlayerSettingDataKey = "player_settings"; // 玩家设置数据键
-    static constexpr auto DbTemplatePermKey      = "template_perm";   // 领地模板权限表数据键
-    static bool           isLandData(std::string_view key);           // 判断键是否为领地数据键
+    static constexpr auto kSnapshotDir = "snapshots"; // 快照目录名
 };
 
 

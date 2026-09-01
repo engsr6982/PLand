@@ -1,35 +1,20 @@
 #pragma once
-#include <cstdlib>
+#include <cstdint>
 #include <utility>
 
 namespace land::internal {
 
-using ChunkID = uint64_t; // 区块ID
+using ChunkID = std::uint64_t;
 
 struct ChunkEncoder {
     ChunkEncoder() = delete;
 
-    [[nodiscard]] inline static ChunkID encode(int x, int z) {
-        auto ux = static_cast<uint64_t>(std::abs(x));
-        auto uz = static_cast<uint64_t>(std::abs(z));
-
-        uint64_t signBits = 0;
-        if (x >= 0) signBits |= (1ULL << 63);
-        if (z >= 0) signBits |= (1ULL << 62);
-        return signBits | (ux << 31) | (uz & 0x7FFFFFFF);
-        // Memory layout:
-        // [signBits][x][z] (signBits: 2 bits, x: 31 bits, z: 31 bits)
+    inline static constexpr ChunkID encode(std::int32_t x, std::int32_t z) noexcept {
+        return (static_cast<ChunkID>(static_cast<std::uint32_t>(x)) << 32) | static_cast<std::uint32_t>(z);
     }
 
-    [[nodiscard]] inline static std::pair<int, int> decode(ChunkID id) {
-        bool xPositive = (id & (1ULL << 63)) != 0;
-        bool zPositive = (id & (1ULL << 62)) != 0;
-
-        int x = static_cast<int>((id >> 31) & 0x7FFFFFFF);
-        int z = static_cast<int>(id & 0x7FFFFFFF);
-        if (!xPositive) x = -x;
-        if (!zPositive) z = -z;
-        return {x, z};
+    inline static constexpr std::pair<std::int32_t, std::int32_t> decode(ChunkID id) noexcept {
+        return {static_cast<std::int32_t>(id >> 32), static_cast<std::int32_t>(id)};
     }
 };
 

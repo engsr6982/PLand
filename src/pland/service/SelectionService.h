@@ -9,7 +9,7 @@ class Player;
 
 namespace land {
 class SelectorManager;
-class ISelector;
+class AbstractSelector;
 } // namespace land
 
 namespace land::service {
@@ -18,8 +18,6 @@ namespace land::service {
 class SelectionService {
     struct Impl;
     std::unique_ptr<Impl> impl;
-
-    LDNDAPI ll::Expected<> _beginSelection(Player& player, std::unique_ptr<ISelector> selector);
 
 public:
     explicit SelectionService(SelectorManager& manager);
@@ -33,11 +31,7 @@ public:
     /**
      * 开始一个新的选区任务
      */
-    template <typename T>
-        requires std::derived_from<T, ISelector> && std::is_final_v<T>
-    ll::Expected<> beginSelection(Player& player, std::unique_ptr<T> selector) {
-        return _beginSelection(player, std::move(selector));
-    }
+    LDNDAPI ll::Expected<> beginSelection(Player& player, std::unique_ptr<AbstractSelector> selector);
 
     /**
      * 结束当前选区任务
@@ -47,7 +41,7 @@ public:
     /**
      * 获取当前选区任务
      */
-    LDNDAPI ISelector* tryGetSelection(Player& player) const;
+    LDNDAPI AbstractSelector* tryGetSelection(Player& player) const;
 };
 
 

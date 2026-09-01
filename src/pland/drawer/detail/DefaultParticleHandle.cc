@@ -28,26 +28,26 @@ class ParticleSpawner {
         return GeoId{id++};
     }
 
+    void buildPackets(LandAABB const& aabb, LandDimid dimId, std::string const& particle) {
+        auto points = aabb.getBorder();
+        mPackets.reserve(points.size());
+        for (auto& point : points) {
+            mPackets.emplace_back(Vec3{point.x + 0.5, point.y + 0.5, point.z + 0.5}, particle, dimId, std::nullopt);
+        }
+    }
+
 public:
     LD_DISABLE_COPY(ParticleSpawner);
     ParticleSpawner(ParticleSpawner&&) noexcept            = default;
     ParticleSpawner& operator=(ParticleSpawner&&) noexcept = default;
 
-    explicit ParticleSpawner(LandAABB const& aabb, LandDimid dimId) : mId(getNextGeoId()) {
-        auto maybeDimid = VanillaDimensions::fromSerializedInt(dimId);
-        if (!maybeDimid) {
-            PLand::getInstance().getSelf().getLogger().error("[ParticleSpawner] Unknown dimension id: {}", dimId);
-            return;
-        }
-        auto dim = maybeDimid.value();
-
-        static std::string const particle = "minecraft:villager_happy";
-
-        auto points = aabb.getBorder();
-        mPackets.reserve(points.size());
-        for (auto& point : points) {
-            mPackets.emplace_back(Vec3{point.x + 0.5, point.y + 0.5, point.z + 0.5}, particle, dim, std::nullopt);
-        }
+    explicit ParticleSpawner(
+        LandAABB const&    aabb,
+        LandDimid          dimId,
+        std::string const& particle = "minecraft:villager_happy"
+    )
+    : mId(getNextGeoId()) {
+        buildPackets(aabb, dimId, particle);
     }
 
     GeoId getId() const { return mId; }

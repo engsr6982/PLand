@@ -24,16 +24,16 @@
 #include "pland/land/Land.h"
 #include "pland/land/repo/LandRegistry.h"
 
-#include <unordered_map>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 
 namespace land::internal {
 
 struct LandScheduler::Impl {
-    std::vector<Player*>                   mPlayers{};
-    std::unordered_map<Player*, LandDimid> mDimensionMap{};
-    std::unordered_map<Player*, LandID>    mLandIdMap{};
+    std::vector<Player*>                    mPlayers{};
+    absl::flat_hash_map<Player*, LandDimid> mDimensionMap{};
+    absl::flat_hash_map<Player*, LandID>    mLandIdMap{};
 
     ll::event::ListenerPtr mPlayerJoinServerListener{nullptr};
     ll::event::ListenerPtr mPlayerDisconnectListener{nullptr};

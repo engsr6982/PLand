@@ -1,20 +1,24 @@
 #pragma once
-#include "pland/selector/ISelector.h"
+#include "pland/selector/ABSelector.h"
+
+#include <memory>
 
 
 namespace land {
 
 class Land;
 
-class LandResizeSelector final : public ISelector {
-    std::weak_ptr<Land> mLand;           // 领地
-    drawer::GeoId       mOldRangeDrawId; // 旧领地范围
+class LandResizeSelector final : public ABSelector {
+    struct Impl;
+    std::unique_ptr<Impl> impl;
 
 public:
     LDAPI explicit LandResizeSelector(Player& player, std::shared_ptr<Land> land);
     LDAPI ~LandResizeSelector() override;
 
-    LDNDAPI std::shared_ptr<Land> getLand() const;
+    LDNDAPI std::shared_ptr<Land> tryGetLand() const;
+
+    LDAPI bool isValid() const override;
 };
 
 

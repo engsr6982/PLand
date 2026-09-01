@@ -9,7 +9,7 @@
 #include "pland/land/Land.h"
 #include "pland/land/LandResizeSettlement.h"
 #include "pland/land/repo/LandRegistry.h"
-#include "pland/land/repo/StorageError.h"
+#include "pland/selector/ABSelector.h"
 #include "pland/selector/SelectorManager.h"
 #include "pland/selector/land/LandResizeSelector.h"
 #include "pland/selector/land/OrdinaryLandCreateSelector.h"
@@ -22,6 +22,7 @@
 #include "utils/BackUtils.h"
 
 
+#include <cassert>
 #include <climits>
 #include <ll/api/form/CustomForm.h>
 #include <ll/api/form/SimpleForm.h>
@@ -39,7 +40,15 @@ void LandBuyGUI::sendTo(Player& player) {
         return;
     }
 
-    auto selector = manager->getSelector(player);
+    auto abstractSelect = manager->getSelector(player);
+    assert(abstractSelect != nullptr);
+
+    auto selector = abstractSelect->as<ABSelector>();
+    if (!selector) {
+        // TODO: handle thirdparty AbstractSelector
+        return;
+    }
+
     if (!selector->isPointABSet()) {
         feedback_utils::sendErrorText(player, "您还没有选择领地范围，无法进行购买!"_trl(localeCode));
         return;
@@ -251,7 +260,12 @@ void LandBuyGUI::_impl(Player& player, LandResizeSelector* selector) {
         return;
     }
 
-    auto      land          = selector->getLand();
+    auto land = selector->tryGetLand();
+    if (!land) {
+        feedback_utils::sendErrorText(player, "目标领地不存在，请重新选择"_trl(localeCode));
+        return;
+    }
+
     int const originalPrice = land->getOriginalBuyPrice(); // 原始购买价格
 
     std::string content = "体积: {0}x{1}x{2} = {3}\n范围: {4}\n原购买价格: {5}"_trl(
@@ -333,7 +347,13 @@ void LandBuyGUI::_impl(Player& player, SubLandCreateSelector* selector) {
         return;
     }
 
-    auto&       parentPos = selector->getParentLand()->getAABB();
+    auto parentLand = selector->tryGetParentLand();
+    if (!parentLand) {
+        feedback_utils::sendErrorText(player, "操作失败, 父领地不存在"_trl(localeCode));
+        return;
+    }
+
+    auto&       parentPos = parentLand->getAABB();
     std::string content   = "[父领地]\n体积: {}x{}x{}={}\n范围: {}\n\n[子领地]\n体积: {}x{}x{}={}\n范围: {}"_trl(
         localeCode,
         // 父领地
@@ -353,7 +373,7 @@ void LandBuyGUI::_impl(Player& player, SubLandCreateSelector* selector) {
     std::optional<int64_t> discountedPrice;
     if (ConfigProvider::isEconomySystemEnabled()) {
         auto& service = PLand::getInstance().getServiceLocator().getLandPriceService();
-        if (auto result = service.getSubLandPrice(*subLandRange, selector->getParentLand()->getDimensionId())) {
+        if (auto result = service.getSubLandPrice(*subLandRange, parentLand->getDimensionId())) {
             discountedPrice  = result->mDiscountedPrice;
             content         += "\n\n[价格]\n原价: {}\n折扣价: {}\n{}"_trl(
                 localeCode,

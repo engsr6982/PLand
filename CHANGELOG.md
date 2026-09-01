@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-09-01
+
+> 注意: 此版本包含数据库存储格式变更，请务必先备份旧数据再升级
+
+### ✨ 新增功能
+
+- 支持自定义领地边框绘制颜色 @engsr6982 [#224](https://github.com/IceBlcokMC/PLand/issues/224)
+
+### 🚀 性能优化
+
+- 改进对实体受伤、玩家攻击时的动态实体分组，减少不必要的多次查表并优化调试日志 @engsr6982
+- 优化缓存数据回写，降低崩溃丢失数据概率 @engsr6982 [#215](https://github.com/IceBlcokMC/PLand/issues/215)
+- 更换数据库存储格式，降低磁盘占用，提升读写性能 @engsr6982 [#215](https://github.com/IceBlcokMC/PLand/issues/215)
+- 优化事件拦截器热重载逻辑，增量注册/移除监听器，优化重载速度 @engsr6982
+
+### 🧩 其他改动
+
+- 补充遗漏的实体、方块权限配置 @engsr6982 [#216](https://github.com/IceBlcokMC/PLand/issues/216) [#212](https://github.com/IceBlcokMC/PLand/issues/212)
+- 改进配置文件合并逻辑 @engsr6982
+- 删除一堆脱裤子放屁的代码 @engsr6982
+
+### 🐛 问题修复
+
+- 修复 PC 端选区时有概率多次触发选择 @engsr6982 [#228](https://github.com/IceBlcokMC/PLand/issues/228)
+- 移除不必要的维度校验，修复 DefaultParticle 后端绘制领地范围不显示 @engsr6982
+- 修复熄屏下开启 DevTool 工具启动服务端崩溃 @engsr6982 [#223](https://github.com/IceBlcokMC/PLand/issues/223)
+- 修复领地重新选区时删除领地再提交新范围时崩溃 @engsr6982 [#235](https://github.com/IceBlcokMC/PLand/issues/235)
+- 修复创建子领地时删除父领地再购买子领地导致崩溃 @engsr6982
+
 ## [0.21.1] - 2026-07-21
 
 ### 🐛 问题修复

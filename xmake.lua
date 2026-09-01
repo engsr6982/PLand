@@ -3,17 +3,17 @@ add_rules("mode.debug", "mode.release")
 add_repositories("liteldev-repo https://github.com/LiteLDev/xmake-repo.git")
 add_repositories("iceblcokmc https://github.com/IceBlcokMC/xmake-repo.git")
 add_repositories("miracleforest-repo https://github.com/MiracleForest/xmake-repo.git")
-
+add_repositories("engsr6982-repo https://github.com/engsr6982/xmake-repo.git")
 
 -- LeviMc(LiteLDev)
-add_requires("levilamina 26.20.0", {configs = {target_type = "server"}})
+add_requires("levilamina 26.20.7", {configs = {target_type = "server"}})
 add_requires("levibuildscript")
 
 -- MiracleForest
 add_requires("ilistenattentively 0.13.0")
 
 -- IceBlockMC
-add_requires("ll-bstats 0.4.0")
+add_requires("ll-bstats 0.5.0")
 add_requires("economy_bridge 0.5.0")
 
 -- xmake
@@ -21,8 +21,12 @@ add_requires("exprtk 0.0.3")
 add_requires("abseil 20250127.0")
 
 if has_config("devtool") then
-    add_requires("imgui v1.91.6-docking", {configs = { opengl3 = true, glfw = true }})
+    -- xmake
+    add_requires("imgui v1.92.7-docking", {configs = { opengl3 = true, glfw = true }})
     add_requires("glew 2.2.0")
+
+    -- engsr6982
+    add_requires("imgui_color_text_edit")
 end
 
 
@@ -92,10 +96,11 @@ target("PLand")
     if has_config("devtool") then
         add_packages(
             "imgui",
-            "glew"
+            "glew",
+            "imgui_color_text_edit"
         )
-        add_includedirs("src-devtool", "src-devtool/deps")
-        add_files("src-devtool/**.cc", "src-devtool/**.cpp")
+        add_includedirs("src-devtool")
+        add_files("src-devtool/**.cc")
         add_defines("LD_DEVTOOL")
     end
 

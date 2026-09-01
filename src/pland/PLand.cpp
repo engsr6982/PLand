@@ -58,7 +58,7 @@ struct PLand::Impl {
 };
 
 bool ensureStableVersion() {
-    auto tag = land::BuildInfo::Tag;
+    auto tag = land::BuildInfo::kBuildTag;
     if (tag.find("-g") != std::string_view::npos) {
         return false;
     }
@@ -70,22 +70,41 @@ bool ensureStableVersion() {
 
 bool PLand::load() {
     auto& logger = getSelf().getLogger();
-    logger.info("{}-{}-{}", BuildInfo::Tag, BuildInfo::Branch, BuildInfo::Commit);
+    logger.info("PLand - Open-source project based on AGPL v3 license");
+    logger.info("Repository: https://github.com/IceBlcokMC/PLand");
+    logger.info("Issues:     https://github.com/IceBlcokMC/PLand/issues");
+    logger.info("Copyright (C) 2024-2026 IceBlcokMC Team and contributors");
+
+    logger.info(
+        "Build: {} (Branch: {}, Commit: {})",
+        BuildInfo::kBuildTag,
+        BuildInfo::kBuildBranch,
+        BuildInfo::kBuildCommit
+    );
+
     if (!ensureStableVersion()) {
-        logger.warn("This is a development build ({}). It may not be stable.", BuildInfo::Tag);
+        logger.warn("This is a development build ({}). It may not be stable.", BuildInfo::kBuildTag);
     }
 
+    logger.info("Loading PLand...");
     if (auto res = ll::i18n::getInstance().load(getSelf().getLangDir()); !res) {
         logger.error("Load language file failed, plugin will use default language.");
         res.error().log(logger);
     }
 
-    internal::interceptor::InterceptorConfig::tryMigrate(getSelf().getConfigDir());
+    internal::interceptor::InterceptorConfig::tryMigrateLegacyConfig(getSelf().getConfigDir());
 
-    loadConfig();
-    internal::interceptor::InterceptorConfig::load(getSelf().getConfigDir());
+    if (!loadConfig()) {
+        logger.error("Failed to load config"); // loadConfig internal log the error message
+        return false;
+    }
 
-    mImpl->mThreadPoolExecutor = std::make_unique<ll::thread::ThreadPoolExecutor>("PLand-ThreadPool", 2);
+    if (auto ok = internal::interceptor::InterceptorConfig::load(getSelf().getConfigDir()); !ok) {
+        logger.error("Failed to load interceptor config, reason: {}", ok.error().message());
+        return false;
+    }
+
+    mImpl->mThreadPoolExecutor = std::make_unique<ll::thread::ThreadPoolExecutor>("PLand-ThreadPool", 4);
 
     try {
         mImpl->mLandRegistry = std::make_unique<land::LandRegistry>(*this);
@@ -106,7 +125,7 @@ bool PLand::load() {
 }
 
 bool PLand::enable() {
-    internal::LandCommand::setup();
+    internal::LandCommand::setupAll();
     mImpl->mLandScheduler     = std::make_unique<internal::LandScheduler>();
     mImpl->mEventListener     = std::make_unique<internal::interceptor::EventInterceptor>();
     mImpl->mSafeTeleport      = std::make_unique<internal::SafeTeleport>();
@@ -122,8 +141,8 @@ bool PLand::enable() {
     mImpl->mConfigReloadListener = ll::event::EventBus::getInstance().emplaceListener<events::ConfigReloadEvent>(
         [this](events::ConfigReloadEvent& ev [[maybe_unused]]) {
             internal::interceptor::InterceptorConfig::load(getSelf().getConfigDir());
-            mImpl->mEventListener.reset();
-            mImpl->mEventListener = std::make_unique<internal::interceptor::EventInterceptor>();
+
+            mImpl->mEventListener->reload();
 
             EconomySystem::getInstance().reload();
 
@@ -159,9 +178,6 @@ bool PLand::disable() {
     mImpl->mTelemetry.reset();
 
     mImpl->mServiceLocator.reset();
-
-    logger.debug("Saving land registry...");
-    mImpl->mLandRegistry->save();
 
     logger.debug("Destroying resources...");
     mImpl->mLandScheduler.reset();

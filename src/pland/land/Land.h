@@ -1,8 +1,8 @@
 #pragma once
 #include "pland/Global.h"
 #include "pland/aabb/LandAABB.h"
+#include "pland/enums/LandRole.h"
 #include "pland/enums/LandType.h"
-#include "pland/infra/DirtyCounter.h"
 #include "repo/LandContext.h"
 
 #include "nlohmann/json.hpp"
@@ -199,10 +199,10 @@ public:
     /**
      * @brief 标记数据为已修改(计数+1)
      */
-    LDAPI void                  markDirty();
-    LDAPI void                  rollbackDirty();
-    LDNDAPI DirtyCounter&       getDirtyCounter();
-    LDNDAPI DirtyCounter const& getDirtyCounter() const;
+    LDAPI void     markDirty();
+    LDAPI void     rollbackDirty();
+    LDAPI uint32_t getDirtyCount() const;
+    LDAPI void     resetDirtyCounter(uint32_t counter = 0) const;
 
     /**
      * @brief 获取领地类型
@@ -271,8 +271,9 @@ public:
      */
     [[deprecated]] LDAPI void migrateOwner(mce::UUID const& ownerUUID);
 
-    LDAPI void load(nlohmann::json& json); // 加载数据
-    LDAPI nlohmann::json toJson() const;   // 导出数据
+    /// 非必要请不要从此接口修改数据，它会导致 observer 无法观察，进而导致 LandRegistry 索引失效
+    [[deprecated]] LDAPI void load(nlohmann::json& json);
+    [[deprecated]] LDAPI nlohmann::json toJson() const;
 
     LDAPI bool operator==(Land const& other) const;
 

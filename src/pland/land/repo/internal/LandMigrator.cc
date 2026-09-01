@@ -11,7 +11,7 @@ LandMigrator& LandMigrator::getInstance() {
 }
 
 LandMigrator::LandMigrator() {
-    registerMigrator(15, [](nlohmann::json& data) -> ll::Expected<> {
+    registerMigrationUnit(15, [](LandMigrator::container_t& data) -> bool {
         static constexpr std::string_view LegacyMaxKey = "mMax_B";
         static constexpr std::string_view LegacyMinKey = "mMin_A";
         static constexpr std::string_view NewMaxKey    = "max";
@@ -28,20 +28,20 @@ LandMigrator::LandMigrator() {
             pos.erase(LegacyMinKey);
             pos[NewMinKey] = std::move(legacyMin);
         }
-        return {};
+        return true;
     });
 
     // 25/26 -> 27
-    registerMigrator(27, [](nlohmann::json& data) -> ll::Expected<> {
-        if (!data.contains("mLandPermTable")) return {};
+    registerMigrationUnit(27, [](LandMigrator::container_t& data) -> bool {
+        if (!data.contains("mLandPermTable")) return true;
 
         // 1. 读取并备份旧权限数据
         auto oldPerms = data["mLandPermTable"]; // copy
-        if (!oldPerms.is_object()) return {};   // 防御性检查
+        if (!oldPerms.is_object()) return true; // 防御性检查
 
         // 2. 准备新的分层结构
-        nlohmann::json newEnv  = nlohmann::json::object();
-        nlohmann::json newRole = nlohmann::json::object();
+        LandMigrator::container_t newEnv  = LandMigrator::container_t::object();
+        LandMigrator::container_t newRole = LandMigrator::container_t::object();
 
         // --- 辅助 Lambda ---
 
@@ -56,7 +56,7 @@ LandMigrator::LandMigrator() {
         // 创建角色权限 Entry (member, guest)
         // isPrivilege: true 表示这是特权(如破坏/开箱)，成员默认为 true；
         //              false 表示这是规则(如PvP/火焰)，成员跟随 v25 设置
-        auto makeEntry = [&](bool v25Val, bool isPrivilege) -> nlohmann::json {
+        auto makeEntry = [&](bool v25Val, bool isPrivilege) -> LandMigrator::container_t {
             return {
                 { "guest",                      v25Val},
                 {"member", isPrivilege ? true : v25Val}
@@ -197,12 +197,12 @@ LandMigrator::LandMigrator() {
         data["mLandPermTable"]["environment"] = newEnv;
         data["mLandPermTable"]["role"]        = newRole;
 
-        return {};
+        return true;
     });
 
-    registerMigrator(31, [](nlohmann::json& root) -> ll::Expected<> {
+    registerMigrationUnit(31, [](LandMigrator::container_t& root) -> bool {
         if (!root.contains("mLandPermTable")) {
-            return {};
+            return true;
         }
         auto& mLandPermTable = root["mLandPermTable"];
         auto& role           = mLandPermTable["role"];
@@ -213,7 +213,7 @@ LandMigrator::LandMigrator() {
         for (auto& [key, entry] : role.items()) {
             mapPath(role, fmt::format("{}.{}", key, legacyField), fmt::format("{}.{}", key, newField));
         }
-        return {};
+        return true;
     });
 }
 

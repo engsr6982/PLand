@@ -366,23 +366,22 @@ LL_TYPE_INSTANCE_HOOK(
 }
 
 void EventInterceptor::setupHooks() {
-    auto& config = InterceptorConfig::cfg.hooks;
-    registerHookIf<FishingHookHitHook>(config.FishingHookHitHook);
-    registerHookIf<LayEggGoalHook>(config.LayEggGoalHook);
-    registerHookIf<FireBlockBurnHook>(config.FireBlockBurnHook);
-    registerHookIf<ChestBlockActorOpenHook>(config.ChestBlockActorOpenHook);
-    registerHookIf<LightningBoltHook>(config.LightningBoltHook);
-    registerHookIf<LecternBlockUseHook>(config.LecternBlockUseHook);
-    registerHookIf<LecternBlockDropBookHook>(config.LecternBlockDropBookHook);
-    registerHookIf<OozingMobEffectHook>(config.OozingMobEffectHook);
-    registerHookIf<WeavingMobEffectHook>(config.WeavingMobEffectHook);
-    registerHookIf<HopperComponentPullInItemsHook>(config.HopperComponentPullInItemsHook);
-    registerHookIf<ExperienceOrbPlayerTouchHook>(config.ExperienceOrbPlayerTouchHook);
-    registerHookIf<ThrownTridentPlayerTouchHook>(config.ThrownTridentPlayerTouchHook);
-    registerHookIf<ArrowPlayerTouchHook>(config.ArrowPlayerTouchHook);
-    registerHookIf<AbstractArrowPlayerTouchHook>(config.AbstractArrowPlayerTouchHook);
-    registerHookIf<FarmChangeEventHook>(config.FarmChangeEventHook);
-    registerHookIf<BigDripleafBlockHook>(config.BigDripleafBlockHook);
+    registerHookIf<&InterceptorConfig::Hooks::FishingHookHitHook, FishingHookHitHook>();
+    registerHookIf<&InterceptorConfig::Hooks::LayEggGoalHook, LayEggGoalHook>();
+    registerHookIf<&InterceptorConfig::Hooks::FireBlockBurnHook, FireBlockBurnHook>();
+    registerHookIf<&InterceptorConfig::Hooks::ChestBlockActorOpenHook, ChestBlockActorOpenHook>();
+    registerHookIf<&InterceptorConfig::Hooks::LightningBoltHook, LightningBoltHook>();
+    registerHookIf<&InterceptorConfig::Hooks::LecternBlockUseHook, LecternBlockUseHook>();
+    registerHookIf<&InterceptorConfig::Hooks::LecternBlockDropBookHook, LecternBlockDropBookHook>();
+    registerHookIf<&InterceptorConfig::Hooks::OozingMobEffectHook, OozingMobEffectHook>();
+    registerHookIf<&InterceptorConfig::Hooks::WeavingMobEffectHook, WeavingMobEffectHook>();
+    registerHookIf<&InterceptorConfig::Hooks::HopperComponentPullInItemsHook, HopperComponentPullInItemsHook>();
+    registerHookIf<&InterceptorConfig::Hooks::ExperienceOrbPlayerTouchHook, ExperienceOrbPlayerTouchHook>();
+    registerHookIf<&InterceptorConfig::Hooks::ThrownTridentPlayerTouchHook, ThrownTridentPlayerTouchHook>();
+    registerHookIf<&InterceptorConfig::Hooks::ArrowPlayerTouchHook, ArrowPlayerTouchHook>();
+    registerHookIf<&InterceptorConfig::Hooks::AbstractArrowPlayerTouchHook, AbstractArrowPlayerTouchHook>();
+    registerHookIf<&InterceptorConfig::Hooks::FarmChangeEventHook, FarmChangeEventHook>();
+    registerHookIf<&InterceptorConfig::Hooks::BigDripleafBlockHook, BigDripleafBlockHook>();
 }
 
 } // namespace land::internal::interceptor

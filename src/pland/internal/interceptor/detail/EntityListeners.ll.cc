@@ -15,11 +15,10 @@
 namespace land::internal::interceptor {
 
 void EventInterceptor::setupLLEntityListeners() {
-    auto& config   = InterceptorConfig::cfg.listeners;
-    auto  registry = &PLand::getInstance().getLandRegistry();
-    auto  bus      = &ll::event::EventBus::getInstance();
+    auto registry = &PLand::getInstance().getLandRegistry();
+    auto bus      = &ll::event::EventBus::getInstance();
 
-    registerListenerIf(config.SpawnedMobEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::SpawnedMobEvent>([bus, registry]() {
         return bus->emplaceListener<ll::event::SpawnedMobEvent>([registry](ll::event::SpawnedMobEvent& ev) {
             TRACE_THIS_EVENT(ll::event::SpawnedMobEvent);
 
@@ -49,7 +48,7 @@ void EventInterceptor::setupLLEntityListeners() {
         });
     });
 
-    registerListenerIf(config.ActorHurtEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::ActorHurtEvent>([bus, registry]() {
         return bus->emplaceListener<ll::event::ActorHurtEvent>([registry](ll::event::ActorHurtEvent& ev) {
             TRACE_THIS_EVENT(ll::event::ActorHurtEvent);
 
@@ -78,19 +77,27 @@ void EventInterceptor::setupLLEntityListeners() {
             }
 
             HashedString typeName{actor.getTypeName()};
-            if (InterceptorConfig::cfg.rules.mob.allowFriendlyDamage.contains(typeName)) {
-                if (!hasMemberOrGuestPermission<&RolePerms::allowFriendlyDamage>(land, uuid)) {
-                    ev.cancel();
-                }
-            } else if (InterceptorConfig::cfg.rules.mob.allowHostileDamage.contains(typeName)) {
+
+            auto category = InterceptorConfig::lookupMobDynamicCategory(typeName);
+            switch (category) {
+            case InterceptorConfig::MobRecordCategory::Hostile:
                 if (!hasMemberOrGuestPermission<&RolePerms::allowHostileDamage>(land, uuid)) {
                     ev.cancel();
                 }
-            } else if (InterceptorConfig::cfg.rules.mob.allowSpecialEntityDamage.contains(typeName)) {
+                break;
+            case InterceptorConfig::MobRecordCategory::Friendly:
+                if (!hasMemberOrGuestPermission<&RolePerms::allowFriendlyDamage>(land, uuid)) {
+                    ev.cancel();
+                }
+                break;
+            case InterceptorConfig::MobRecordCategory::SpecialEntity:
                 if (!hasMemberOrGuestPermission<&RolePerms::allowSpecialEntityDamage>(land, uuid)) {
                     ev.cancel();
                 }
-            }
+                break;
+            case InterceptorConfig::MobRecordCategory::Undefined:
+                break;
+            };
         });
     });
 }

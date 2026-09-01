@@ -29,11 +29,10 @@
 namespace land::internal::interceptor {
 
 void EventInterceptor::setupIlaEntityListeners() {
-    auto& config   = InterceptorConfig::cfg.listeners;
-    auto  registry = &PLand::getInstance().getLandRegistry();
-    auto  bus      = &ll::event::EventBus::getInstance();
+    auto registry = &PLand::getInstance().getLandRegistry();
+    auto bus      = &ll::event::EventBus::getInstance();
 
-    registerListenerIf(config.ActorDestroyBlockEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::ActorDestroyBlockEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::ActorDestroyBlockEvent>([registry](ila::mc::ActorDestroyBlockEvent& ev) {
             TRACE_THIS_EVENT(ila::mc::ActorDestroyBlockEvent);
 
@@ -49,7 +48,7 @@ void EventInterceptor::setupIlaEntityListeners() {
         });
     });
 
-    registerListenerIf(config.MobTakeBlockBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::MobTakeBlockBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::MobTakeBlockBeforeEvent>([registry](ila::mc::MobTakeBlockBeforeEvent& ev) {
             TRACE_THIS_EVENT(ila::mc::MobTakeBlockBeforeEvent);
 
@@ -65,7 +64,7 @@ void EventInterceptor::setupIlaEntityListeners() {
         });
     });
 
-    registerListenerIf(config.MobPlaceBlockBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::MobPlaceBlockBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::MobPlaceBlockBeforeEvent>(
             [registry](ila::mc::MobPlaceBlockBeforeEvent& ev) {
                 TRACE_THIS_EVENT(ila::mc::MobPlaceBlockBeforeEvent);
@@ -84,7 +83,7 @@ void EventInterceptor::setupIlaEntityListeners() {
         );
     });
 
-    registerListenerIf(config.ActorPickupItemBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::ActorPickupItemBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::ActorPickupItemBeforeEvent>(
             [registry](ila::mc::ActorPickupItemBeforeEvent& ev) {
                 TRACE_THIS_EVENT(ila::mc::ActorPickupItemBeforeEvent);
@@ -102,7 +101,7 @@ void EventInterceptor::setupIlaEntityListeners() {
         );
     });
 
-    registerListenerIf(config.ActorRideBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::ActorRideBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::ActorRideBeforeEvent>([registry](ila::mc::ActorRideBeforeEvent& ev) {
             TRACE_THIS_EVENT(ila::mc::ActorRideBeforeEvent);
 
@@ -135,7 +134,7 @@ void EventInterceptor::setupIlaEntityListeners() {
         });
     });
 
-    registerListenerIf(config.MobHurtEffectBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::MobHurtEffectBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::MobHurtEffectBeforeEvent>(
             [registry](ila::mc::MobHurtEffectBeforeEvent& ev) {
                 TRACE_THIS_EVENT(ila::mc::MobHurtEffectBeforeEvent);
@@ -161,24 +160,32 @@ void EventInterceptor::setupIlaEntityListeners() {
                 }
 
                 HashedString typeName{actor.getTypeName()};
-                if (InterceptorConfig::cfg.rules.mob.allowFriendlyDamage.contains(typeName)) {
-                    if (!hasMemberOrGuestPermission<&RolePerms::allowFriendlyDamage>(land, uuid)) {
-                        ev.cancel();
-                    }
-                } else if (InterceptorConfig::cfg.rules.mob.allowHostileDamage.contains(typeName)) {
+
+                auto category = InterceptorConfig::lookupMobDynamicCategory(typeName);
+                switch (category) {
+                case InterceptorConfig::MobRecordCategory::Hostile:
                     if (!hasMemberOrGuestPermission<&RolePerms::allowHostileDamage>(land, uuid)) {
                         ev.cancel();
                     }
-                } else if (InterceptorConfig::cfg.rules.mob.allowSpecialEntityDamage.contains(typeName)) {
+                    break;
+                case InterceptorConfig::MobRecordCategory::Friendly:
+                    if (!hasMemberOrGuestPermission<&RolePerms::allowFriendlyDamage>(land, uuid)) {
+                        ev.cancel();
+                    }
+                    break;
+                case InterceptorConfig::MobRecordCategory::SpecialEntity:
                     if (!hasMemberOrGuestPermission<&RolePerms::allowSpecialEntityDamage>(land, uuid)) {
                         ev.cancel();
                     }
-                }
+                    break;
+                case InterceptorConfig::MobRecordCategory::Undefined:
+                    break;
+                };
             }
         );
     });
 
-    registerListenerIf(config.ActorTriggerPressurePlateBeforeEvent, [bus, registry]() {
+    registerListenerIf<&InterceptorConfig::Listeners::ActorTriggerPressurePlateBeforeEvent>([bus, registry]() {
         return bus->emplaceListener<ila::mc::ActorTriggerPressurePlateBeforeEvent>(
             [registry](ila::mc::ActorTriggerPressurePlateBeforeEvent& ev) {
                 TRACE_THIS_EVENT(ila::mc::ActorTriggerPressurePlateBeforeEvent);

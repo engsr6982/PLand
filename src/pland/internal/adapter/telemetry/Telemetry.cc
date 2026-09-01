@@ -13,7 +13,7 @@
 namespace land::internal {
 namespace adapter {
 
-Telemetry::Telemetry() : ll_bstats::Telemetry(27389, std::string{BuildInfo::Tag}) {}
+Telemetry::Telemetry() : ll_bstats::Telemetry(27389, std::string{BuildInfo::kBuildTag}) {}
 
 void Telemetry::initConstant() {
     ll_bstats::Telemetry::initConstant();

@@ -27,20 +27,46 @@ export default withMermaid(
                 {
                     text: '用户指南',
                     items: [
+                        { text: '快速上手', link: '/user_guide/QuickStart' },
                         { text: '安装', link: '/' },
                         { text: '指令', link: '/user_guide/CommandList' },
                         { text: '领地配置文件', link: '/user_guide/Config' },
                         { text: '拦截器配置文件', link: '/user_guide/InterceptorConfig' },
+                        { text: '术语表', link: '/user_guide/Glossary' },
                         { text: 'FAQ', link: '/user_guide/FAQ' },
                     ],
                 },
                 {
                     text: '开发者指南',
                     items: [
-                        { text: '环境配置', link: '/developer_guide/RequireSDK' },
-                        { text: 'LDAPI', link: '/developer_guide/LDAPI' },
-                        { text: 'Event', link: '/developer_guide/Event' },
-                        { text: 'i18n', link: '/developer_guide/I18n' },
+                        {
+                            text: 'C++ 原生开发',
+                            collapsed: false,
+                            items: [
+                                { text: '快速开始', link: '/developer_guide/QuickStart' },
+                                { text: '环境配置', link: '/developer_guide/RequireSDK' },
+                                { text: 'LDAPI', link: '/developer_guide/LDAPI' },
+                                { text: 'Event', link: '/developer_guide/Event' },
+                                { text: 'i18n', link: '/developer_guide/I18n' },
+                            ],
+                        },
+                        {
+                            text: '脚本开发',
+                            collapsed: false,
+                            items: [
+                                { text: '概览', link: '/developer_guide/script/index' },
+                                {
+                                    text: 'PLand-NAPI',
+                                    link: '/developer_guide/script/NAPI',
+                                    badge: { text: '实验性', type: 'warning' },
+                                },
+                                {
+                                    text: 'PLand-LegacyRemoteCallApi',
+                                    link: '/developer_guide/script/LegacyRemoteCallApi',
+                                    badge: { text: '废弃', type: 'danger' },
+                                },
+                            ],
+                        },
                     ],
                 },
                 {

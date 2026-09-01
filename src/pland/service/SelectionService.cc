@@ -1,4 +1,5 @@
 #include "SelectionService.h"
+#include "pland/selector/AbstractSelector.h"
 #include "pland/selector/SelectorManager.h"
 
 #include "ll/api/Expected.h"
@@ -15,11 +16,11 @@ SelectionService::~SelectionService() = default;
 
 bool SelectionService::hasActiveSelection(Player& player) const { return impl->mManager.hasSelector(player); }
 
-ll::Expected<> SelectionService::_beginSelection(Player& player, std::unique_ptr<ISelector> selector) {
+ll::Expected<> SelectionService::beginSelection(Player& player, std::unique_ptr<AbstractSelector> selector) {
     if (hasActiveSelection(player)) {
         return ll::makeStringError("选区开启失败，当前存在未完成的选区任务"_trl(player.getLocaleCode()));
     }
-    if (impl->mManager._startSelection(std::move(selector))) {
+    if (impl->mManager.startSelection(std::move(selector))) {
         return {};
     }
     return ll::makeStringError("选区开启失败，未知错误"_trl(player.getLocaleCode()));
@@ -31,7 +32,7 @@ void SelectionService::endSelection(Player& player) {
     }
 }
 
-ISelector* SelectionService::tryGetSelection(Player& player) const {
+AbstractSelector* SelectionService::tryGetSelection(Player& player) const {
     if (hasActiveSelection(player)) {
         return impl->mManager.getSelector(player);
     }
