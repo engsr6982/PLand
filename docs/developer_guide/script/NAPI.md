@@ -8,8 +8,7 @@ PLand-NAPI 目前处于**实验性**阶段，**只是一个理想的推荐方案
 :::
 
 ::: danger 已知问题
-- **事件订阅**（EventBus）功能回调内无法访问 LSE 引擎接口。
-- 运行在 quickjs 后端的脚本**热重载**后，触发事件回调可能导致崩溃、内存泄漏。
+- 相关问题请查看 [issues](https://github.com/IceBlcokMC/PLand-NAPI/issues)
 :::
 
 PLand 的**原生绑定 API**（Native Bind API），用于在 **LegacyScriptEngine（quickjs / nodejs 后端）** 中直接调用 PLand 的 C++ 接口。

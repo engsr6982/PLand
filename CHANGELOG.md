@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-09-01
+
+> 注意: 此版本包含数据库存储格式变更，请务必先备份旧数据再升级
+
 ### ✨ 新增功能
 
 - 支持自定义领地边框绘制颜色 @engsr6982 [#224](https://github.com/IceBlcokMC/PLand/issues/224)
