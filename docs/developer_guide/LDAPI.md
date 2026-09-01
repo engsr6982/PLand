@@ -12,19 +12,19 @@
 
 所有公开 API 均在 `land` 命名空间下（事件在 `land::event`，服务在 `land::service`）。
 
-| 类名 | 命名空间 | 描述 |
-|:----|:--------|:----|
-| `PLand` | `land` | 插件主入口（单例），从这里获取注册表、服务等 |
-| `LandRegistry` | `land` | 领地注册表（存储、查询的核心类） |
-| `Land` | `land` | 领地代理类（提供对原始数据的封装 API） |
-| `LandAABB` / `LandPos` | `land` | 领地范围 / 坐标基类 |
-| `PriceCalculate` | `land` | 价格公式解析、计算 ([formula 价格表达式](../user_guide/Config.md#formula-价格表达式)) |
-| `ConfigProvider` | `land` | 配置文件读取 |
-| `EconomySystem` | `land` | 经济系统 (已封装对接双经济) |
-| `ServiceLocator` | `land::service` | 服务定位器（获取各类 Service） |
-| `LandSelector` | `land` | 领地选区器(负责圈地、修改范围) |
-| `SelectorManager` | `land` | 选区管理器 |
-| `DrawHandleManager` | `land` | 绘制管道管理 (每个玩家独立分配) |
+| 类名                   | 命名空间        | 描述                                                                                |
+| :--------------------- | :-------------- | :---------------------------------------------------------------------------------- |
+| `PLand`                | `land`          | 插件主入口（单例），从这里获取注册表、服务等                                        |
+| `LandRegistry`         | `land`          | 领地注册表（存储、查询的核心类）                                                    |
+| `Land`                 | `land`          | 领地代理类（提供对原始数据的封装 API）                                              |
+| `LandAABB` / `LandPos` | `land`          | 领地范围 / 坐标基类                                                                 |
+| `PriceCalculate`       | `land`          | 价格公式解析、计算 ([formula 价格表达式](/user_guide/Config.md#formula-价格表达式)) |
+| `ConfigProvider`       | `land`          | 配置文件读取                                                                        |
+| `EconomySystem`        | `land`          | 经济系统 (已封装对接双经济)                                                         |
+| `ServiceLocator`       | `land::service` | 服务定位器（获取各类 Service）                                                      |
+| `LandSelector`         | `land`          | 领地选区器(负责圈地、修改范围)                                                      |
+| `SelectorManager`      | `land`          | 选区管理器                                                                          |
+| `DrawHandleManager`    | `land`          | 绘制管道管理 (每个玩家独立分配)                                                     |
 
 ::: warning ⚠️：当您需要长期持有 `Land` 时建议使用 `std::weak_ptr<Land>` 弱引用。
 :::
@@ -144,7 +144,7 @@ bool ok = economy.reduceChecked(playerUuid, /* 金额 */ 1000);
 
 ### 事件监听
 
-事件系统使用 LeviLamina 的 `EventBus`，详见 [Event](Event)：
+事件系统使用 LeviLamina 的 `EventBus`，详见 [Event](/developer_guide/Event)：
 
 ```cpp
 #include "pland/events/domain/OwnerChangedEvent.h"
@@ -176,10 +176,10 @@ PLand 默认不导出这些API的符号，也不推荐访问、修改 `internal`
 
 所有 `Service` 都受 `ServiceLocator` 管理，您可以通过 `ServiceLocator` 获取它们：
 
-| Service | 作用 |
-|:--------|:----|
+| Service                 | 作用                                 |
+| :---------------------- | :----------------------------------- |
 | `LandManagementService` | 领地管理（创建、删除、转让、成员等） |
-| `LandHierarchyService` | 子领地层级管理 |
-| `LandPriceService` | 价格计算 |
-| `LeasingService` | 租赁管理 |
-| `SelectionService` | 选区任务管理 |
+| `LandHierarchyService`  | 子领地层级管理                       |
+| `LandPriceService`      | 价格计算                             |
+| `LeasingService`        | 租赁管理                             |
+| `SelectionService`      | 选区任务管理                         |

@@ -3,26 +3,28 @@
 > 本篇带你**从零创建第一个能调用 PLand API 的 C++ 附属插件**，完成后你将拥有一个「玩家进出领地时向全服广播」的可用插件。
 
 ::: tip 前置知识
+
 - 本教程假设你会 C++，并且熟悉 Git 和 XMake
 - 需要已经安装：Git、Visual Studio 2022（含 C++ 桌面开发工作负载）、**LLVM clang-cl**（22.x）、XMake
 - **LeviLamina 26.20 及以上版本**需要 **LLVM clang-cl 22.x** 编译器进行构建
-:::
+  :::
 
 ## 1. 环境准备
 
 PLand 是运行在 **LeviLamina** 上的插件，我们的附属插件首先是一个标准的 LeviLamina Mod。
 
-项目创建、引入 PLand SDK 等环境搭建步骤请先完成 [环境配置](RequireSDK)：
+项目创建、引入 PLand SDK 等环境搭建步骤请先完成 [环境配置](/developer_guide/RequireSDK)：
 
 1. 基于 [levilamina-mod-template](https://github.com/LiteLDev/levilamina-mod-template) 创建项目
 2. 在 `xmake.lua` 中引入 PLand SDK（`add_requires("pland >= 0.16.0")` + `add_packages("pland")`）
 3. 运行 `xmake repo -u`、`xmake f -y -p windows -a x64 -m release`、`xmake` 完成构建配置
 
 ::: warning 使用注意
+
 - `include` 时，PLand 的项目文件在 `pland` 文件夹下，例如 `#include "pland/PLand.h"`
 - PLand 的命名空间为 `land`（所有类和函数都在 `land` 命名空间下）
 - 在添加新的依赖后，别忘了更新 IntelliSense，否则 clangd 可能无法找到实现
-:::
+  :::
 
 ::: tip 已经完成环境配置？
 跳过本节，直接进入 [编写你的第一个插件](#2-编写你的第一个插件)。
@@ -96,7 +98,7 @@ xmake
 
 ## 4. 下一步
 
-- 了解 PLand 导出的全部 API → [LDAPI](LDAPI)
-- 了解所有可监听的事件 → [Event](Event)
-- 学习服务定位器（ServiceLocator）的用法 → [LDAPI：service 相关](LDAPI#service-相关)
+- 了解 PLand 导出的全部 API → [LDAPI](/developer_guide/LDAPI)
+- 了解所有可监听的事件 → [Event](/developer_guide/Event)
+- 学习服务定位器（ServiceLocator）的用法 → [LDAPI：service 相关](/developer_guide/LDAPI#service-相关)
 - 不想写 C++？试试 [脚本开发](/developer_guide/script/index)

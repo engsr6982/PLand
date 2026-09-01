@@ -6,7 +6,7 @@ PLand 的 **LegacyRemoteCallApi（LRCA）** 实现，用于在 **LegacyScriptEng
 
 ::: warning 注意事项
 - 本项目仅对 PLand C++ API 进行封装，**不包含 PLand 的任何代码**，请确保已经安装了 PLand
-- 由于引擎限制，无法做到原生持有 Native 对象，因此采用了一些折衷方案（句柄），**对于大型项目存在性能问题**，建议大型项目使用 [C++ API](../QuickStart)
+- 由于引擎限制，无法做到原生持有 Native 对象，因此采用了一些折衷方案（句柄），**对于大型项目存在性能问题**，建议大型项目使用 [C++ API](/developer_guide/QuickStart)
 :::
 
 ## 安装

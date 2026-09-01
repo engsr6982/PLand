@@ -4,7 +4,7 @@
 PLand-NAPI 目前处于**实验性**阶段，**只是一个理想的推荐方案**，还有一些问题没有验证和解决。
 
 - API 可能随版本调整，请关注更新日志
-- 生产环境建议使用稳定可用的 [PLand-LegacyRemoteCallApi](LegacyRemoteCallApi)
+- 生产环境建议使用稳定可用的 [PLand-LegacyRemoteCallApi](/developer_guide/script/LegacyRemoteCallApi)
 :::
 
 ::: danger 已知问题
