@@ -37,11 +37,11 @@ int64_t LandPriceService::calculatePriceRecursively(
 
 ll::Expected<LandPriceService::PriceResult>
 LandPriceService::getOrdinaryLandPrice(LandAABB const& range, int dimId, bool is3D) const {
-    return executeFormula(range, dimId, Config::getLandPriceCalculateFormula(is3D));
+    return executeFormula(range, dimId, ConfigProvider::getPurchasePriceFormula(is3D));
 }
 
 ll::Expected<LandPriceService::PriceResult> LandPriceService::getSubLandPrice(LandAABB const& range, int dimId) const {
-    return executeFormula(range, dimId, Config::getSubLandPriceCalculateFormula());
+    return executeFormula(range, dimId, ConfigProvider::getSubLandPriceFormula());
 }
 
 int64_t LandPriceService::getRefundAmount(std::shared_ptr<Land> const& land) const {

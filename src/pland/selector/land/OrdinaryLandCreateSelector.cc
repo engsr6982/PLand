@@ -1,4 +1,3 @@
-#pragma once
 #include "OrdinaryLandCreateSelector.h"
 
 #include "pland/land/Land.h"

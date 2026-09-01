@@ -69,9 +69,8 @@ void EventInterceptor::setupIlaEntityListeners() {
             [registry](ila::mc::MobPlaceBlockBeforeEvent& ev) {
                 TRACE_THIS_EVENT(ila::mc::MobPlaceBlockBeforeEvent);
 
-                auto& actor       = ev.self();
-                auto& blockPos    = ev.pos();
-                auto& blockSource = actor.getDimensionBlockSource();
+                auto& actor    = ev.self();
+                auto& blockPos = ev.pos();
 
                 TRACE_LOG("actor={}, pos={}", actor.getTypeName(), blockPos.toString());
 

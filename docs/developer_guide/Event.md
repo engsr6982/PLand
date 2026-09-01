@@ -5,9 +5,10 @@ PLand 通过 **LeviLamina 的事件系统**向附属插件暴露领地事件，�
 ## 核心概念
 
 ::: tip 事件分为 `Before` 和 `After` 两个阶段
+
 - `Before` 阶段：事件触发**前**，可以通过 `ev.cancel()` 取消事件
 - `After` 阶段：事件触发**后**，无法取消
-:::
+  :::
 
 ::: tip 命名规则
 `事件名` + `Before` / `After` + `Event`  
@@ -27,52 +28,53 @@ PLand 通过 **LeviLamina 的事件系统**向附属插件暴露领地事件，�
 
 位于 `pland/events/player/`，均继承 `ll::event::PlayerEvent`（可通过 `ev.self()` 获取玩家）。
 
-| 事件 | 头文件 | 可取消 |
-|:----|:------|:-----:|
-| `PlayerEnterLandEvent` | `player/PlayerMoveEvent.h` | × |
-| `PlayerLeaveLandEvent` | `player/PlayerMoveEvent.h` | × |
-| `PlayerBuyLandBeforeEvent` | `player/PlayerBuyLandEvent.h` | √ |
-| `PlayerBuyLandAfterEvent` | `player/PlayerBuyLandEvent.h` | × |
-| `PlayerRequestCreateLandEvent` | `player/PlayerRequestCreateLandEvent.h` | × |
-| `PlayerApplyLandRangeChangeBeforeEvent` | `player/PlayerApplyLandRangeChangeEvent.h` | √ |
-| `PlayerApplyLandRangeChangeAfterEvent` | `player/PlayerApplyLandRangeChangeEvent.h` | × |
-| `PlayerRequestChangeLandRangeBeforeEvent` | `player/PlayerRequestChangeLandRangeEvent.h` | √ |
-| `PlayerRequestChangeLandRangeAfterEvent` | `player/PlayerRequestChangeLandRangeEvent.h` | × |
-| `PlayerChangeLandMemberBeforeEvent` | `player/PlayerChangeLandMemberEvent.h` | √ |
-| `PlayerChangeLandMemberAfterEvent` | `player/PlayerChangeLandMemberEvent.h` | × |
-| `PlayerChangeLandNameBeforeEvent` | `player/PlayerChangeLandNameEvent.h` | √ |
-| `PlayerChangeLandNameAfterEvent` | `player/PlayerChangeLandNameEvent.h` | × |
-| `PlayerDeleteLandBeforeEvent` | `player/PlayerDeleteLandEvent.h` | √ |
-| `PlayerDeleteLandAfterEvent` | `player/PlayerDeleteLandEvent.h` | × |
-| `PlayerLeaseLandEvent` | `player/PlayerLeaseLandEvent.h` | × |
-| `PlayerRenewLandEvent` | `player/PlayerRenewLandEvent.h` | × |
-| `PlayerTransferLandBeforeEvent` | `player/PlayerTransferLandEvent.h` | √ |
-| `PlayerTransferLandAfterEvent` | `player/PlayerTransferLandEvent.h` | × |
+| 事件                                      | 头文件                                       | 可取消 |
+| :---------------------------------------- | :------------------------------------------- | :----: |
+| `PlayerEnterLandEvent`                    | `player/PlayerMoveEvent.h`                   |   ×    |
+| `PlayerLeaveLandEvent`                    | `player/PlayerMoveEvent.h`                   |   ×    |
+| `PlayerBuyLandBeforeEvent`                | `player/PlayerBuyLandEvent.h`                |   √    |
+| `PlayerBuyLandAfterEvent`                 | `player/PlayerBuyLandEvent.h`                |   ×    |
+| `PlayerRequestCreateLandEvent`            | `player/PlayerRequestCreateLandEvent.h`      |   ×    |
+| `PlayerApplyLandRangeChangeBeforeEvent`   | `player/PlayerApplyLandRangeChangeEvent.h`   |   √    |
+| `PlayerApplyLandRangeChangeAfterEvent`    | `player/PlayerApplyLandRangeChangeEvent.h`   |   ×    |
+| `PlayerRequestChangeLandRangeBeforeEvent` | `player/PlayerRequestChangeLandRangeEvent.h` |   √    |
+| `PlayerRequestChangeLandRangeAfterEvent`  | `player/PlayerRequestChangeLandRangeEvent.h` |   ×    |
+| `PlayerChangeLandMemberBeforeEvent`       | `player/PlayerChangeLandMemberEvent.h`       |   √    |
+| `PlayerChangeLandMemberAfterEvent`        | `player/PlayerChangeLandMemberEvent.h`       |   ×    |
+| `PlayerChangeLandNameBeforeEvent`         | `player/PlayerChangeLandNameEvent.h`         |   √    |
+| `PlayerChangeLandNameAfterEvent`          | `player/PlayerChangeLandNameEvent.h`         |   ×    |
+| `PlayerDeleteLandBeforeEvent`             | `player/PlayerDeleteLandEvent.h`             |   √    |
+| `PlayerDeleteLandAfterEvent`              | `player/PlayerDeleteLandEvent.h`             |   ×    |
+| `PlayerLeaseLandEvent`                    | `player/PlayerLeaseLandEvent.h`              |   ×    |
+| `PlayerRenewLandEvent`                    | `player/PlayerRenewLandEvent.h`              |   ×    |
+| `PlayerTransferLandBeforeEvent`           | `player/PlayerTransferLandEvent.h`           |   √    |
+| `PlayerTransferLandAfterEvent`            | `player/PlayerTransferLandEvent.h`           |   ×    |
 
 ### 领域事件
 
 位于 `pland/events/domain/`，与具体玩家无关，均带 `land()` 访问器。
 
-| 事件 | 头文件 | 可取消 |
-|:----|:------|:-----:|
-| `LandRecycleEvent` | `domain/LandRecycleEvent.h` | × |
-| `LandResizedEvent` | `domain/LandResizedEvent.h` | × |
-| `LandStateChangedEvent` | `domain/LandStateChangedEvent.h` | × |
-| `MemberChangedEvent` | `domain/MemberChangedEvent.h` | × |
-| `MembersClearedEvent` | `domain/MemberChangedEvent.h` | × |
-| `OwnerChangedEvent` | `domain/OwnerChangedEvent.h` | × |
-| `ConfigReloadEvent` | `domain/ConfigReloadEvent.h` | × |
+| 事件                    | 头文件                           | 可取消 |
+| :---------------------- | :------------------------------- | :----: |
+| `LandRecycleEvent`      | `domain/LandRecycleEvent.h`      |   ×    |
+| `LandResizedEvent`      | `domain/LandResizedEvent.h`      |   ×    |
+| `LandStateChangedEvent` | `domain/LandStateChangedEvent.h` |   ×    |
+| `MemberChangedEvent`    | `domain/MemberChangedEvent.h`    |   ×    |
+| `MembersClearedEvent`   | `domain/MemberChangedEvent.h`    |   ×    |
+| `OwnerChangedEvent`     | `domain/OwnerChangedEvent.h`     |   ×    |
+| `ConfigReloadEvent`     | `domain/ConfigReloadEvent.h`     |   ×    |
 
 ### 经济事件
 
-| 事件 | 头文件 | 可取消 |
-|:----|:------|:-----:|
-| `LandRefundFailedEvent` | `economy/LandRefundFailedEvent.h` | × |
+| 事件                    | 头文件                            | 可取消 |
+| :---------------------- | :-------------------------------- | :----: |
+| `LandRefundFailedEvent` | `economy/LandRefundFailedEvent.h` |   ×    |
 
 ::: tip 提示
+
 - `Before` 事件可以在触发前阻止操作（如阻止购买、阻止删除等）
 - 领域事件与 `PlayerXxxAfterEvent` 可通过 `ev.land()` 获取领地对象（`std::shared_ptr<Land>`）
-:::
+  :::
 
 ## 监听事件示例
 

@@ -58,22 +58,18 @@ ll::Expected<> ConfigProvider::save(const std::filesystem::path& baseDir) {
 }
 
 bool Config::ensureDimensionAllowed(int dimensionId) {
-    auto& allowed = cfg.business.bought.allowDimensions;
-    return std::find(allowed.begin(), allowed.end(), dimensionId) != allowed.end();
+    return ConfigProvider::isDimensionAllowedForPurchase(dimensionId);
 }
-bool Config::ensureSubLandFeatureEnabled() { return cfg.business.bought.subLand.enabled; }
-bool Config::ensureOrdinaryLandEnabled(bool is3D) {
-    return is3D ? cfg.business.bought.mode3D.enabled : cfg.business.bought.mode2D.enabled;
-}
-bool Config::ensureLeasingEnabled() { return cfg.business.leasing.enabled; }
+
+bool Config::ensureSubLandFeatureEnabled() { return ConfigProvider::isSubLandEnabled(); }
+bool Config::ensureOrdinaryLandEnabled(bool is3D) { return ConfigProvider::isPurchaseModeEnabled(is3D); }
+bool Config::ensureLeasingEnabled() { return ConfigProvider::isLeasingEnabled(); }
 bool Config::ensureLeasingDimensionAllowed(int dimensionId) {
-    auto& allowed = cfg.business.leasing.allowDimensions;
-    return std::find(allowed.begin(), allowed.end(), dimensionId) != allowed.end();
+    return ConfigProvider::isDimensionAllowedForLeasing(dimensionId);
 }
 std::string const& Config::getLandPriceCalculateFormula(bool is3D) {
-    return is3D ? cfg.business.bought.mode3D.formula : cfg.business.bought.mode2D.formula;
+    return ConfigProvider::getPurchasePriceFormula(is3D);
 }
-std::string const& Config::getSubLandPriceCalculateFormula() { return cfg.business.bought.subLand.formula; }
-
+std::string const& Config::getSubLandPriceCalculateFormula() { return ConfigProvider::getSubLandPriceFormula(); }
 
 } // namespace land

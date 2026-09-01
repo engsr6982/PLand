@@ -159,7 +159,7 @@ void LandManagerGUI::sendMainMenu(Player& player, std::shared_ptr<Land> land) {
             [land](Player& pl) { sendTransferLandGUI(pl, land); }
         );
 
-        if (Config::ensureSubLandFeatureEnabled() && land->canCreateSubLand()) {
+        if (ConfigProvider::isSubLandEnabled() && land->canCreateSubLand()) {
             fm.appendButton("创建子领地"_trl(localeCode), "textures/ui/icon_recipe_nature", "path", [land](Player& pl) {
                 sendCreateSubLandConfirm(pl, land);
             });

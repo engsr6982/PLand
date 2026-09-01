@@ -17,7 +17,7 @@ PLand 的所有配置文件均为 **JSON 格式**，位于 `plugins/PLand/config
 | [`constraints`](#constraints-全局约束) | 全服统一的领地规则（数量/大小/间距） | `Config.json` |
 | [`business`](#business-商业配置) | 买断制 / 租赁制的价格与规则 | `Config.json` |
 | [`system`](#system-系统配置) | 遥测、开发者工具 | `Config.json` |
-| [`listeners` / `hooks` / `rules`](#) | 事件监听、权限修补、特殊物品权限 | `InterceptorConfig.json`（[单独文档](InterceptorConfig)） |
+| [`listeners` / `hooks` / `rules`](#) | 事件监听、权限修补、特殊物品权限 | `InterceptorConfig.json`（[单独文档](/user_guide/InterceptorConfig)） |
 
 ## 完整配置示例
 
@@ -268,7 +268,7 @@ PLand 的所有配置文件均为 **JSON 格式**，位于 `plugins/PLand/config
 
 ### 租赁制 `leasing`
 
-> 租赁制详细设计见 [设计文档：租赁模式](../design/feat/LeasingModel)。
+> 租赁制详细设计见 [设计文档：租赁模式](/design/feat/LeasingModel)。
 
 | 配置项 | 默认值 | 说明 |
 |:------|:-----|:----|
@@ -292,7 +292,7 @@ PLand 的所有配置文件均为 **JSON 格式**，位于 `plugins/PLand/config
 
 | 配置项 | 默认值 | 说明 |
 |:------|:-----|:----|
-| `telemetry` | `true` | 是否启用遥测统计（[了解更多](FAQ#关于遥测)） |
+| `telemetry` | `true` | 是否启用遥测统计（[了解更多](/user_guide/FAQ#关于遥测)） |
 | `devTools` | `false` | 是否启用开发者工具（依赖 OpenGL3 与 Windows 桌面环境） |
 
 ## formula 价格表达式

@@ -88,7 +88,7 @@ void LandBuyGUI::_impl(Player& player, OrdinaryLandCreateSelector* selector) {
 
     bool const is3D  = selector->is3D();
     auto       range = selector->newLandAABB();
-    range->fix();
+    range->canonicalize();
 
     auto const volume = range->getVolume();
     if (volume >= INT_MAX) {
@@ -153,7 +153,7 @@ void LandBuyGUI::_chooseLeaseDays(Player& player, OrdinaryLandCreateSelector* se
 
     bool const is3D  = selector->is3D();
     auto       range = selector->newLandAABB();
-    range->fix();
+    range->canonicalize();
 
     auto const volume = range->getVolume();
     if (volume >= INT_MAX) {
@@ -253,7 +253,7 @@ void LandBuyGUI::_impl(Player& player, LandResizeSelector* selector) {
 
     auto aabb = selector->newLandAABB();
 
-    aabb->fix();
+    aabb->canonicalize();
     auto const volume = aabb->getVolume();
     if (volume >= INT_MAX) {
         feedback_utils::sendErrorText(player, "领地体积过大，无法购买"_trl(localeCode));
@@ -340,7 +340,7 @@ void LandBuyGUI::_impl(Player& player, SubLandCreateSelector* selector) {
     auto localeCode = player.getLocaleCode();
 
     auto subLandRange = selector->newLandAABB();
-    subLandRange->fix();
+    subLandRange->canonicalize();
     auto const volume = subLandRange->getVolume();
     if (volume >= INT_MAX) {
         feedback_utils::sendErrorText(player, "领地体积过大，无法购买"_trl(localeCode));

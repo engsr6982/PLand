@@ -23,7 +23,7 @@
 :::
 
 ::: tip 想直接上手？
-可以先跟着 [C++ 快速开始](QuickStart) 教程，创建你的第一个能调用 PLand API 的插件。
+可以先跟着 [C++ 快速开始](/developer_guide/QuickStart) 教程，创建你的第一个能调用 PLand API 的插件。
 :::
 
 ## 创建项目
@@ -88,6 +88,6 @@ xmake
 
 ## 下一步
 
-- 编写你的第一个插件 → [C++ 快速开始](QuickStart)
-- 查看 PLand 导出的全部 API → [LDAPI](LDAPI)
-- 了解可监听的事件 → [Event](Event)
+- 编写你的第一个插件 → [C++ 快速开始](/developer_guide/QuickStart)
+- 查看 PLand 导出的全部 API → [LDAPI](/developer_guide/LDAPI)
+- 了解可监听的事件 → [Event](/developer_guide/Event)

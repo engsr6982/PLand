@@ -204,7 +204,7 @@ void land_buy(CommandOrigin const& ori, CommandOutput& /* out */) {
 
 void reload(CommandOrigin const& /* ori */, CommandOutput& out) {
     if (PLand::getInstance().loadConfig()) {
-        ll::event::EventBus::getInstance().publish(events::ConfigReloadEvent{});
+        ll::event::EventBus::getInstance().publish(event::ConfigReloadEvent{});
         feedback_utils::sendText(out, "领地系统配置已重新加载"_tr());
     } else {
         feedback_utils::sendErrorText(out, "领地系统配置加载失败，请检查配置文件"_tr());

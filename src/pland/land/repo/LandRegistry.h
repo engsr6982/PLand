@@ -16,7 +16,7 @@ class UUID;
 namespace land {
 
 class Land;
-class LandContext;
+struct LandContext;
 class PLand;
 
 struct PlayerSettings {
@@ -99,7 +99,12 @@ public: // 领地查询API
 
     LDNDAPI std::unordered_map<mce::UUID, std::unordered_set<std::shared_ptr<Land>>> getLandsByOwner() const;
 
-    LDNDAPI LandPermType getPermType(mce::UUID const& uuid, LandID id = 0, bool includeOperator = true) const;
+    [[deprecated("Use `getEffectiveRole` instead")]]
+    LDNDAPI
+        LandPermType getPermType(mce::UUID const& uuid, LandID id = INVALID_LAND_ID, bool includeOperator = true) const;
+
+    LDNDAPI LandRole
+    getEffectiveRole(mce::UUID const& uuid, LandID id = INVALID_LAND_ID, bool includeOperator = true) const;
 
     LDNDAPI std::shared_ptr<Land> getLandAt(BlockPos const& pos, LandDimid dimid) const;
 

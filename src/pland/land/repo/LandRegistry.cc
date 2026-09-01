@@ -846,20 +846,25 @@ std::unordered_map<mce::UUID, std::unordered_set<std::shared_ptr<Land>>> LandReg
 
 
 LandPermType LandRegistry::getPermType(mce::UUID const& uuid, LandID id, bool includeOperator) const {
+    return getEffectiveRole(uuid, id, includeOperator);
+}
+LandRole LandRegistry::getEffectiveRole(mce::UUID const& uuid, LandID id, bool includeOperator) const {
     std::shared_lock lock(impl->mDataMutex);
 
     if (includeOperator) {
         std::shared_lock opLock(impl->mOperatorMutex);
         if (std::find(impl->mAdmins.begin(), impl->mAdmins.end(), uuid) != impl->mAdmins.end()) {
-            return LandPermType::Admin;
+            return LandRole::Admin;
         }
     }
 
-    if (auto it = impl->mLandCache.find(id); it != impl->mLandCache.end()) {
-        return it->second->getPermType(uuid);
+    if (id > INVALID_LAND_ID) {
+        if (auto it = impl->mLandCache.find(id); it != impl->mLandCache.end()) {
+            return it->second->getEffectiveRole(uuid);
+        }
     }
 
-    return LandPermType::Actor;
+    return LandRole::Actor;
 }
 
 

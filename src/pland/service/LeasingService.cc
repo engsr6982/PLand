@@ -467,7 +467,7 @@ ll::Expected<> LeasingService::toLeased(std::shared_ptr<Land> const& land, int d
 
 ll::Expected<std::shared_ptr<Land>>
 LeasingService::leaseLand(Player& player, OrdinaryLandCreateSelector* selector, int days) {
-    if (!Config::ensureLeasingEnabled()) {
+    if (!ConfigProvider::isLeasingEnabled()) {
         return ll::makeStringError("租赁模式未启用"_trl(player.getLocaleCode()));
     }
     if (!selector) {
@@ -486,7 +486,7 @@ LeasingService::leaseLand(Player& player, OrdinaryLandCreateSelector* selector, 
     if (!range) {
         return ll::makeStringError("选区范围无效"_trl(player.getLocaleCode()));
     }
-    range->fix();
+    range->canonicalize();
 
     auto rentExp = impl->mLandPriceService.calculateDailyRent(*range, selector->getDimensionId(), selector->is3D());
     if (!rentExp) {
