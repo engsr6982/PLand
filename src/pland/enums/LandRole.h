@@ -12,8 +12,8 @@ enum class LandRole : uint8_t {
     Actor = 3, // 实体
 
     // 兼容旧数据
-    Operator [[deprecated]] = 0, // 旧版操作员，映射到 Admin
-    Guest [[deprecated]]    = 3, // 旧版访客，映射到 Actor
+    Operator [[deprecated("Use `LandRole::Admin` instead")]] = 0, // 旧版操作员，映射到 Admin
+    Guest [[deprecated("Use `LandRole::Actor` instead")]]    = 3, // 旧版访客，映射到 Actor
 };
 
 using LandPermRole [[deprecated("Use LandRole instead")]] = LandRole;

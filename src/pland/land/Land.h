@@ -263,7 +263,13 @@ public:
     /**
      * @brief 获取一个玩家在当前领地所拥有的权限类别
      */
-    LDNDAPI LandPermType getPermType(mce::UUID const& uuid) const;
+    [[deprecated("Use `getEffectiveRole` instead")]] LDNDAPI LandPermType getPermType(mce::UUID const& uuid) const;
+
+    /**
+     * @brief 获取玩家在当前领地的有效角色
+     * @return 领地冻结时返回 Actor，否则根据权限返回对应角色
+     */
+    LDNDAPI LandRole getEffectiveRole(mce::UUID const& uuid) const;
 
     /**
      * 迁移领地主人信息 (XUID -> UUID)

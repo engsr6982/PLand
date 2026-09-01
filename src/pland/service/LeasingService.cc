@@ -467,7 +467,7 @@ ll::Expected<> LeasingService::toLeased(std::shared_ptr<Land> const& land, int d
 
 ll::Expected<std::shared_ptr<Land>>
 LeasingService::leaseLand(Player& player, OrdinaryLandCreateSelector* selector, int days) {
-    if (!Config::ensureLeasingEnabled()) {
+    if (!ConfigProvider::isLeasingEnabled()) {
         return ll::makeStringError("租赁模式未启用"_trl(player.getLocaleCode()));
     }
     if (!selector) {

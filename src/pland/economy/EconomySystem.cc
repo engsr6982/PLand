@@ -19,7 +19,7 @@ struct EconomySystem::Impl {
     mutable std::mutex                    mInstanceMutex;
 
     std::shared_ptr<econbridge::IEconomy> create() const {
-        auto& cfg = Config::cfg.economy;
+        auto& cfg = ConfigProvider::cfg.economy;
         if (!cfg.enabled) {
             PLand::getInstance().getSelf().getLogger().debug("using internals::EmptyEconomy");
             return std::make_shared<econbridge::detail::NullEconomy>();
@@ -75,7 +75,7 @@ bool EconomySystem::reduceChecked(mce::UUID const& uuid, int64_t amount) const {
 std::string EconomySystem::getCostMessage(Player& player, llong amount) const {
     auto localeCode = player.getLocaleCode();
 
-    auto& config = Config::cfg.economy;
+    auto& config = ConfigProvider::cfg.economy;
     if (!config.enabled) {
         return "\n[Tip] 经济系统未启用，本次操作不消耗 {}"_trl(localeCode, config.economyName);
     }

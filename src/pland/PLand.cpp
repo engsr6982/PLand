@@ -138,9 +138,9 @@ bool PLand::enable() {
 
     mImpl->mServiceLocator = std::make_unique<service::ServiceLocator>(*this);
 
-    mImpl->mConfigReloadListener = ll::event::EventBus::getInstance().emplaceListener<events::ConfigReloadEvent>(
-        [this](events::ConfigReloadEvent& ev [[maybe_unused]]) {
-            internal::interceptor::InterceptorConfig::load(getSelf().getConfigDir());
+    mImpl->mConfigReloadListener = ll::event::EventBus::getInstance().emplaceListener<event::ConfigReloadEvent>(
+        [this](event::ConfigReloadEvent& ev [[maybe_unused]]) {
+            (void)internal::interceptor::InterceptorConfig::load(getSelf().getConfigDir());
 
             mImpl->mEventListener->reload();
 

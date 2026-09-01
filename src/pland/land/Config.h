@@ -236,18 +236,48 @@ struct ConfigProvider {
         }
         return std::nullopt;
     }
+
+    inline static bool isDimensionAllowedForPurchase(LandDimid dimensionId) {
+        auto& allowed = cfg.business.bought.allowDimensions;
+        return std::find(allowed.begin(), allowed.end(), dimensionId) != allowed.end();
+    }
+    inline static bool isPurchaseModeEnabled(bool is3D) {
+        return is3D ? cfg.business.bought.mode3D.enabled : cfg.business.bought.mode2D.enabled;
+    }
+    inline static std::string const& getPurchasePriceFormula(bool is3D) {
+        return is3D ? cfg.business.bought.mode3D.formula : cfg.business.bought.mode2D.formula;
+    }
+    inline static bool               isSubLandEnabled() { return cfg.business.bought.subLand.enabled; }
+    inline static std::string const& getSubLandPriceFormula() { return cfg.business.bought.subLand.formula; }
+
+    inline static bool isLeasingEnabled() { return cfg.business.leasing.enabled; }
+    inline static bool isDimensionAllowedForLeasing(LandDimid dimensionId) {
+        auto& allowed = cfg.business.leasing.allowDimensions;
+        return std::find(allowed.begin(), allowed.end(), dimensionId) != allowed.end();
+    }
 };
 
-struct [[deprecated]] Config : ConfigProvider {
-    [[deprecated]] LDAPI static bool ensureDimensionAllowed(int dimensionId);
-    [[deprecated]] LDAPI static bool ensureSubLandFeatureEnabled();
-    [[deprecated]] LDAPI static bool ensureOrdinaryLandEnabled(bool is3D);
-    [[deprecated]] LDAPI static bool ensureLeasingEnabled();
-    [[deprecated]] LDAPI static bool ensureLeasingDimensionAllowed(int dimensionId);
+struct [[deprecated("Use ConfigProvider instead")]] Config : ConfigProvider {
+    [[deprecated("Use `ConfigProvider::isDimensionAllowedForPurchase` instead")]]
+    LDAPI static bool ensureDimensionAllowed(int dimensionId);
 
-    [[deprecated]] LDAPI static std::string const& getLandPriceCalculateFormula(bool is3D); // 获取价格计算公式
+    [[deprecated("Use `ConfigProvider::isSubLandEnabled` instead")]]
+    LDAPI static bool ensureSubLandFeatureEnabled();
 
-    [[deprecated]] LDAPI static std::string const& getSubLandPriceCalculateFormula(); // 获取子领地价格计算公式
+    [[deprecated("Use `ConfigProvider::isPurchaseModeEnabled` instead")]]
+    LDAPI static bool ensureOrdinaryLandEnabled(bool is3D);
+
+    [[deprecated("Use `ConfigProvider::isLeasingEnabled` (or `isLeasingModelEnabled`) instead")]]
+    LDAPI static bool ensureLeasingEnabled();
+
+    [[deprecated("Use `ConfigProvider::isDimensionAllowedForLeasing` instead")]]
+    LDAPI static bool ensureLeasingDimensionAllowed(int dimensionId);
+
+    [[deprecated("Use `ConfigProvider::getPurchasePriceFormula` instead")]]
+    LDAPI static std::string const& getLandPriceCalculateFormula(bool is3D);
+
+    [[deprecated("Use `ConfigProvider::getSubLandPriceFormula` instead")]]
+    LDAPI static std::string const& getSubLandPriceCalculateFormula();
 };
 
 } // namespace land
