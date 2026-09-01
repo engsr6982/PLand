@@ -13,7 +13,7 @@ add_requires("levibuildscript")
 add_requires("ilistenattentively 0.13.0")
 
 -- IceBlockMC
-add_requires("ll-bstats 0.4.0")
+add_requires("ll-bstats 0.5.0")
 add_requires("economy_bridge 0.5.0")
 
 -- xmake
