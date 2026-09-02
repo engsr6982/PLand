@@ -21,7 +21,12 @@
     /* Mac 风格代码块 (浅色模式) */
     --vp-code-header-bg: #eef0f2;
     --vp-code-header-border: rgba(0, 0, 0, 0.09);
+    --vp-code-block-border: rgba(0, 0, 0, 0.16);
     --vp-code-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+
+    /* 代码块/表格横向滚动条 (浅色模式) */
+    --vp-scrollbar-thumb: rgba(0, 0, 0, 0.28);
+    --vp-scrollbar-track: rgba(0, 0, 0, 0.07);
 
     /* 自定义容器强调色 (浅色模式) */
     --cb-info: #2563eb;
@@ -53,7 +58,12 @@
     /* Mac 风格代码块 (深色模式) */
     --vp-code-header-bg: rgba(255, 255, 255, 0.06);
     --vp-code-header-border: rgba(255, 255, 255, 0.09);
+    --vp-code-block-border: rgba(255, 255, 255, 0.16);
     --vp-code-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+
+    /* 代码块/表格横向滚动条 (深色模式) */
+    --vp-scrollbar-thumb: rgba(255, 255, 255, 0.3);
+    --vp-scrollbar-track: rgba(255, 255, 255, 0.07);
 
     /* 自定义容器强调色 (深色模式) */
     --cb-info: #60a5fa;
@@ -68,10 +78,12 @@
  * Mac 风格代码块
  * ========================================================================== */
 
-/* 容器：为顶部标题栏留出空间，圆角裁切标题栏背景 */
+/* 容器：为顶部标题栏留出空间，圆角裁切标题栏背景；
+ * 不加 border 时轮廓只靠软阴影，与页面背景区分度不够，补一圈细边框让边界清晰 */
 .vp-doc div[class*='language-'] {
     padding-top: 38px;
     overflow: hidden;
+    border: 1px solid var(--vp-code-block-border);
     box-shadow: var(--vp-code-shadow);
 }
 
@@ -127,16 +139,18 @@
     display: none;
 }
 
-/* 复制按钮：缩小并移入标题栏右上角 */
+/* 复制按钮：缩小并移入标题栏右上角，常驻显示 (不依赖鼠标悬停)
+ * 覆盖默认的 opacity: 0，并给出可见的常驻边框/背景 */
 .vp-doc div[class*='language-'] > button.copy {
     top: 6px;
     right: 12px;
     width: 26px;
     height: 26px;
     border-radius: 6px;
-    background-color: transparent;
-    border-color: transparent;
+    border-color: var(--vp-code-copy-code-border-color);
+    background-color: var(--vp-code-copy-code-bg);
     background-size: 16px;
+    opacity: 1;
 }
 
 .vp-doc div[class*='language-'] > button.copy:hover,
@@ -191,6 +205,42 @@
 /* 差异行保留 +/- 标记，不显示行号 */
 .vp-doc div[class*='language-'] code .line.diff::before {
     content: none;
+}
+
+/* ==========================================================================
+ * 代码块 / 表格横向滚动条：常驻可见
+ *
+ * Windows 开启“自动隐藏滚动条”时，浏览器使用浮层滚动条，内容一旦横向溢出
+ * 在没滚动之前完全看不出能不能滚。显式定义 ::-webkit-scrollbar（宽高 +
+ * thumb/track）会强制 WebKit 内核启用常驻滚动条；scrollbar-width/color 兼容
+ * Firefox。二者只在真正溢出时才出现，不会凭空占位。
+ * ========================================================================== */
+
+.vp-doc [class*='language-'] pre,
+.vp-doc table {
+    scrollbar-width: thin;
+    scrollbar-color: var(--vp-scrollbar-thumb) var(--vp-scrollbar-track);
+}
+
+.vp-doc [class*='language-'] pre::-webkit-scrollbar,
+.vp-doc table::-webkit-scrollbar {
+    height: 10px;
+}
+
+.vp-doc [class*='language-'] pre::-webkit-scrollbar-track,
+.vp-doc table::-webkit-scrollbar-track {
+    background-color: var(--vp-scrollbar-track);
+}
+
+.vp-doc [class*='language-'] pre::-webkit-scrollbar-thumb,
+.vp-doc table::-webkit-scrollbar-thumb {
+    background-color: var(--vp-scrollbar-thumb);
+    border-radius: 6px;
+}
+
+.vp-doc [class*='language-'] pre::-webkit-scrollbar-thumb:hover,
+.vp-doc table::-webkit-scrollbar-thumb:hover {
+    background-color: var(--vp-c-brand-2);
 }
 
 /* ==========================================================================
