@@ -42,7 +42,10 @@ struct Land::Impl {
 };
 
 Land::Land() : impl(std::make_unique<Impl>()) {}
-Land::Land(LandContext ctx) : Land{} { impl->mContext = std::move(ctx); }
+Land::Land(LandContext ctx) : Land{} {
+    impl->mContext = std::move(ctx);
+    impl->initCache();
+}
 Land::Land(LandAABB const& pos, LandDimid dimid, bool is3D, mce::UUID const& owner, LandPermTable ptable) : Land{} {
     impl->mContext.mPos           = pos;
     impl->mContext.mLandDimid     = dimid;

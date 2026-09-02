@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.2] - 2026-09-02
+
+### 🐛 问题修复
+
+- 修复因缓存未初始化导致部分接口返回空值 @engsr6982
+
 ## [0.22.1] - 2026-09-01
 
 ### 🐛 问题修复
