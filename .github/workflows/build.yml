@@ -32,6 +32,7 @@ jobs:
     strategy:
       matrix:
         devtool: ["y", "n"]
+    name: build-${{ matrix.devtool == 'y' && 'devtool' || 'headless' }}
     steps:
       - uses: actions/checkout@v4
         with:
