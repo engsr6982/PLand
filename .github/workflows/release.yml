@@ -6,6 +6,10 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        devtool: ["y", "n"]
+    name: build-${{ matrix.devtool == 'y' && 'devtool' || 'headless' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,14 +31,14 @@ jobs:
           xmake repo -u
 
       - run: |
-          xmake f -a x64 -m release -p windows -y
+          xmake f -a x64 -m release -p windows -v -y --devtool=${{ matrix.devtool }}
 
       - run: |
           xmake -w -y
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.repository.name }}-windows-x64-${{ github.sha }}
+          name: ${{ github.event.repository.name }}-windows-x64-${{ matrix.devtool == 'y' && 'devtool' || 'headless' }}-${{ github.sha }}
           path: |
             bin/
 
@@ -65,29 +69,40 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        devtool: ["y", "n"]
+    env:
+      FinalName: ${{ github.event.repository.name }}-windows-x64-${{ matrix.devtool == 'y' && 'devtool' || 'headless' }}
+      ArtifactName: ${{ github.event.repository.name }}-windows-x64-${{ matrix.devtool == 'y' && 'devtool' || 'headless' }}-${{ github.sha }}
+    name: upload-to-release-${{ matrix.devtool == 'y' && 'devtool' || 'headless' }}
     steps:
+      - run: |
+          echo "FinalName: ${{ env.FinalName }}"
+          echo "ArtifactName: ${{ env.ArtifactName }}"
+
       - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ github.event.repository.name }}-windows-x64-${{ github.sha }}
+          name: ${{ env.ArtifactName }}
           path: artifact
 
       - run: |
           cp CHANGELOG.md README.md LICENSE artifact/
 
       - run: |
-          zip -r ../${{ github.event.repository.name }}-windows-x64.zip *
+          zip -r ../${{ env.FinalName }}.zip *
         working-directory: artifact
 
       - id: calculate-sha256-core
         run: |
-          echo sha256=$(sha256sum ${{ github.event.repository.name }}-windows-x64.zip | awk '{print $1}') >> $GITHUB_OUTPUT
+          echo sha256=$(sha256sum ${{ env.FinalName }}.zip | awk '{print $1}') >> $GITHUB_OUTPUT
 
       - uses: softprops/action-gh-release@v1
         with:
           append_body: true
           body: |-
-            | ${{ github.event.repository.name }}-windows-x64.zip | ${{ steps.calculate-sha256-core.outputs.sha256 }} |
+            | ${{ env.FinalName }}.zip | ${{ steps.calculate-sha256-core.outputs.sha256 }} |
           files: |
-            ${{ github.event.repository.name }}-windows-x64.zip
+            ${{ env.FinalName }}.zip
