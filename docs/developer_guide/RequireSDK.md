@@ -2,7 +2,7 @@
 
 > 本文是 **C++ 原生开发**的环境配置指南。
 >
-> 如果你需要用 **LegacyScriptEngine（quickjs / nodejs）脚本**调用 PLand 接口，请看 [脚本开发](/developer_guide/script/index) 板块。
+> 如果你需要用 **LegacyScriptEngine** 脚本调用 PLand 接口，请看 [脚本开发](/developer_guide/script/lrca/index) 板块。
 
 ::: warning 在开始之前，请确保您的 PC 上已经安装了以下软件：
 
@@ -15,9 +15,10 @@
 :::
 
 ::: warning 编译器要求
+
 - **LeviLamina 26.20 及以上版本**需要 **LLVM clang-cl** 编译器（**22.x**）进行构建
 - 需要将其加入 PATH，或使用 `xmake f --toolchain=clang-cl` 指定
-:::
+  :::
 
 ::: warning 本教程默认您会 C++ 编程，并且熟悉 Git 和 XMake。
 :::
@@ -46,20 +47,24 @@ LeviLamina **没有提供 `xmake create` 模板**，需要通过官方模板仓�
 2. 在文件顶部添加以下代码：
 
 ```lua
-add_repositories("iceblcokmc https://github.com/IceBlcokMC/xmake-repo.git")
+add_repositories("iceblcokmc https://github.com/IceBlcokMC/xmake-repo.git") -- 添加 xmake-repo 仓库
 
-add_requires("pland >= 0.16.0")
+add_requires("pland") -- 声明依赖
+```
 
+然后在你的 target 目标中添加 `add_packages`，例如：
+
+```lua
 target("xxx")
-    -- ...
     add_packages("pland")
 ```
 
 ::: tip
+
 - `xxx` 是您在 `target` 中定义的生成目标，请将其替换为您自己的包名
 - PLand SDK 由 [IceBlcokMC/xmake-repo](https://github.com/IceBlcokMC/xmake-repo) 提供（仓库已从 engsr6982 转移）
-- 建议使用最新版本的 SDK（当前为 0.16.0），并确保与服务器上安装的 PLand 版本兼容
-:::
+- 建议使用最新版本的 SDK，并确保与服务器上安装的 PLand 版本兼容
+  :::
 
 3. 保存并关闭文件。
 
