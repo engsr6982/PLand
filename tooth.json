@@ -6,7 +6,12 @@
   "info": {
     "name": "PLand",
     "description": "基于 LeviLamina 的领地系统 / A land system based on LeviLamina",
-    "tags": ["type:mod", "platform:levilamina", "land", "pland"],
+    "tags": [
+      "type:mod",
+      "platform:levilamina",
+      "land",
+      "pland"
+    ],
     "avatar_url": ""
   },
   "variants": [
@@ -20,7 +25,30 @@
         {
           "type": "zip",
           "urls": [
-            "https://{{tooth}}/releases/download/v{{version}}/PLand-windows-x64.zip"
+            "https://{{tooth}}/releases/download/v{{version}}/PLand-windows-x64-devtool.zip"
+          ],
+          "placements": [
+            {
+              "type": "dir",
+              "src": "PLand/",
+              "dest": "plugins/PLand"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "headless",
+      "platform": "win-x64",
+      "dependencies": {
+        "github.com/LiteLDev/LeviLamina": ">=26.20.7",
+        "github.com/MiracleForest/iListenAttentively-Release": "0.13.*"
+      },
+      "assets": [
+        {
+          "type": "zip",
+          "urls": [
+            "https://{{tooth}}/releases/download/v{{version}}/PLand-windows-x64-headless.zip"
           ],
           "placements": [
             {
