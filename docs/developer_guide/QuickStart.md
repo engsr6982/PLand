@@ -101,4 +101,4 @@ xmake
 - 了解 PLand 导出的全部 API → [LDAPI](/developer_guide/LDAPI)
 - 了解所有可监听的事件 → [Event](/developer_guide/Event)
 - 学习服务定位器（ServiceLocator）的用法 → [LDAPI：service 相关](/developer_guide/LDAPI#service-相关)
-- 不想写 C++？试试 [脚本开发](/developer_guide/script/index)
+- 不想写 C++？试试 [脚本开发](/developer_guide/script/lrca/index)

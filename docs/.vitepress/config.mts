@@ -33,13 +33,17 @@ export default withMermaid(
         {
           text: "用户指南",
           items: [
-            { text: "快速上手", link: "/user_guide/QuickStart" },
-            { text: "安装指南", link: "/user_guide/Install" },
-            { text: "指令列表", link: "/user_guide/CommandList" },
-            { text: "领地配置文件", link: "/user_guide/Config" },
-            { text: "拦截器配置文件", link: "/user_guide/InterceptorConfig" },
-            { text: "术语表", link: "/user_guide/Glossary" },
-            { text: "FAQ", link: "/user_guide/FAQ" },
+            { text: "快速上手", link: "/user_guide/QuickStart.md" },
+            { text: "安装指南", link: "/user_guide/Install.md" },
+            { text: "指令列表", link: "/user_guide/CommandList.md" },
+            { text: "领地配置文件", link: "/user_guide/Config.md" },
+            {
+              text: "拦截器配置文件",
+              link: "/user_guide/InterceptorConfig.md",
+            },
+            { text: "术语表", link: "/user_guide/Glossary.md" },
+            { text: "疑难解答", link: "/user_guide/FAQ.md" },
+            { text: "多语言", link: "/user_guide/I18n.md" },
           ],
         },
         {
@@ -49,25 +53,53 @@ export default withMermaid(
               text: "C++ 原生开发",
               collapsed: false,
               items: [
-                { text: "快速开始", link: "/developer_guide/QuickStart" },
-                { text: "环境配置", link: "/developer_guide/RequireSDK" },
-                { text: "LDAPI", link: "/developer_guide/LDAPI" },
-                { text: "Event", link: "/developer_guide/Event" },
-                { text: "i18n", link: "/developer_guide/I18n" },
+                { text: "快速开始", link: "/developer_guide/QuickStart.md" },
+                { text: "环境配置", link: "/developer_guide/RequireSDK.md" },
+                { text: "接口指南", link: "/developer_guide/LDAPI.md" },
+                { text: "事件定义", link: "/developer_guide/Event.md" },
               ],
             },
             {
-              text: "脚本开发",
+              text: "脚本开发(PLand-LRCA)",
               collapsed: false,
               items: [
-                { text: "概览", link: "/developer_guide/script/index" },
                 {
-                  text: "PLand-NAPI",
-                  link: "/developer_guide/script/NAPI",
+                  text: "概览",
+                  link: "/developer_guide/script/lrca/index.md",
                 },
                 {
-                  text: "PLand-LegacyRemoteCallApi",
-                  link: "/developer_guide/script/LegacyRemoteCallApi",
+                  text: "接口定义",
+                  collapsed: true,
+                  items: [
+                    {
+                      text: "类型定义",
+                      link: "/developer_guide/script/lrca/api/types.md",
+                    },
+                    {
+                      text: "领地对象(Land)",
+                      link: "/developer_guide/script/lrca/api/land.md",
+                    },
+                    {
+                      text: "领地注册表(LandRegistry)",
+                      link: "/developer_guide/script/lrca/api/land_registry.md",
+                    },
+                    {
+                      text: "领地范围(LandAABB)",
+                      link: "/developer_guide/script/lrca/api/land_aabb.md",
+                    },
+                    {
+                      text: "租赁服务(LeasingService)",
+                      link: "/developer_guide/script/lrca/api/leasing_service.md",
+                    },
+                    {
+                      text: "脚本事件系统(Event)",
+                      link: "/developer_guide/script/lrca/api/event.md",
+                    },
+                    {
+                      text: "其它接口",
+                      link: "/developer_guide/script/lrca/api/other.md",
+                    },
+                  ],
                 },
               ],
             },
@@ -75,7 +107,7 @@ export default withMermaid(
         },
         {
           text: "设计文档",
-          items: [{ text: "租赁模式", link: "/design/feat/LeasingModel" }],
+          items: [{ text: "租赁模式", link: "/design/feat/LeasingModel.md" }],
         },
         {
           text: "其他",
